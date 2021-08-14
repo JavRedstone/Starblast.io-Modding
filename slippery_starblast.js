@@ -7,7 +7,7 @@
   For instance:
   - The value of 1 does nothing
   - The value of 1.01 is a bit laggy
-  - The value of 1.01 is pretty good
+  - The value of 1.02 is pretty good (default)
   - Anything higher makes it hard to even control the ship and it will speed out of control
   - The values under 1 can be used to make your ship go slower and eventually stop, which
   may be fun to use, but will not be so "slippery" :(
