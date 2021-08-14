@@ -11,6 +11,7 @@
   - Anything higher makes it hard to even control the ship and it will speed out of control
   - The values under 1 can be used to make your ship go slower and eventually stop, which
   may be fun to use, but will not be so "slippery" :(
+  - Negative values make you slip backwards lol. Will be fun as well but will be confusing to play
   
   Have fun!
 */
