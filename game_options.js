@@ -4,6 +4,8 @@
 const root_mode = ["survival", "team", "invasion", "deathmatch", "battleroyale", ""];
 // Options for reset tree. Default value is: false.
 const reset_tree = [true, false];
+// Default ships, which is the array of ships added to the current tree.
+const ships = [];
 // Default map size correlated to the root modes, in the same order. It is an integer
 // between 20 and 200 and can be specified, but these are the default numbers.
 const map_size = [100, 80, 30, 20, 80, 60];
