@@ -20,7 +20,6 @@
 this.options = {
   root_mode: "survival",
   map_size: 100,
-  custom_map: ""
 };
 
 this.tick = function(game) {
