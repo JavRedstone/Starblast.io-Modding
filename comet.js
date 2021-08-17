@@ -4,7 +4,7 @@
   This project was to create a simple comet (that never dies)
   Beware of changing the values as you might crash your mod editor / chrome / 
   computer if you are not careful. Close the tab entirely when you find that the
-  asteroids are not destorying themselves anymore and that it is getting laggy
+  asteroids are not destroying themselves anymore and that it is getting laggy
   on the the end of the mod editor.
   
   Enjoy!
