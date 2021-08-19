@@ -1,4 +1,4 @@
-// Anti-troll starblast
+// Anti-troll
 
 /*
   Prevents excessive trolling of players by means of unprecedented killing, basecamping, etc
