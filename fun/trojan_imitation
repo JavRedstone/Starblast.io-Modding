@@ -18,7 +18,7 @@ this.options = {
   map_size: 30
 };
 
-const spped = 10; // Higher the speed variable, the slower it goes
+const speed = 10; // Higher the speed variable, the slower it goes
 
 const sx = 5;
 const sy = 5;
