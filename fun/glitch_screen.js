@@ -38,4 +38,4 @@ this.tick = function(game) {
       }
     }
   }
-};
+}
