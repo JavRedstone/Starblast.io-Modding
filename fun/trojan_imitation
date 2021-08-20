@@ -1,0 +1,42 @@
+// Trojan Imitation
+
+/*
+  Trojan viruses typically impose flashing and screen-covering elements, disposed
+  of bright colours. I wanted to "recreate" this in starblast as a new challenge:
+  - Try to survive as long as you can in this
+  
+  *NOTE*: You might crash your computer if you are not careful with the number of
+  elements on your screen at the same time. Close the starblast window if your fps
+  drops below 30, as it can be dangerous on your computer. (Honestly you won't
+  last that long)
+  
+  Enjoy killing your starblast!
+*/
+
+this.options = {
+  root_mode: "survival",
+  map_size: 30
+};
+
+const spped = 10; // Higher the speed variable, the slower it goes
+
+const sx = 5;
+const sy = 5;
+
+this.tick = function(game) {
+  if (game.step % speed === 0) {
+    for (var ship of game.ships) {
+      var x = Math.random() * 100;
+      var y = Math.random() * 100;
+      ship.setUIComponent({
+        id: `${[x, y]}`,
+        position: [x,y,sx,sy],
+        clickable: false,
+        visible: true,
+        components: [
+          { type: "box", position: [0,0,100,100], fill: "#f00"},
+        ]
+      });
+    }
+  }
+}
