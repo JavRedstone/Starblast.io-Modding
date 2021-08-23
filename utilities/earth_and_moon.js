@@ -11,7 +11,7 @@
 this.options = {
   root_mode: "survival",
   map_size: 30,
-  custom_map: ""
+  custom_map: "" //If you don't want the Earth and Moon to collide into anything, and possibly breaking.
 };
 
 // Distance
