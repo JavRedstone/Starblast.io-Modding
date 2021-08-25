@@ -230,36 +230,6 @@ this.tick = function(game) {
   for (var ship of game.ships) {
     if (!ship.custom.installed) {
       ship.custom.installed = true;
-      
-      ship.setUIComponent(A);
-      ship.setUIComponent(B);
-      ship.setUIComponent(C);
-      ship.setUIComponent(D);
-      ship.setUIComponent(E);
-      ship.setUIComponent(F);
-      ship.setUIComponent(G);
-      ship.setUIComponent(H);
-      ship.setUIComponent(I);
-      ship.setUIComponent(J);
-      ship.setUIComponent(K);
-      ship.setUIComponent(L);
-      ship.setUIComponent(M);
-      ship.setUIComponent(N);
-      ship.setUIComponent(O);
-      ship.setUIComponent(P);
-      ship.setUIComponent(Q);
-      ship.setUIComponent(R);
-      ship.setUIComponent(S);
-      ship.setUIComponent(T);
-      ship.setUIComponent(U);
-      ship.setUIComponent(V);
-      ship.setUIComponent(W);
-      ship.setUIComponent(X);
-      ship.setUIComponent(Y);
-      ship.setUIComponent(Z);
-      
-      ship.setUIComponent(stuck_on_upgrade);
-      
       ship.custom.text = "";
       ship.custom.hide_show_chat = false;
     }
@@ -293,6 +263,37 @@ this.tick = function(game) {
       ship.setUIComponent(chat);
       
       ship.setUIComponent(hide_show_chat);
+      
+      ship.setUIComponent(stuck_on_upgrade);
+    }
+    
+    if (game.step % 60 === 0) {
+      ship.setUIComponent(A);
+      ship.setUIComponent(B);
+      ship.setUIComponent(C);
+      ship.setUIComponent(D);
+      ship.setUIComponent(E);
+      ship.setUIComponent(F);
+      ship.setUIComponent(G);
+      ship.setUIComponent(H);
+      ship.setUIComponent(I);
+      ship.setUIComponent(J);
+      ship.setUIComponent(K);
+      ship.setUIComponent(L);
+      ship.setUIComponent(M);
+      ship.setUIComponent(N);
+      ship.setUIComponent(O);
+      ship.setUIComponent(P);
+      ship.setUIComponent(Q);
+      ship.setUIComponent(R);
+      ship.setUIComponent(S);
+      ship.setUIComponent(T);
+      ship.setUIComponent(U);
+      ship.setUIComponent(V);
+      ship.setUIComponent(W);
+      ship.setUIComponent(X);
+      ship.setUIComponent(Y);
+      ship.setUIComponent(Z);
     }
   }
 }
