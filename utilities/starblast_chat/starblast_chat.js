@@ -334,14 +334,19 @@ this.event = function(event, game) {
       
       else if (event.id == "stuck_on_upgrade") {
         var crystals = event.ship.crystals;
+        
+        function set_crystals () {
+          event.ship.set({crystals: crystals - 1});
+          event.ship.custom.wait_tick = {tick: game.step, crystals: crystals};
+        }
+        
         if (crystals > 0) {
           if (event.ship.custom.wait_tick) {
             if (event.ship.custom.wait_tick.tick - game.step <= -10) {
-              event.ship.set({crystals: crystals - 1});
-              event.ship.custom.wait_tick = {tick: game.step, crystals: crystals};
+              set_crystals();
             }
           }
-          else event.ship.custom.wait_tick = {tick: game.step, crystals: crystals};
+          else set_crystals()
         }
       }
     
