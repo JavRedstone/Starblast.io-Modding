@@ -19,7 +19,7 @@ this.tick = function(game) {
       type: {
         id: "Rick Roll",
         obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-        diffuse: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/fun/rickroll/Rick_Astley.jpg"
+        emissive: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/fun/rickroll/Rick_Astley.jpg"
       },
       position: {x:0,y:0,z:-100},
       rotation: {x:0,y:0,z:Math.PI},
