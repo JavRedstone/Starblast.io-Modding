@@ -1,9 +1,6 @@
 // Rickroll in Starblast
 
 /*
-  The rick is sorta hidden in the center so you have to go to the bottom in order to see him.
-  Makes up for a good troll. The bigger the map the better.
-
   Enjoy your rickrolling!
 */
 
