@@ -9,17 +9,19 @@ this.options = {
 
 var asteroid_rate = 15;
 var asteroid_counter = 0;
+var asteroid_amount = 100;
 var asteroid_done;
 
 var alien_rate = 25;
 var alien_counter = 0;
+var alien_amount = 100;
 var alien_done;
 
 this.tick = function(game) {
   if (game.step === 0) echo("Wave 4 has started...");
   if (game.step == 500) echo("Preparing to spawn asteroids...");
   if (game.step > 500 & game.step % asteroid_rate === 0) {
-    if (asteroid_counter < 100) {
+    if (asteroid_counter < asteroid_amount) {
       game.addAsteroid({
         x: Math.random() * game.options.map_size * 5 * (Math.round(Math.random()) === 0 ? -1 : 1),
         y: -game.options.map_size * 5,
@@ -36,7 +38,7 @@ this.tick = function(game) {
   }
   if (game.step - asteroid_done == 500) echo("Preparing to spawn aliens...");
   if (game.step - asteroid_done > 500 & game.step % alien_rate === 0) {
-    if (alien_counter < 100) {
+    if (alien_counter < alien_amount) {
       game.addAlien({
         x: Math.random() * game.options.map_size * 5 * (Math.round(Math.random()) === 0 ? -1 : 1),
         y: Math.random() * game.options.map_size * 5 * (Math.round(Math.random()) === 0 ? -1 : 1),
