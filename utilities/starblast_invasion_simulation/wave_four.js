@@ -53,5 +53,4 @@ this.tick = function(game) {
       echo("Alien spawn finished.");
     }
   }
-  if(alien_done && game.aliens.length === 0) echo("Wave 4 finished.");
 }
