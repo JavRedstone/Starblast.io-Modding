@@ -3,6 +3,7 @@
 this.options = {
   map_size: 20,
   custom_map: "",
+  // Just to get ahead a little bit
   starting_ship: 704
 };
 
