@@ -333,6 +333,6 @@ this.event = function(event, game){
       break;
     case "ship_spawned": 
       ship.set({x:0,y:0,invulnerable:360,crystals:((Math.trunc(ship.type/100)||0)**2)*20});
-    break;
+      break;
   }
 };
