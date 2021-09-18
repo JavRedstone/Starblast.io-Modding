@@ -36,8 +36,8 @@ authorize = id => {
     visible: true,
     shortcut: "M",
     components: [
-      {type:"box",position:[0,0,200,100],fill:"rgba(68, 85, 102, 0)",stroke:"#cde",width:5},
-      {type: "text",position:[0,30,100,60],value:"Admin ship [M]",color:"#cde"},
+      {type:"box",position:[0,0,200,100],stroke:"white",width:5},
+      {type: "text",position:[0,30,100,60],value:"Admin ship [M]",color:"white"},
     ]
   });     
   return game.ships[id].name + " was granted admin ship\n ";
