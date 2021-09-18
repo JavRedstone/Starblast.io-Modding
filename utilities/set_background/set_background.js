@@ -20,9 +20,9 @@ function setBackground(image_url) {
     game.setObject({
         id: "background",
         type: {
-        id: "background_image",
-        obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-        emissive: image_url
+          id: "background_image",
+          obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
+          emissive: image_url
         },
         position: {x: 0, y: 0, z: depth},
         rotation: {x: 0, y: Math.PI, z: Math.PI},
