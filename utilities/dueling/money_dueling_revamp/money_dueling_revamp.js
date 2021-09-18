@@ -148,7 +148,7 @@ this.tick = function(game){
       type: {
         id: "AFK_Position",
         obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-        emissive: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/AFK_Position.png"
+        emissive: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/money_dueling_revamp/AFK_Position.png"
       },
       position: {x: 0, y: 100, z: -10},
       rotation: {x: 0, y: Math.PI, z: Math.PI},
