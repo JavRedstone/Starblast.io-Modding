@@ -103,7 +103,7 @@ var names = ["switch_left", "switch_right", "spawn", "spectate", "reset", "heal"
 var values = ["<", ">", "🏠", "🧐", "↩️", "💖"];
 
 function generate_ui(ship) {
-  for (var i = 0; i < names.length; i++) {
+  for (let i = 0; i < names.length; i++) {
     ship.setUIComponent({
       id: names[i],
       position: [56 + i * 4, 1, 4, 6.4],
