@@ -1,4 +1,21 @@
+// Dueling by JavRedstone
+
+/*
+  Just wanted to make my own dueling mod, from the very start
+  
+  This dueling mod uses emojis as recognizable buttons for different functions
+  
+  Enjoy!
+*/
+
 var Spectator_102 = '{"name":"Spectator","level":1,"model":2,"size":0.1,"zoom":0.3,"specs":{"shield":{"capacity":[10000,10000],"reload":[10000,10000]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0.1,"speed":[1000,1000],"rotation":[500,500],"acceleration":[100000,100000]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-65,-60,-50,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,0,0,0,0,0,0,0,0],"height":[0,0,0.1,0.1,0.1,0.1,0,0,0],"propeller":true,"texture":[4,63,10,1,1,1,12,17]}},"typespec":{"name":"Spectator","level":1,"model":2,"code":102,"specs":{"shield":{"capacity":[10000,10000],"reload":[10000,10000]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0.1,"speed":[1000,1000],"rotation":[500,500],"acceleration":[100000,100000]}},"shape":[0.13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.15}}';
+
+var Admin_791 = '{"name":"Admin","level":7.9,"model":1,"size":0.5,"zoom":0.4,"specs":{"shield":{"capacity":[1e+308,1e+308],"reload":[1e+308,1e+308]},"generator":{"capacity":[260,260],"reload":[1000000000000000,1000000000000000]},"ship":{"mass":1e+308,"speed":[500,500],"rotation":[105,105],"acceleration":[300,300]}},"bodies":{"gun1":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}},"gun2":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}},"gun3":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}},"gun4":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}},"gun5":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}},"gun6":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0],"y":[0,30],"z":[0,0]},"width":[1,1],"height":[1,1],"texture":[4],"laser":{"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"angle":0,"error":0}}},"typespec":{"name":"Admin","level":7.9,"model":1,"code":791,"specs":{"shield":{"capacity":[1e+308,1e+308],"reload":[1e+308,1e+308]},"generator":{"capacity":[260,260],"reload":[1000000000000000,1000000000000000]},"ship":{"mass":1e+308,"speed":[500,500],"rotation":[105,105],"acceleration":[300,300]}},"shape":[0.15,0.15,0.049,0.029,0.02,0.015,0.013,0.01,0.011,0.007,0.01,0,0,0.01,0,0.01,0.007,0.011,0.01,0.013,0.015,0.02,0.029,0.049,0.15,0.15,0.15,0.049,0.029,0.02,0.015,0.013,0.01,0.011,0.007,0.01,0,0,0.01,0,0.01,0.007,0.011,0.01,0.013,0.015,0.02,0.029,0.049,0.15],"lasers":[{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0,"y":-0.15,"z":0,"angle":0,"damage":[260,260],"rate":10,"type":2,"speed":[210,210],"number":1,"spread":0,"error":0,"recoil":0}],"radius":0.15}}';
+
+var ships = [];
+
+ships.push(Spectator_102);
+ships.push(Admin_791);
 
 var vocabulary = [
   { text: "You", icon:"\u004e", key: "O" },
@@ -23,7 +40,7 @@ var switch_arr = [1, 2, 4, 6, 7, 8, 4];
 
 this.options = {
   map_name: "Dueling by JavRedstone",
-  ships: [Spectator_102],
+  ships: ships,
   starting_ship: 605,
   reset_tree: false,
   max_players: 60,
@@ -90,9 +107,9 @@ function generate_ui(ship) {
     ship.setUIComponent({
       id: names[i],
       position: [56 + i * 4, 1, 4, 6.4],
-      clickable: true,
+      clickable: names[i] != "admin",
       shortcut: `${i + 1}`,
-      visible: true,
+      visible: names[i] != "admin",
       components: [
         { type: "box", position: [0,0,100,100], stroke: "white", width: 2},
         { type: "text", position: [5, 10, 90, 60], value: values[i], color: "white"},
@@ -100,6 +117,49 @@ function generate_ui(ship) {
       ]
     });
   }
+}
+
+var admin = ["admin", "🔑"];
+
+function give_admin(ship_id) {
+  var admin_valid;
+  for (var ship of game.ships) {
+    if (ship.id == ship_id) {
+      admin_valid = ship;
+    }
+  }
+  admin_valid.setUIComponent({
+    id: admin[0],
+    position: [52, 1, 4, 6.4],
+    clickable: true,
+    shortcut: "0",
+    visible: true,
+    components: [
+      { type: "box", position: [0,0,100,100], stroke: "white", width: 2},
+      { type: "text", position: [5, 10, 90, 60], value: admin[1], color: "white"},
+      { type: "text", position: [5, 65, 90, 25], value: `[0]`, color: "white"}
+    ]
+  });
+}
+
+function remove_admin(ship_id) {
+  var admin_invalid;
+  for (var ship of game.ships) {
+    if (ship.id == ship_id) {
+      admin_invalid = ship;
+    }
+  }
+  admin_invalid.setUIComponent({
+    id: admin[0],
+    clickable: false,
+    visible: false
+  });
+  admin_invalid.set({
+    type: 605,
+    shield: 999,
+    crystals: get_crystals(605),
+    stats: get_stats(605)
+  });
 }
 
 this.tick = function(game) {
@@ -120,6 +180,25 @@ this.tick = function(game) {
             break;
         }
       }
+      // Space to give admin: (call the function give_admin(),
+      // and enter the ship id that you want (it is printed inside the console
+      // alongside their nickname))
+      
+      // Give the owner (usually the first player to join the game), admin.
+      // If the owner leaves, it will NOT give the subsequent person admin :)
+      var admins = [1]; // <- Assuming that you're the first to join
+      
+      for (var admin of admins) {
+        give_admin(admin);
+      }
+      // Space to remove admin: (call the function remove_admin(),
+      // and enter the ship id that you want (it is printed inside the console
+      // alongside their nickname))
+      var invalids = [];
+      
+      for (var invalid of invalids) {
+        remove_admin(invalid);
+      }
       break;
   }
 };
@@ -132,8 +211,8 @@ this.event = function(event, game) {
         x: 0,
         y: 0,
         invulnerable: 360,
-        crystals: get_crystals(game.options.starting_ship),
-        stats: get_stats(game.options.starting_ship)
+        crystals: get_crystals(ship.type),
+        stats: get_stats(ship.type)
       });
       echo(list_players());
       break;
@@ -171,7 +250,7 @@ this.event = function(event, game) {
           else {
             previous = ship.type - 1;
           }
-          if (!ship.custom.spectate) {
+          if (!ship.custom.spectate && !ship.custom.admin) {
             ship.set({
               type: previous,
               shield: 999,
@@ -188,7 +267,7 @@ this.event = function(event, game) {
           else {
             next = ship.type + 1;
           }
-          if (!ship.custom.spectate) {
+          if (!ship.custom.spectate && !ship.custom.admin) {
             ship.set({
               type: next,
               shield: 999,
@@ -197,22 +276,30 @@ this.event = function(event, game) {
             });
           }
           break;
-        case "spectate":
-          ship.custom.spectate ? ship.set({
-            type: game.options.starting_ship,
-            crystals: get_crystals(game.options.starting_ship),
-            stats: get_stats(game.options.starting_ship),
-            collider: true
-          }) : ship.set({
-            type: 102,
-            crystals: 0,
-            collider: false,
-            stats: get_stats(102)
+        case "spawn":
+          ship.set({
+            x: 0,
+            y: 0
           });
-          ship.custom.spectate = !ship.custom.spectate;
+          break;
+        case "spectate":
+          if (!ship.custom.admin) {
+            ship.custom.spectate ? ship.set({
+              type: game.options.starting_ship,
+              crystals: get_crystals(game.options.starting_ship),
+              stats: get_stats(game.options.starting_ship),
+              collider: true
+            }) : ship.set({
+              type: 102,
+              crystals: 0,
+              collider: false,
+              stats: get_stats(102)
+            });
+            ship.custom.spectate = !ship.custom.spectate;
+          }
           break;
         case "reset":
-          if (!ship.custom.spectate) {
+          if (!ship.custom.spectate && !ship.custom.admin) {
             ship.set({
               type: 101,
               shield: 999,
@@ -228,11 +315,20 @@ this.event = function(event, game) {
             stats: get_stats(ship.type)
           });
           break;
-        case "spawn":
-          ship.set({
-            x: 0,
-            y: 0
-          });
+        case "admin":
+          if (!ship.custom.spectate) {
+            ship.custom.admin ? ship.set({
+              type: 605,
+              shield: 999,
+              crystals: get_crystals(605),
+              stats: get_stats(605)
+            }) : ship.set({
+              type: 791,
+              crystals: 1248.2,
+            });
+            ship.custom.admin = !ship.custom.admin;
+          }
+          break;
       }
       break;
   }
