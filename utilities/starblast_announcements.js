@@ -124,5 +124,7 @@ this.event = function(event, game) {
           visible: false,
         });
       }
+      
+      echo(`Ship announcements were successfully installed for ${ship.name}`);
   }
 }
