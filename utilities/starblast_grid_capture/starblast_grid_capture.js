@@ -67,6 +67,8 @@ var yellow_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Mo
 var green_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Green_Tile.png";
 var blue_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Blue_Tile.png";
 
+var goal_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Goal_Tile.png";
+
 var tile_types = [red_tile, yellow_tile, green_tile, blue_tile];
 
 var depth = -10;
@@ -79,15 +81,15 @@ class Tile {
       type: image,
       position: { x: px, y: py },
     }) {
-        this.id = id;
-        this.position = { x: px, y: py, z: depth };
-        this.rotation = { x: 0, y: Math.PI, z: Math.PI }
-        this.scale = { x: tile_size, y: tile_size, z: 0 };
-        this.type = {
-          id: id,
-          obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-          emissive: image
-        };
+      this.id = id;
+      this.position = { x: px, y: py, z: depth };
+      this.rotation = { x: 0, y: Math.PI, z: Math.PI }
+      this.scale = { x: tile_size, y: tile_size, z: 0 };
+      this.type = {
+        id: id,
+        obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+        emissive: image
+      };
     }
     
     initiate(game) {
@@ -101,6 +103,21 @@ class Tile {
       
       tiles.push(this);
       
+      return this;
+    }
+}
+
+var num = 0;
+var running_round = null;
+
+class Round {
+    constructor() {
+      this.num = num + 1;
+      this.tiles = [];
+    }
+    
+    start() {
+      num += 1;
       return this;
     }
 }
@@ -214,7 +231,7 @@ this.tick = function (game) {
       generate_border ();
       generate_base ();
       break;
-    case game.step % 30 === 0:
+    case game.step % 30 === 0 && game.step % 1000 !== 0:
       for (var ship of game.ships) {
         if (ship.custom.position) {
           ship.set ({
@@ -252,13 +269,26 @@ this.tick = function (game) {
         ship.custom.surr_up_avail ? enable_ui(2, ship) : disable_ui(2, ship);
         ship.custom.surr_down_avail ? enable_ui(3, ship) : disable_ui(3, ship);
       }
-      
-      // enable_ui(0, ship);
-      // enable_ui(1, ship);
-      // enable_ui(2, ship);
-      // enable_ui(3, ship);
-      
+      game.ships[0].custom.position = tiles[tiles.length - 1].position
       break;
+    case game.step % 1000 === 0:
+      running_round = null;
+      if (!running_round) {
+        running_round = new Round ().start;
+        
+        var goal_pos = {
+          x: tile_size * (4 + Math.floor(Math.random() * ((map_size / tile_size) - 5))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
+          y: tile_size * (4 + Math.floor(Math.random() * ((map_size / tile_size) - 5))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
+        }
+        
+        echo([goal_pos.x, goal_pos.y])
+        
+        var goal_tile_round = new Tile ({
+          id: `goal_tile`,
+          type: goal_tile,
+          position: goal_pos
+        }).initiate(game);
+      }
   }
 }
 
