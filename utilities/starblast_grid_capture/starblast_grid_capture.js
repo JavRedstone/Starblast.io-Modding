@@ -258,10 +258,12 @@ this.tick = function (game) {
           // echo(["up",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_up.x, ship.custom.surr_up.y, tile.position.x, tile.position.y])
           // echo(["down",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_down.x, ship.custom.surr_down.y, tile.position.x, tile.position.y])
           
-          if (tile.position.x == ship.custom.surr_left.x && tile.position.y == ship.custom.surr_left.y && (tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile)) ship.custom.surr_left_avail = true;
-          if (tile.position.x == ship.custom.surr_right.x && tile.position.y == ship.custom.surr_right.y && (tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile)) ship.custom.surr_right_avail = true;
-          if (tile.position.x == ship.custom.surr_up.x && tile.position.y == ship.custom.surr_up.y && (tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile)) ship.custom.surr_up_avail = true;
-          if (tile.position.x == ship.custom.surr_down.x && tile.position.y == ship.custom.surr_down.y && (tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile)) ship.custom.surr_down_avail = true;
+          if ((tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile) || (tile.type.emissive == goal_tile && running_round.tiles[0] == tile)) {
+            if (tile.position.x == ship.custom.surr_left.x && tile.position.y == ship.custom.surr_left.y) ship.custom.surr_left_avail = true;
+            if (tile.position.x == ship.custom.surr_right.x && tile.position.y == ship.custom.surr_right.y) ship.custom.surr_right_avail = true;
+            if (tile.position.x == ship.custom.surr_up.x && tile.position.y == ship.custom.surr_up.y) ship.custom.surr_up_avail = true;
+            if (tile.position.x == ship.custom.surr_down.x && tile.position.y == ship.custom.surr_down.y) ship.custom.surr_down_avail = true;
+          }
         }
         
         ship.custom.surr_left_avail ? enable_ui(0, ship) : disable_ui(0, ship);
@@ -269,7 +271,7 @@ this.tick = function (game) {
         ship.custom.surr_up_avail ? enable_ui(2, ship) : disable_ui(2, ship);
         ship.custom.surr_down_avail ? enable_ui(3, ship) : disable_ui(3, ship);
       }
-      game.ships[0].custom.position = tiles[tiles.length - 1].position
+      // game.ships[0].custom.position = tiles[tiles.length - 1].position
       break;
     case game.step % 1000 === 0:
       running_round = null;
@@ -277,17 +279,17 @@ this.tick = function (game) {
         running_round = new Round ().start;
         
         var goal_pos = {
-          x: tile_size * (4 + Math.floor(Math.random() * ((map_size / tile_size) - 5))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
-          y: tile_size * (4 + Math.floor(Math.random() * ((map_size / tile_size) - 5))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
+          x: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
+          y: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
         }
         
-        echo([goal_pos.x, goal_pos.y])
-        
-        var goal_tile_round = new Tile ({
-          id: `goal_tile`,
-          type: goal_tile,
-          position: goal_pos
-        }).initiate(game);
+        running_round.tiles.push(
+          new Tile ({
+            id: `goal_tile`,
+            type: goal_tile,
+            position: goal_pos
+          }).initiate(game)
+        )
       }
   }
 }
