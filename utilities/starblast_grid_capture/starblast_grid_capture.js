@@ -112,7 +112,7 @@ function generate_scoreboard (ship) {
       {
         type: "text",
         position: position,
-        value: `${team_colors[i].toUpperCase}: `,
+        value: `${team_colors[i].toUpperCase}:`,
         color: team_colors[i],
         align: "left"
       },
@@ -127,6 +127,22 @@ function generate_scoreboard (ship) {
   }
   
   ship.setUIComponent (scoreboard);
+}
+
+function generate_message (message, ship) {
+  ship.setUIComponent ({
+    id: "message",
+    position: [0, 10, 100, 5],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 100],
+        value: message,
+        color: rgb(128, 181, 233)
+      }
+    ]
+  });
 }
 
 var white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
@@ -390,6 +406,8 @@ this.tick = function (game) {
           
           for (var _ship of game.ships) {
              _ship.custom.position = pos;
+            
+            generate_message (`${team_colors[ship.custom.team].toUpperCase} has scored a point!`, _ship);
           }
         }
       }
