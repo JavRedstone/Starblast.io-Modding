@@ -24,6 +24,35 @@ var dir_names = ["left", "right", "up", "down"];
 var dir_values = ["🡸", "🡺", "🡹", "🡻"];
 var dir_shortcuts = ["A", "D", "W", "S"];
 
+function get_team_pos (team) {
+  switch (team) {
+    case 0:
+      return {
+        x: curr_team_A.position.x,
+        y: curr_team_A.position.y
+      };
+      break;
+    case 1:
+      return {
+        x: curr_team_B.position.x,
+        y: curr_team_B.position.y
+      };
+      break;
+    case 2:
+      return {
+        x: curr_team_C.position.x,
+        y: curr_team_C.position.y
+      };
+      break;
+    case 3:
+      return {
+        x: curr_team_D.position.x,
+        y: curr_team_D.position.y
+      };
+      break;
+  }
+}
+
 function generate_ui (ship) {
   for (let i = 0; i < dir_names.length; i++) {
     ship.setUIComponent({
@@ -76,6 +105,7 @@ function generate_scoreboard (ship) {
       {
         type: "box",
         position: position,
+        fill: ship.custom.team == i ? rgba(96, 255, 255, 0.2) : rgba(0, 0, 0, 0),
         stroke: team_colors[i],
         width: 2
       },
@@ -351,6 +381,17 @@ this.tick = function (game) {
         ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
         ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
         ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
+        
+        if (ship.custom.position == running_round.tiles[0].position) {
+          ship.scores += 1;
+          scores[ship.custom.team] += 1;
+          
+          var pos = get_team_pos (ship.custom.team);
+          
+          for (var _ship of game.ships) {
+             _ship.custom.position = pos;
+          }
+        }
       }
       
       if (running_round && game.step % 1000 === 0) {
@@ -452,40 +493,17 @@ this.event = function (event, game) {
         hue: hue_value
       });
       
-      generate_scoreboard (ship);
-      
       ship.custom.team = current_team;
       
-      switch (ship.custom.team) {
-        case 0:
-          ship.custom.position = {
-            x: curr_team_A.position.x,
-            y: curr_team_A.position.y
-          };
-          break;
-        case 1:
-          ship.custom.position = {
-            x: curr_team_B.position.x,
-            y: curr_team_B.position.y
-          };
-          break;
-        case 2:
-          ship.custom.position = {
-            x: curr_team_C.position.x,
-            y: curr_team_C.position.y
-          };
-          break;
-        case 3:
-          ship.custom.position = {
-            x: curr_team_D.position.x,
-            y: curr_team_D.position.y
-          };
-          break;
-      }
-      ship.set({
+      ship.custom.position = get_team_pos (ship.custom.team);
+      
+      ship.set ({
         x: ship.custom.position.x,
         y: ship.custom.position.y
-      })
+      });
+      
+      ship.custom.scores = 0;
+      generate_scoreboard (ship);
       break;
     case "ui_component_clicked":
       if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -30) {
