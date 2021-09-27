@@ -31,7 +31,7 @@ function generate_ui (ship) {
       position: [60 + i * 4, 1, 4, 6.4],
       clickable: ship.custom.restrictions[i].clickable,
       shortcut: `${dir_shortcuts[i]}`,
-      visible: ship.custom.restrictions[i].visible,
+      visible: true,
       components: [
         { type: "box", position: [0,0,100,100], stroke: ship.custom.restrictions[i].stroke, width: 2},
         { type: "text", position: [5, 10, 90, 60], value: dir_values[i], color: ship.custom.restrictions[i].color},
@@ -59,6 +59,44 @@ function enable_ui (dir_id, ship) {
   };
   
   generate_ui(ship);
+}
+
+var scores = [0, 0, 0, 0];
+
+var scoreboard = {
+  id: "scoreboard",
+  position: [0.5, 1, 10, 20],
+  components: []
+};
+
+function generate_scoreboard (ship) {
+  for (let i = 0; i < team_colors.length; i++) {
+    var position = [0, i * 20, 100, 20];
+    scoreboard.components.push (
+      {
+        type: "box",
+        position: position,
+        stroke: team_colors[i],
+        width: 2
+      },
+      {
+        type: "text",
+        position: position,
+        value: `${team_colors[i].toUpperCase}: `,
+        color: team_colors[i],
+        align: "left"
+      },
+      {
+        type: "text",
+        position: position,
+        value: scores[i],
+        color: team_colors[i],
+        align: "right"
+      }
+    );
+  }
+  
+  ship.setUIComponent (scoreboard);
 }
 
 var white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
@@ -387,7 +425,6 @@ this.event = function (event, game) {
       for (let i = 0; i < dir_names.length; i++) {
         ship.custom.restrictions.push({
           clickable: false,
-          visible: true,
           stroke: "grey",
           color: "grey"
         });
@@ -414,6 +451,8 @@ this.event = function (event, game) {
       ship.set ({
         hue: hue_value
       });
+      
+      generate_scoreboard (ship);
       
       ship.custom.team = current_team;
       
