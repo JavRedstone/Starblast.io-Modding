@@ -135,25 +135,25 @@ var corner_D = { x: -map_size + tile_size * move_in, y: -map_size + tile_size * 
 
 
 var corner_tile_A = new Tile ({
-  id: `tile_${corner_A.x}_${corner_A.y}`,
+  id: "corner_tile_A",
   type: white_tile,
   position: { x: corner_A.x, y: corner_A.y }
 }).initiate(game);
 
 var corner_tile_B = new Tile ({
-  id: `tile_${corner_B.x}_${corner_B.y}`,
+  id: "corner_tile_B",
   type: white_tile,
   position: { x: corner_B.x, y: corner_B.y }
 }).initiate(game);
 
 var corner_tile_C = new Tile ({
-  id: `tile_${corner_C.x}_${corner_C.y}`,
+  id: "corner_tile_C",
   type: white_tile,
   position: { x: corner_C.x, y: corner_C.y }
 }).initiate(game);
 
 var corner_tile_D = new Tile ({
-  id: `tile_${corner_D.x}_${corner_D.y}`,
+  id: "corner_tile_D",
   type: white_tile,
   position: { x: corner_D.x, y: corner_D.y }
 }).initiate(game);
@@ -273,6 +273,10 @@ function generate_base () {
   }
 }
 
+var round_tracker = {
+  tick: 0
+};
+
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
@@ -338,6 +342,7 @@ this.tick = function (game) {
             y: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
           }
           
+          // Check if it is inside an existing tile
           for (var _tile of tiles) {
             if (check_there (_tile, position)) {
               generate_pos ();
@@ -345,25 +350,31 @@ this.tick = function (game) {
           }
         }
         
-        running_round.tiles.push(
-          new Tile ({
-            id: `goal_tile`,
-            type: goal_tile,
-            position: position
-          }).initiate (game)
-        )
+        // Create a goal tile
+        var goal_tile = new Tile ({
+          id: `goal_tile`,
+          type: goal_tile,
+          position: position
+        }).initiate (game);
         
-        var dir_link = directions[Math.round(Math.random() * (directions.length - 1))];
+        running_round.tiles.push (goal_tile);
         
-        var path_tile_tile = running_round.tiles[0];
+        var dir_link = directions[Math.round (Math.random () * (directions.length - 1))];
+        
+        var path_tile_tile = goal_tile;
         var path;
         
+        var i = 0;
+        
+        // Create the path tiles
         while (true) {
           path = path ? dir_link (path.tile, path_tile, true) : dir_link (path_tile_tile, path_tile, true);
           path_tile_tile = path.tile;
+          path_tile_tile.id = `${num}_path_tile_${i}`;
           running_round.tiles.push(path_tile_tile);
+          i++;
           if (path.check) break;
-          else path_tile_tile.initiate (game);
+          path_tile_tile.initiate (game);
         }
       }
       break;
