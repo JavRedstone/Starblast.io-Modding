@@ -273,9 +273,7 @@ function generate_base () {
   }
 }
 
-var round_tracker = {
-  tick: 0
-};
+round_tick = 0;
 
 this.tick = function (game) {
   switch (true) {
