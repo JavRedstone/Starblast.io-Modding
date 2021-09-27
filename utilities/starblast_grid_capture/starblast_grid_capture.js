@@ -68,6 +68,7 @@ var green_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Mod
 var blue_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Blue_Tile.png";
 
 var goal_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Goal_Tile.png";
+var path_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Path_Tile.png";
 
 var tile_types = [red_tile, yellow_tile, green_tile, blue_tile];
 
@@ -90,6 +91,7 @@ class Tile {
         obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
         emissive: image
       };
+      this.hidden = false;
     }
     
     initiate(game) {
@@ -156,41 +158,87 @@ var corner_tile_D = new Tile ({
   position: { x: corner_D.x, y: corner_D.y }
 }).initiate(game);
 
-function left (tile, image) {
-  // echo(["left", tile.position.x, tile.position.y])
-  return new Tile ({
+function check_there (tile, pos) {
+  return tile.position.x == pos.x && tile.position.y == pos.y && tile.type.emissive !== "";
+}
+
+function left (tile, image, remove = false) {
+  // echo(["left", tile.position.x, tile.position.y]);
+  var new_tile = new Tile ({
     id: `tile_${tile.position.x - tile_size}_${tile.position.y}`,
     type: image,
     position: { x: tile.position.x - tile_size, y: tile.position.y }
-  }).initiate(game);
+  });
+  check = false;
+  for (var _tile of tiles) {
+    if (check_there (_tile, new_tile.position)) {
+      check = true;
+    }
+  }
+  return {
+    check: check,
+    tile: remove ? new_tile : new_tile.initiate (game)
+  };
 }
 
-function right (tile, image) {
-  // echo(["right", tile.position.x, tile.position.y])
-  return new Tile ({
+function right (tile, image, remove = false) {
+  // echo(["right", tile.position.x, tile.position.y]);
+  var new_tile = new Tile ({
     id: `tile_${tile.position.x + tile_size}_${tile.position.y}`,
     type: image,
     position: { x: tile.position.x + tile_size, y: tile.position.y }
-  }).initiate(game);
+  });
+  check = false;
+  for (var _tile of tiles) {
+    if (check_there (_tile, new_tile.position)) {
+      check = true;
+    }
+  }
+  return {
+    check: check,
+    tile: remove ? new_tile : new_tile.initiate (game)
+  };
 }
 
-function up (tile, image) {
-  // echo(["up", tile.position.x, tile.position.y])
-  return new Tile ({
+function up (tile, image, remove = false) {
+  // echo(["up", tile.position.x, tile.position.y]);
+  var new_tile = new Tile ({
     id: `tile_${tile.position.x}_${tile.position.y + tile_size}`,
     type: image,
     position: { x: tile.position.x, y: tile.position.y + tile_size }
-  }).initiate(game);
+  });
+  check = false;
+  for (var _tile of tiles) {
+    if (check_there (_tile, new_tile.position)) {
+      check = true;
+    }
+  }
+  return {
+    check: check,
+    tile: remove ? new_tile : new_tile.initiate (game)
+  };
 }
 
-function down (tile, image) {
-  // echo(["down", tile.position.x, tile.position.y])
-  return new Tile ({
+function down (tile, image, remove = false) {
+  // echo(["down", tile.position.x, tile.position.y]);
+  var new_tile = new Tile ({
     id: `tile_${tile.position.x}_${tile.position.y - tile_size}`,
     type: image,
     position: { x: tile.position.x, y: tile.position.y - tile_size }
-  }).initiate(game);
+  });
+  check = false;
+  for (var _tile of tiles) {
+    if (check_there (_tile, new_tile.position)) {
+      check = true;
+    }
+  }
+  return {
+    check: check,
+    tile: remove ? new_tile : new_tile.initiate (game)
+  };
 }
+
+var directions = [left, right, up, down];
 
 var curr_A = corner_tile_A;
 var curr_B = corner_tile_B;
@@ -199,17 +247,17 @@ var curr_D = corner_tile_D;
 
 function generate_border () {
   for (let i = 0; i < map_size * 2 / tile_size - move_in * 2 - 1; i++) {
-    curr_A = right(curr_A, white_tile);
-    curr_B = down(curr_B, white_tile);
-    curr_C = left(curr_C, white_tile);
-    curr_D = up(curr_D, white_tile);
+    curr_A = right(curr_A, white_tile).tile;
+    curr_B = down(curr_B, white_tile).tile;
+    curr_C = left(curr_C, white_tile).tile;
+    curr_D = up(curr_D, white_tile).tile;
   }
 }
 
-var team_A = down(right(right(corner_tile_A, white_tile), white_tile), red_tile);
-var team_B = left(down(down(corner_tile_B, white_tile), white_tile), yellow_tile);
-var team_C = up(left(left(corner_tile_C, white_tile), white_tile), green_tile);
-var team_D = right(up(up(corner_tile_D, white_tile), white_tile), blue_tile);
+var team_A = down(right(right(corner_tile_A, white_tile).tile, white_tile).tile, red_tile).tile;
+var team_B = left(down(down(corner_tile_B, white_tile).tile, white_tile).tile, yellow_tile).tile;
+var team_C = up(left(left(corner_tile_C, white_tile).tile, white_tile).tile, green_tile).tile;
+var team_D = right(up(up(corner_tile_D, white_tile).tile, white_tile).tile, blue_tile).tile;
 
 var curr_team_A = team_A;
 var curr_team_B = team_B;
@@ -218,10 +266,10 @@ var curr_team_D = team_D;
 
 function generate_base () {
   for (let i = 0; i < 2; i++) {
-    curr_team_A = down(curr_team_A, red_tile);
-    curr_team_B = left(curr_team_B, yellow_tile);
-    curr_team_C = up(curr_team_C, green_tile);
-    curr_team_D = right(curr_team_D, blue_tile);
+    curr_team_A = down(curr_team_A, red_tile).tile;
+    curr_team_B = left(curr_team_B, yellow_tile).tile;
+    curr_team_C = up(curr_team_C, green_tile).tile;
+    curr_team_D = right(curr_team_D, blue_tile).tile;
   }
 }
 
@@ -231,7 +279,7 @@ this.tick = function (game) {
       generate_border ();
       generate_base ();
       break;
-    case game.step % 30 === 0 && game.step % 1000 !== 0:
+    case game.step % 30 === 0:
       for (var ship of game.ships) {
         if (ship.custom.position) {
           ship.set ({
@@ -253,44 +301,72 @@ this.tick = function (game) {
         ship.custom.surr_down_avail = false;
         
         for (var tile of tiles) {
-          // echo(["left",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_left.x, ship.custom.surr_left.y, tile.position.x, tile.position.y])
-          // echo(["right",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_right.x, ship.custom.surr_right.y, tile.position.x, tile.position.y])
-          // echo(["up",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_up.x, ship.custom.surr_up.y, tile.position.x, tile.position.y])
-          // echo(["down",ship.custom.position.x, ship.custom.position.y, ship.custom.surr_down.x, ship.custom.surr_down.y, tile.position.x, tile.position.y])
-          
-          if ((tile.type.emissive == tile_types[ship.custom.team] || tile.type.emissive == white_tile) || (tile.type.emissive == goal_tile && running_round.tiles[0] == tile)) {
-            if (tile.position.x == ship.custom.surr_left.x && tile.position.y == ship.custom.surr_left.y) ship.custom.surr_left_avail = true;
-            if (tile.position.x == ship.custom.surr_right.x && tile.position.y == ship.custom.surr_right.y) ship.custom.surr_right_avail = true;
-            if (tile.position.x == ship.custom.surr_up.x && tile.position.y == ship.custom.surr_up.y) ship.custom.surr_up_avail = true;
-            if (tile.position.x == ship.custom.surr_down.x && tile.position.y == ship.custom.surr_down.y) ship.custom.surr_down_avail = true;
-          }
+          if (check_there (tile, ship.custom.surr_left)) ship.custom.surr_left_avail = true;
+          if (check_there (tile, ship.custom.surr_right)) ship.custom.surr_right_avail = true;
+          if (check_there (tile, ship.custom.surr_up)) ship.custom.surr_up_avail = true;
+          if (check_there (tile, ship.custom.surr_down)) ship.custom.surr_down_avail = true;
         }
         
-        ship.custom.surr_left_avail ? enable_ui(0, ship) : disable_ui(0, ship);
-        ship.custom.surr_right_avail ? enable_ui(1, ship) : disable_ui(1, ship);
-        ship.custom.surr_up_avail ? enable_ui(2, ship) : disable_ui(2, ship);
-        ship.custom.surr_down_avail ? enable_ui(3, ship) : disable_ui(3, ship);
+        ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
+        ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
+        ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
+        ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
       }
-      // game.ships[0].custom.position = tiles[tiles.length - 1].position
-      break;
-    case game.step % 1000 === 0:
-      running_round = null;
+      
+      if (running_round && game.step % 1000 === 0) {
+        for (var tile of running_round.tiles) {
+          new Tile ({
+            id: tile.id,
+            type: "",
+            position: {}
+          }).initiate (game);
+        }
+      
+        running_round = null;
+      }
+      
       if (!running_round) {
-        running_round = new Round ().start;
+        running_round = new Round ().start();
         
-        var goal_pos = {
-          x: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
-          y: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
+        var position;
+        
+        generate_pos ();
+        
+        function generate_pos () {
+          position = {
+            x: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
+            y: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
+          }
+          
+          for (var _tile of tiles) {
+            if (check_there (_tile, position)) {
+              generate_pos ();
+            }
+          }
         }
         
         running_round.tiles.push(
           new Tile ({
             id: `goal_tile`,
             type: goal_tile,
-            position: goal_pos
-          }).initiate(game)
+            position: position
+          }).initiate (game)
         )
+        
+        var dir_link = directions[Math.round(Math.random() * (directions.length - 1))];
+        
+        var path_tile_tile = running_round.tiles[0];
+        var path;
+        
+        while (true) {
+          path = path ? dir_link (path.tile, path_tile, true) : dir_link (path_tile_tile, path_tile, true);
+          path_tile_tile = path.tile;
+          running_round.tiles.push(path_tile_tile);
+          if (path.check) break;
+          else path_tile_tile.initiate (game);
+        }
       }
+      break;
   }
 }
 
