@@ -93,7 +93,7 @@ function enable_ui (dir_id, ship) {
 var scores = [0, 0, 0, 0];
 
 var scoreboard = {
-  id: "scoreboard",
+  id: "team_scoreboard",
   position: [0.5, 1, 10, 20],
   components: []
 };
@@ -357,6 +357,43 @@ function generate_base () {
   }
 }
 
+function get_winning_team () {
+  var _team_colors = team_colors;
+  var _scores = scores;
+  
+  let n = _scores.length;
+  for (let i = 1; i < n; i++) {
+    let curr = _scores[i];
+    let j = i - 1; 
+    while (j > -1 && curr < _scores[j]) {
+      _scores[j + 1] = _scores[j];
+      _team_colors[j + 1] = _team_colors[j];
+      j--;
+    }
+    _scores[j+1] = curr;
+  }
+  
+    var winning_teams = [
+      {
+        color: _team_colors[0],
+        score: _scores[0]
+      }
+    ];
+  
+  for (let i = 1; i < _team_colors.length; i++) {
+    if (_scores[i] == _scores[0]) {
+      winning_teams.push(
+        {
+          color: _team_colors[i],
+          score: _scores[i]
+        }
+      );
+    }
+  }
+  
+  return winning_teams;
+}
+
 round_tick = 0;
 
 this.tick = function (game) {
@@ -407,7 +444,21 @@ this.tick = function (game) {
           for (var _ship of game.ships) {
              _ship.custom.position = pos;
             
-            generate_message (`${team_colors[ship.custom.team].toUpperCase} has scored a point!`, _ship);
+            var msg = `${team_colors[ship.custom.team].toUpperCase()} has scored a point!`;
+            
+            if (num == 25) {
+              var teams = get_winning_team ();
+              
+              var team_msg = "";
+              
+              for (var team of teams) {
+                team_msg += `[${team.color.toUpperCase()}] `;
+              }
+              
+              msg += `\n 25 rounds have been reached! The winning team(s): ${team_msg}with score ${teams[0].score}`;
+            }
+            
+            generate_message (, _ship);
           }
         }
       }
