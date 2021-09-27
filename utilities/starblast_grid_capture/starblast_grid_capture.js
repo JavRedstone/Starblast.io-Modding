@@ -31,25 +31,21 @@ function get_team_pos (team) {
         x: curr_team_A.position.x,
         y: curr_team_A.position.y
       };
-      break;
     case 1:
       return {
         x: curr_team_B.position.x,
         y: curr_team_B.position.y
       };
-      break;
     case 2:
       return {
         x: curr_team_C.position.x,
         y: curr_team_C.position.y
       };
-      break;
     case 3:
       return {
         x: curr_team_D.position.x,
         y: curr_team_D.position.y
       };
-      break;
   }
 }
 
@@ -90,35 +86,57 @@ function enable_ui (dir_id, ship) {
   generate_ui(ship);
 }
 
+var num = 0;
+var running_round = null;
+
 var scores = [0, 0, 0, 0];
 
-var scoreboard = {
-  id: "team_scoreboard",
-  position: [0.5, 1, 10, 20],
-  components: []
-};
-
 function generate_scoreboard (ship) {
+  var scoreboard = {
+    id: "scoreboard",
+    components: [
+      {
+        type: "box",
+        position: [0, 75, 100, 15],
+        stroke: "magenta",
+        width: 2
+      },
+      {
+        type: "text",
+        position: [0, 75, 60, 15],
+        value: "ROUND:",
+        color: "magenta",
+        align: "left"
+      },
+      {
+        type: "text",
+        position: [0, 75, 100, 15],
+        value: num,
+        color: "magenta",
+        align: "right"
+      }  
+    ]
+  };
+  
   for (let i = 0; i < team_colors.length; i++) {
-    var position = [0, i * 20, 100, 20];
     scoreboard.components.push (
       {
         type: "box",
-        position: position,
-        fill: ship.custom.team == i ? rgba(96, 255, 255, 0.2) : rgba(0, 0, 0, 0),
+        position: [0, i * 15, 100, 15],
+        fill: ship.custom.team == i ? "rgba(96, 255, 255, 0.3)" : "rgba(0, 0, 0, 0)",
         stroke: team_colors[i],
         width: 2
       },
       {
         type: "text",
-        position: position,
-        value: `${team_colors[i].toUpperCase}:`,
+        position: [0, i * 15, 40, 15],
+        value: `${team_colors[i].toUpperCase()}:`,
         color: team_colors[i],
         align: "left"
       },
       {
         type: "text",
-        position: position,
+        position: [0, i * 15, 100, 15],
         value: scores[i],
         color: team_colors[i],
         align: "right"
@@ -139,9 +157,16 @@ function generate_message (message, ship) {
         type: "text",
         position: [0, 0, 100, 100],
         value: message,
-        color: rgb(128, 181, 233)
+        color: "rgb(128, 181, 233)"
       }
     ]
+  });
+}
+
+function hide_message (ship) {
+  ship.setUIComponent ({
+    id: "message",
+    visible: false,
   });
 }
 
@@ -162,16 +187,16 @@ var tiles = [];
 
 class Tile {
     constructor({
-      id: id,
+      id: ID,
       type: image,
       position: { x: px, y: py },
     }) {
-      this.id = id;
+      this.id = ID;
       this.position = { x: px, y: py, z: depth };
       this.rotation = { x: 0, y: Math.PI, z: Math.PI }
       this.scale = { x: tile_size, y: tile_size, z: 0 };
       this.type = {
-        id: id,
+        id: ID,
         obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
         emissive: image
       };
@@ -193,9 +218,6 @@ class Tile {
     }
 }
 
-var num = 0;
-var running_round = null;
-
 class Round {
     constructor() {
       this.num = num + 1;
@@ -203,20 +225,24 @@ class Round {
     }
     
     start() {
-      num += 1;
+      num++;
       return this;
     }
 }
 
 var map_size = map_size_small * 5;
 var tile_size = 20;
-var move_in = 1;
 
-var corner_A = { x: -map_size + tile_size * move_in, y: map_size - tile_size * move_in };
-var corner_B = { x: map_size - tile_size * move_in, y: map_size - tile_size * move_in };
-var corner_C = { x: map_size - tile_size * move_in, y: -map_size + tile_size * move_in };
-var corner_D = { x: -map_size + tile_size * move_in, y: -map_size + tile_size * move_in };
+var corner_A = { x: -map_size + tile_size, y: map_size - tile_size };
+var corner_B = { x: map_size - tile_size, y: map_size - tile_size };
+var corner_C = { x: map_size - tile_size, y: -map_size + tile_size };
+var corner_D = { x: -map_size + tile_size, y: -map_size + tile_size };
 
+var corner_tile_center = new Tile ({
+  id: "corner_tile_center",
+  type: white_tile,
+  position: { x: map_size, y: map_size }
+}).initiate(game);
 
 var corner_tile_A = new Tile ({
   id: "corner_tile_A",
@@ -330,7 +356,7 @@ var curr_C = corner_tile_C;
 var curr_D = corner_tile_D;
 
 function generate_border () {
-  for (let i = 0; i < map_size * 2 / tile_size - move_in * 2 - 1; i++) {
+  for (let i = 0; i < map_size * 2 / tile_size - 3; i++) {
     curr_A = right(curr_A, white_tile).tile;
     curr_B = down(curr_B, white_tile).tile;
     curr_C = left(curr_C, white_tile).tile;
@@ -370,7 +396,7 @@ function get_winning_team () {
       _team_colors[j + 1] = _team_colors[j];
       j--;
     }
-    _scores[j+1] = curr;
+    _scores[j + 1] = curr;
   }
   
     var winning_teams = [
@@ -394,15 +420,13 @@ function get_winning_team () {
   return winning_teams;
 }
 
-round_tick = 0;
-
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
       generate_border ();
       generate_base ();
       break;
-    case game.step % 30 === 0:
+    case game.step % 20 === 0:
       for (var ship of game.ships) {
         if (ship.custom.position) {
           ship.set ({
@@ -435,9 +459,11 @@ this.tick = function (game) {
         ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
         ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
         
-        if (ship.custom.position == running_round.tiles[0].position) {
-          ship.scores += 1;
-          scores[ship.custom.team] += 1;
+        generate_scoreboard (ship);
+        
+        if (check_there (running_round.tiles[0], ship.custom.position)) {
+          ship.scores++;
+          scores[ship.custom.team]++;
           
           var pos = get_team_pos (ship.custom.team);
           
@@ -458,18 +484,26 @@ this.tick = function (game) {
               msg += `\n 25 rounds have been reached! The winning team(s): ${team_msg}with score ${teams[0].score}`;
             }
             
-            generate_message (, _ship);
+            generate_message (msg, _ship);
+            
+            ship.custom.message_on = game.step;
           }
+        }
+        
+        if (ship.custom.message_on && ship.custom.message_on - game.step <= -500) {
+          hide_message (ship);
         }
       }
       
       if (running_round && game.step % 1000 === 0) {
         for (var tile of running_round.tiles) {
-          new Tile ({
+          var replaced_tile = new Tile ({
             id: tile.id,
             type: "",
             position: {}
           }).initiate (game);
+          
+          replaced_tile.position = { x: tile.position.x, y: tile.position.y };
         }
       
         running_round = null;
@@ -491,23 +525,23 @@ this.tick = function (game) {
           // Check if it is inside an existing tile
           for (var _tile of tiles) {
             if (check_there (_tile, position)) {
-              generate_pos ();
+              return generate_pos ();
             }
           }
         }
         
         // Create a goal tile
-        var goal_tile = new Tile ({
+        var goal_tile_tile = new Tile ({
           id: `goal_tile`,
           type: goal_tile,
           position: position
         }).initiate (game);
         
-        running_round.tiles.push (goal_tile);
+        running_round.tiles.push (goal_tile_tile);
         
         var dir_link = directions[Math.round (Math.random () * (directions.length - 1))];
         
-        var path_tile_tile = goal_tile;
+        var path_tile_tile = goal_tile_tile;
         var path;
         
         var i = 0;
@@ -575,7 +609,7 @@ this.event = function (event, game) {
       generate_scoreboard (ship);
       break;
     case "ui_component_clicked":
-      if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -30) {
+      if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -20) {
         ship.custom.ui_tick = game.step;
         switch (event.id) {
           case "left":
