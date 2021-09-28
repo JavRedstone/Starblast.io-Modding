@@ -170,6 +170,28 @@ function hide_message (ship) {
   });
 }
 
+var energy_levels = ["red", "orange", "yellow", "lime"];
+
+function generate_energy (level, ship) {
+  var energy_bar = {
+    id: "energy_bar",
+    position: [58, 1, 2, 6.4],
+    components: []
+  };
+  
+  var energy_div = 100 / energy_levels.length;
+  
+  for (let i = 0; i < level; i++) {
+    energy_bar.components.push ({
+      type: "box",
+      position: [0, (energy_levels.length - i - 1) * energy_div, 100, energy_div],
+      fill: energy_levels[i]
+    });
+  }
+  
+  ship.setUIComponent (energy_bar);
+}
+
 var white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
 var red_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Red_Tile.png";
 var yellow_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Yellow_Tile.png";
@@ -439,7 +461,7 @@ this.tick = function (game) {
       generate_border ();
       generate_base ();
       break;
-    case game.step % 20 === 0:
+    case game.step % 30 === 0:
       for (var ship of game.ships) {
         if (ship.custom.position) {
           ship.set ({
@@ -451,6 +473,10 @@ this.tick = function (game) {
         }
         
         var home_pos = get_team_pos (ship.custom.team);
+        
+        ship.custom.energy == 3 ? ship.custom.energy = 0 : ship.custom.energy++;
+        
+        generate_energy (ship.custom.energy, ship);
         
         if (started) {
           ship.custom.surr_left = { x: ship.custom.position.x - tile_size, y: ship.custom.position.y };
@@ -512,7 +538,7 @@ this.tick = function (game) {
         }
         
         else {
-          if (game.ships.length == start_players) {
+          if (game.ships.length >= start_players) {
             started = true;
             
             generate_message (`Waiting for more players... — ${start_players - game.ships.length} players remaining.`, ship);
@@ -639,6 +665,9 @@ this.event = function (event, game) {
       
       ship.custom.scores = 0;
       generate_scoreboard (ship);
+      
+      ship.custom.energy = 3;
+      generate_energy (ship.custom.energy, ship);
       break;
     case "ui_component_clicked":
       if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -20) {
