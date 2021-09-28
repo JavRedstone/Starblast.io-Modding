@@ -103,7 +103,7 @@ function generate_scoreboard (ship) {
       },
       {
         type: "text",
-        position: [0, 75, 60, 15],
+        position: [0, 75, 50, 15],
         value: "ROUND:",
         color: "magenta",
         align: "left"
@@ -123,13 +123,13 @@ function generate_scoreboard (ship) {
       {
         type: "box",
         position: [0, i * 15, 100, 15],
-        fill: ship.custom.team == i ? "rgba(96, 255, 255, 0.3)" : "rgba(0, 0, 0, 0)",
+        fill: ship.custom.team == i ? "rgba(123, 255, 61, 0.3)" : "rgba(0, 0, 0, 0)",
         stroke: team_colors[i],
         width: 2
       },
       {
         type: "text",
-        position: [0, i * 15, 40, 15],
+        position: [0, i * 15, 50, 15],
         value: `${team_colors[i].toUpperCase()}:`,
         color: team_colors[i],
         align: "left"
@@ -238,11 +238,17 @@ var corner_B = { x: map_size - tile_size, y: map_size - tile_size };
 var corner_C = { x: map_size - tile_size, y: -map_size + tile_size };
 var corner_D = { x: -map_size + tile_size, y: -map_size + tile_size };
 
-var corner_tile_center = new Tile ({
+var center_tile = new Tile ({
   id: "corner_tile_center",
   type: white_tile,
   position: { x: map_size, y: map_size }
 }).initiate(game);
+
+// Make filler tile to prevent infinite loops
+var center_tile_left = left (center_tile, white_tile);
+var center_tile_right = right (center_tile, white_tile);
+var center_tile_up = up (center_tile, white_tile);
+var center_tile_down = down (center_tile, white_tile);
 
 var corner_tile_A = new Tile ({
   id: "corner_tile_A",
@@ -269,7 +275,7 @@ var corner_tile_D = new Tile ({
 }).initiate(game);
 
 function check_there (tile, pos) {
-  return tile.position.x == pos.x && tile.position.y == pos.y && tile.type.emissive !== "";
+  return tile.position.x == pos.x && tile.position.y == pos.y && tile.position.z == -10;
 }
 
 function left (tile, image, remove = false) {
@@ -481,7 +487,7 @@ this.tick = function (game) {
                 team_msg += `[${team.color.toUpperCase()}] `;
               }
               
-              msg += `\n 25 rounds have been reached! The winning team(s): ${team_msg}with score ${teams[0].score}`;
+              msg += `\n25 rounds have been reached!\nThe winning team(s): ${team_msg}with score ${teams[0].score}!`;
             }
             
             generate_message (msg, _ship);
@@ -503,7 +509,7 @@ this.tick = function (game) {
             position: {}
           }).initiate (game);
           
-          replaced_tile.position = { x: tile.position.x, y: tile.position.y };
+          replaced_tile.position = { x: tile.position.x, y: tile.position.y, z: -15 };
         }
       
         running_round = null;
