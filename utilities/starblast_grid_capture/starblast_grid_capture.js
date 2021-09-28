@@ -390,8 +390,8 @@ function generate_base () {
 }
 
 function get_winning_team () {
-  var _team_colors = team_colors;
-  var _scores = scores;
+  var _team_colors = [...team_colors];
+  var _scores = [...scores];
   
   let n = _scores.length;
   for (let i = 1; i < n; i++) {
@@ -426,6 +426,13 @@ function get_winning_team () {
   return winning_teams;
 }
 
+var started = false;
+var start_players = 4;
+
+var round_finished = {
+  done: false
+};
+
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
@@ -443,65 +450,79 @@ this.tick = function (game) {
           });
         }
         
-        ship.custom.surr_left = { x: ship.custom.position.x - tile_size, y: ship.custom.position.y };
-        ship.custom.surr_right = { x: ship.custom.position.x + tile_size, y: ship.custom.position.y };
-        ship.custom.surr_up = { x: ship.custom.position.x, y: ship.custom.position.y + tile_size };
-        ship.custom.surr_down = { x: ship.custom.position.x, y: ship.custom.position.y - tile_size };
+        var home_pos = get_team_pos (ship.custom.team);
         
-        ship.custom.surr_left_avail = false;
-        ship.custom.surr_right_avail = false;
-        ship.custom.surr_up_avail = false;
-        ship.custom.surr_down_avail = false;
-        
-        for (var tile of tiles) {
-          if (check_there (tile, ship.custom.surr_left)) ship.custom.surr_left_avail = true;
-          if (check_there (tile, ship.custom.surr_right)) ship.custom.surr_right_avail = true;
-          if (check_there (tile, ship.custom.surr_up)) ship.custom.surr_up_avail = true;
-          if (check_there (tile, ship.custom.surr_down)) ship.custom.surr_down_avail = true;
-        }
-        
-        ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
-        ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
-        ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
-        ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
-        
-        generate_scoreboard (ship);
-        
-        if (check_there (running_round.tiles[0], ship.custom.position)) {
-          ship.scores++;
-          scores[ship.custom.team]++;
-          
-          var pos = get_team_pos (ship.custom.team);
-          
-          for (var _ship of game.ships) {
-             _ship.custom.position = pos;
-            
-            var msg = `${team_colors[ship.custom.team].toUpperCase()} has scored a point!`;
-            
-            if (num == 25) {
-              var teams = get_winning_team ();
-              
-              var team_msg = "";
-              
-              for (var team of teams) {
-                team_msg += `[${team.color.toUpperCase()}] `;
+        if (started) {
+          ship.custom.surr_left = { x: ship.custom.position.x - tile_size, y: ship.custom.position.y };
+          ship.custom.surr_right = { x: ship.custom.position.x + tile_size, y: ship.custom.position.y };
+          ship.custom.surr_up = { x: ship.custom.position.x, y: ship.custom.position.y + tile_size };
+          ship.custom.surr_down = { x: ship.custom.position.x, y: ship.custom.position.y - tile_size };
+
+          ship.custom.surr_left_avail = false;
+          ship.custom.surr_right_avail = false;
+          ship.custom.surr_up_avail = false;
+          ship.custom.surr_down_avail = false;
+
+          for (var tile of tiles) {
+            if (check_there (tile, ship.custom.surr_left)) ship.custom.surr_left_avail = true;
+            if (check_there (tile, ship.custom.surr_right)) ship.custom.surr_right_avail = true;
+            if (check_there (tile, ship.custom.surr_up)) ship.custom.surr_up_avail = true;
+            if (check_there (tile, ship.custom.surr_down)) ship.custom.surr_down_avail = true;
+          }
+
+          ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
+          ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
+          ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
+          ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
+
+          generate_scoreboard (ship);
+
+          if (check_there (running_round.tiles[0], ship.custom.position)) {
+            ship.scores++;
+            scores[ship.custom.team]++;
+
+            for (var _ship of game.ships) {
+               _ship.custom.position = home_pos;
+
+              var msg = `${team_colors[ship.custom.team].toUpperCase()} has scored a point!`;
+
+              if (num == 25) {
+                var teams = get_winning_team ();
+
+                var team_msg = "";
+
+                for (var team of teams) {
+                  team_msg += `[${team.color.toUpperCase()}] `;
+                }
+
+                msg += `\n25 rounds have been reached!\nThe winning team(s): ${team_msg}with score ${teams[0].score}!`;
               }
-              
-              msg += `\n25 rounds have been reached!\nThe winning team(s): ${team_msg}with score ${teams[0].score}!`;
+
+              generate_message (msg, _ship);
+
+              ship.custom.message_on = game.step;
             }
-            
-            generate_message (msg, _ship);
-            
-            ship.custom.message_on = game.step;
+
+            round_finished.done = true;
+          }
+
+          if (ship.custom.message_on && ship.custom.message_on - game.step <= -500) {
+            hide_message (ship);
           }
         }
         
-        if (ship.custom.message_on && ship.custom.message_on - game.step <= -500) {
-          hide_message (ship);
+        else {
+          if (game.ships.length == start_players) {
+            started = true;
+            
+            generate_message (`Waiting for more players... — ${start_players - game.ships.length} players remaining.`, ship);
+            
+            ship.custom.position = home_pos;
+          }
         }
       }
       
-      if (running_round && game.step % 1000 === 0) {
+      if (round_finished.done) {
         for (var tile of running_round.tiles) {
           var replaced_tile = new Tile ({
             id: tile.id,
@@ -513,9 +534,14 @@ this.tick = function (game) {
         }
       
         running_round = null;
+        
+        round_finished = {
+          done: false,
+          tick: game.step
+        };
       }
       
-      if (!running_round) {
+      if (!running_round && round_finished.tick && round_finished.tick - game.step == -300) {
         running_round = new Round ().start();
         
         var position;
