@@ -123,7 +123,7 @@ function generate_scoreboard (ship) {
       {
         type: "box",
         position: [0, i * 15, 100, 15],
-        fill: ship.custom.team == i ? "rgba(123, 255, 61, 0.3)" : "rgba(0, 0, 0, 0)",
+        fill: ship.custom.team == i ? "rgba(0, 255, 255, 0.2)" : "rgba(0, 0, 0, 0)",
         stroke: team_colors[i],
         width: 2
       },
@@ -181,7 +181,7 @@ function generate_energy (level, ship) {
   
   var energy_div = 100 / energy_levels.length;
   
-  for (let i = 0; i < level; i++) {
+  for (let i = 0; i < level - 1; i++) {
     energy_bar.components.push ({
       type: "box",
       position: [0, (energy_levels.length - i - 1) * energy_div, 100, energy_div],
@@ -474,76 +474,84 @@ this.tick = function (game) {
         
         var home_pos = get_team_pos (ship.custom.team);
         
-        ship.custom.energy == 3 ? ship.custom.energy = 0 : ship.custom.energy++;
+        if (ship.custom.energy < 5) {
+          ship.custom.energy++;
+        }
         
         generate_energy (ship.custom.energy, ship);
         
+        echo(started)
+        echo("SHIP " + ship.id)
+        
         if (started) {
+          echo(ship.id)
+          
           ship.custom.surr_left = { x: ship.custom.position.x - tile_size, y: ship.custom.position.y };
           ship.custom.surr_right = { x: ship.custom.position.x + tile_size, y: ship.custom.position.y };
           ship.custom.surr_up = { x: ship.custom.position.x, y: ship.custom.position.y + tile_size };
           ship.custom.surr_down = { x: ship.custom.position.x, y: ship.custom.position.y - tile_size };
-
+          
           ship.custom.surr_left_avail = false;
           ship.custom.surr_right_avail = false;
           ship.custom.surr_up_avail = false;
           ship.custom.surr_down_avail = false;
-
+          
           for (var tile of tiles) {
             if (check_there (tile, ship.custom.surr_left)) ship.custom.surr_left_avail = true;
             if (check_there (tile, ship.custom.surr_right)) ship.custom.surr_right_avail = true;
             if (check_there (tile, ship.custom.surr_up)) ship.custom.surr_up_avail = true;
             if (check_there (tile, ship.custom.surr_down)) ship.custom.surr_down_avail = true;
           }
-
+          
           ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
           ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
           ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
           ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
-
+          
           generate_scoreboard (ship);
-
+          
           if (check_there (running_round.tiles[0], ship.custom.position)) {
             ship.scores++;
             scores[ship.custom.team]++;
-
+            
             for (var _ship of game.ships) {
                _ship.custom.position = home_pos;
-
+              
               var msg = `${team_colors[ship.custom.team].toUpperCase()} has scored a point!`;
-
+              
               if (num == 25) {
                 var teams = get_winning_team ();
-
                 var team_msg = "";
-
+                
                 for (var team of teams) {
                   team_msg += `[${team.color.toUpperCase()}] `;
                 }
-
+                
                 msg += `\n25 rounds have been reached!\nThe winning team(s): ${team_msg}with score ${teams[0].score}!`;
               }
-
+              
               generate_message (msg, _ship);
-
+              
               ship.custom.message_on = game.step;
             }
-
+            
             round_finished.done = true;
           }
-
+          
           if (ship.custom.message_on && ship.custom.message_on - game.step <= -500) {
             hide_message (ship);
           }
         }
         
         else {
+          generate_message (`Waiting for more players... — ${start_players - game.ships.length} player(s) remaining.`, ship);
+          
           if (game.ships.length >= start_players) {
+            for (var _ship of game.ships) {
+              hide_message (_ship);
+            }
+            
             started = true;
-            
-            generate_message (`Waiting for more players... — ${start_players - game.ships.length} players remaining.`, ship);
-            
-            ship.custom.position = home_pos;
           }
         }
       }
@@ -666,11 +674,11 @@ this.event = function (event, game) {
       ship.custom.scores = 0;
       generate_scoreboard (ship);
       
-      ship.custom.energy = 3;
+      ship.custom.energy = 5;
       generate_energy (ship.custom.energy, ship);
       break;
     case "ui_component_clicked":
-      if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -20) {
+      if (!ship.custom.ui_tick || ship.custom.ui_tick - game.step < -30) {
         ship.custom.ui_tick = game.step;
         switch (event.id) {
           case "left":
