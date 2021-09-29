@@ -19,6 +19,10 @@ var control = {
     values: ["🡸", "🡺", "🡹", "🡻"],
     shortcuts: ["A", "D", "W", "S"]
   },
+  round: {
+    num: 0,
+    curr: null
+  },
   wait: {
     started: false,
     players: 4
@@ -203,6 +207,17 @@ class Tile {
     }
 }
 
+class Round {
+    constructor() {
+      this.tiles = [];
+    }
+    
+    start() {
+      control.round.num++;
+      return this;
+    }
+}
+
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
@@ -210,9 +225,14 @@ this.tick = function (game) {
       break;
     case game.step % 30 === 0:
       for (var ship of game.ships {
+        ship.set ({
+          x: ship.custom.pos.x,
+          y: ship.custom.pos.y
+        });
+        
         switch (control.wait.started) {
           case true:
-
+            
             break;
           case false:
             if (game.ships.length >= control.wait.players) {
