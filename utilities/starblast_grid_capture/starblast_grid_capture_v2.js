@@ -36,7 +36,7 @@ function generate_dirs (ship) {
       position: [60 + i * 4, 1, 4, 6.4],
       clickable: ship.custom.dir_rest[i].clickable,
       shortcut: `${control.dirs.shortcuts[i]}`,
-      component.s: [
+      components: [
         { type: "box", position: [0,0,100,100], stroke: ship.custom.dir_rest[i].stroke, width: 2},
         { type: "text", position: [5, 10, 90, 60], value: control.dirs.values[i], color: ship.custom.dir_rest[i].color},
         { type: "text", position: [5, 65, 90, 25], value: `[${control.dirs.shortcuts[i]}]`, color: ship.custom.dir_rest[i].color}
@@ -224,7 +224,7 @@ this.tick = function (game) {
 
       break;
     case game.step % 30 === 0:
-      for (var ship of game.ships {
+      for (var ship of game.ships) {
         ship.set ({
           x: ship.custom.pos.x,
           y: ship.custom.pos.y
