@@ -201,7 +201,7 @@ function generate_scoreboard (ship) {
   ship.setUIComponent (scoreboard);
 }
 
-function generate_message (message, color = "rgb(128, 181, 233)", ship) {
+function generate_message (message, ship, color = "rgb(128, 181, 233)") {
   ship.setUIComponent ({
     id: "message",
     position: [0, 10, 100, 5],
