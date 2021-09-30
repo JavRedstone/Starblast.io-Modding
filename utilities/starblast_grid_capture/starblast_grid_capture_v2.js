@@ -7,7 +7,7 @@ this.options = {
 var control = {
   teams: {
     length: 4,
-    current: 3,
+    current: 0,
     colors: ["red", "yellow", "lime", "blue"],
     abbrev: ["R", "Y", "L", "B"],
     hues: [0, 60, 120, 240],
@@ -19,27 +19,91 @@ var control = {
     values: ["🡸", "🡺", "🡹", "🡻"],
     shortcuts: ["A", "D", "W", "S"]
   },
-  round: {
+  tiles: {
+    tiles: [],
+    tile_types: []
+  },
+  rounds: {
     num: 0,
     curr: null
   },
   wait: {
     started: false,
     players: 4
-  }
+  },
 };
+
+const white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
+const red_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Red_Tile.png";
+const yellow_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Yellow_Tile.png";
+const lime_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Lime_Tile.png";
+const blue_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Blue_Tile.png";
+
+const goal_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Goal_Tile.png";
+const path_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Path_Tile.png";
+
+const grey_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Grey_Tile.png";
+
+control.tiles.tile_types = [red_tile, yellow_tile, lime_tile, blue_tile, white_tile, goal_tile, path_tile];
+
+class Tile {
+    constructor({
+      id: id,
+      type: {
+        id: type_id,
+        emissive: image
+      },
+      position: { x: px, y: py },
+    }) {
+      this.id = id;
+      this.position = { x: px, y: py, z: -20 };
+      this.rotation = { x: 0, y: Math.PI, z: Math.PI }
+      this.scale = { x: tile_size, y: tile_size, z: 0 };
+      this.type = {
+        id: type_id,
+        obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+        emissive: image
+      };
+      this.hidden = false;
+    }
+    
+    initiate(game) {
+      game.setObject({
+        id: this.id,
+        type: this.type,
+        position: this.position,
+        rotation: this.rotation,
+        scale: this.scale 
+      });
+      
+      tiles.push(this);
+      
+      return this;
+    }
+}
+
+class Round {
+    constructor() {
+      this.tiles = [];
+    }
+    
+    start() {
+      control.rounds.num++;
+      return this;
+    }
+}
 
 function generate_dirs (ship) {
   for (let i = 0; i < control.dirs.length; i++) {
     ship.setUIComponent({
       id: control.dirs.names[i],
       position: [60 + i * 4, 1, 4, 6.4],
-      clickable: ship.custom.dir_rest[i].clickable,
+      clickable: ship.custom.rest[i].clickable,
       shortcut: `${control.dirs.shortcuts[i]}`,
       components: [
-        { type: "box", position: [0,0,100,100], stroke: ship.custom.dir_rest[i].stroke, width: 2},
-        { type: "text", position: [5, 10, 90, 60], value: control.dirs.values[i], color: ship.custom.dir_rest[i].color},
-        { type: "text", position: [5, 65, 90, 25], value: `[${control.dirs.shortcuts[i]}]`, color: ship.custom.dir_rest[i].color}
+        { type: "box", position: [0,0,100,100], stroke: ship.custom.rest[i].stroke, width: 2},
+        { type: "text", position: [5, 10, 90, 60], value: control.dirs.values[i], color: ship.custom.rest[i].color},
+        { type: "text", position: [5, 65, 90, 25], value: `[${control.dirs.shortcuts[i]}]`, color: ship.custom.rest[i].color}
       ]
     });
   }
@@ -101,7 +165,7 @@ function generate_scoreboard (ship) {
       {
         type: "text",
         position: [0, 75, 100, 15],
-        value: num,
+        value: control.rounds.num,
         color: "magenta",
         align: "right"
       }  
@@ -137,7 +201,7 @@ function generate_scoreboard (ship) {
   ship.setUIComponent (scoreboard);
 }
 
-function generate_message (message, ship, color = "rgb(128, 181, 233)") {
+function generate_message (message, color = "rgb(128, 181, 233)", ship) {
   ship.setUIComponent ({
     id: "message",
     position: [0, 10, 100, 5],
@@ -160,62 +224,23 @@ function hide_message (ship) {
   });
 }
 
-var white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
-var red_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Red_Tile.png";
-var yellow_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Yellow_Tile.png";
-var green_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Green_Tile.png";
-var blue_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Blue_Tile.png";
-
-var goal_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Goal_Tile.png";
-var path_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Path_Tile.png";
-
-var tile_types = [red_tile, yellow_tile, green_tile, blue_tile];
-
-class Tile {
-    constructor({
-      id: id,
-      type: {
-        id: type_id,
-        emissive: image
-      },
-      position: { x: px, y: py },
-    }) {
-      this.id = id;
-      this.position = { x: px, y: py, z: -20 };
-      this.rotation = { x: 0, y: Math.PI, z: Math.PI }
-      this.scale = { x: tile_size, y: tile_size, z: 0 };
-      this.type = {
-        id: type_id,
-        obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-        emissive: image
-      };
-      this.hidden = false;
-    }
-    
-    initiate(game) {
-      game.setObject({
-        id: this.id,
-        type: this.type,
-        position: this.position,
-        rotation: this.rotation,
-        scale: this.scale 
-      });
-      
-      tiles.push(this);
-      
-      return this;
-    }
+function general_update (ship) {
+  ship.set ({
+    x: ship.custom.pos.x,
+    y: ship.custom.pos.y
+  });
+  
+  generate_scoreboard (ship);
 }
 
-class Round {
-    constructor() {
-      this.tiles = [];
+function check_there (pos) {
+  for (var tile of tiles) {
+    if (tile.position.x == pos.x && tile.position.y == pos.y && tile_types.includes (tile.type.emmissive)) {
+      return true;
     }
-    
-    start() {
-      control.round.num++;
-      return this;
-    }
+  }
+  
+  return false;
 }
 
 this.tick = function (game) {
@@ -225,10 +250,7 @@ this.tick = function (game) {
       break;
     case game.step % 30 === 0:
       for (var ship of game.ships) {
-        ship.set ({
-          x: ship.custom.pos.x,
-          y: ship.custom.pos.y
-        });
+        general_update (ship);
         
         switch (control.wait.started) {
           case true:
@@ -242,7 +264,7 @@ this.tick = function (game) {
               
               control.wait.started = true;
             }
-
+            
             else {
               generate_message (`Waiting for more players... — ${control.wait.players - game.ships.length} player(s) remaining.`, ship);
             }
@@ -251,14 +273,15 @@ this.tick = function (game) {
       }
       break;
   }
-}
+};
 
 this.event = function (event, game) {
   var ship = event.ship;
   switch (event.name) {
     case "ship_spawned":
+      ship.custom.rest = [];
       for (let i = 0; i < control.dirs.length; i++) {
-        ship.custom.rest.push({
+        ship.custom.rest.push ({
           clickable: false,
           stroke: "grey",
           color: "grey"
@@ -272,7 +295,7 @@ this.event = function (event, game) {
       generate_scoreboard (ship);
       
       ship.custom.team = control.teams.current;
-      
+      control.teams.current = control.teams.current < control.teams.length - 1 ? control.teams.current + 1 : 0;
       break;
   }
 }
