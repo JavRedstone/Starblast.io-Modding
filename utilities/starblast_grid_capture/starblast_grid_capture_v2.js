@@ -354,6 +354,8 @@ this.tick = function (game) {
       
       generate_stones ();
       
+      generate_border ();
+      
       break;
     case game.step % 30 === 0:
       for (var ship of game.ships) {
