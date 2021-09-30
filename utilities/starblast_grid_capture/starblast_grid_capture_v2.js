@@ -19,7 +19,11 @@ var control = {
     values: ["🡸", "🡺", "🡹", "🡻"],
     shortcuts: ["A", "D", "W", "S"]
   },
+  map: {
+    size: 0
+  },
   tiles: {
+    size: 20,
     tiles: [],
     tile_types: []
   },
@@ -58,7 +62,7 @@ class Tile {
       this.id = id;
       this.position = { x: px, y: py, z: -20 };
       this.rotation = { x: 0, y: Math.PI, z: Math.PI }
-      this.scale = { x: tile_size, y: tile_size, z: 0 };
+      this.scale = { x: control.tiles.size, y: control.tiles.size, z: 0 };
       this.type = {
         id: type_id,
         obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
@@ -91,6 +95,105 @@ class Round {
       control.rounds.num++;
       return this;
     }
+}
+
+var corner_A, corner_B, corner_C, corner_D, center_tile, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
+
+function generate_stones () {
+  var map_size = control.map.size;
+  
+  corner_A = { x: -map_size + control.tiles.size, y: map_size - control.tiles.size };
+  corner_B = { x: map_size - control.tiles.size, y: map_size - control.tiles.size };
+  corner_C = { x: map_size - control.tiles.size, y: -map_size + control.tiles.size };
+  corner_D = { x: -map_size + control.tiles.size, y: -map_size + control.tiles.size };
+  
+  center_tile = new Tile ({
+    id: "center_tile",
+    type: white_tile,
+    position: { x: map_size, y: map_size }
+  }).initiate(game);
+  
+  corner_tile_A = new Tile ({
+    id: "corner_tile_A",
+    type: white_tile,
+    position: { x: corner_A.x, y: corner_A.y }
+  }).initiate(game);
+  
+  corner_tile_B = new Tile ({
+    id: "corner_tile_B",
+    type: white_tile,
+    position: { x: corner_B.x, y: corner_B.y }
+  }).initiate(game);
+  
+  corner_tile_C = new Tile ({
+    id: "corner_tile_C",
+    type: white_tile,
+    position: { x: corner_C.x, y: corner_C.y }
+  }).initiate(game);
+  
+  corner_tile_D = new Tile ({
+    id: "corner_tile_D",
+    type: white_tile,
+    position: { x: corner_D.x, y: corner_D.y }
+  }).initiate(game);
+}
+
+function check_there (pos) {
+  for (var tile of tiles) {
+    if (tile.position.x == pos.x && tile.position.y == pos.y && tile_types.includes (tile.type.emmissive)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+function left (tile, image = white_tile, remove = false) {
+  var pos = { x: tile.position.x - tile_size, y: tile.position.y };
+  return {
+    check: check_there (pos),
+    tile: remove ? new Tile ({
+      id: `tile_${pos}`,
+      type: image,
+      position: pos
+    }) : null
+  };
+}
+
+function right (tile, image = white_tile, remove = false) {
+  var pos = { x: tile.position.x + tile_size, y: tile.position.y };
+  return {
+    check: check_there (pos),
+    tile: remove ? new Tile ({
+      id: `tile_${pos}`,
+      type: image,
+      position: pos
+    }) : null
+  };
+}
+
+function up (tile, image = white_tile, remove = false) {
+  var pos = { x: tile.position.x, y: tile.position.y + tile_size };
+  return {
+    check: check_there (pos),
+    tile: remove ? new Tile ({
+      id: `tile_${pos}`,
+      type: image,
+      position: pos
+    }) : null
+  };
+}
+
+function down (tile, image = white_tile, remove = false) {
+  var pos = { x: tile.position.x, y: tile.position.y - tile_size };
+  return {
+    check: check_there (pos),
+    tile: remove ? new Tile ({
+      id: `tile_${pos}`,
+      type: image,
+      position: pos
+    }) : null
+  };
 }
 
 function generate_dirs (ship) {
@@ -225,28 +328,32 @@ function hide_message (ship) {
 }
 
 function general_update (ship) {
-  ship.set ({
-    x: ship.custom.pos.x,
-    y: ship.custom.pos.y
-  });
+  if (ship.custom.pos) {
+    ship.set ({
+      x: ship.custom.pos.x,
+      y: ship.custom.pos.y
+    });
+  }
   
   generate_scoreboard (ship);
 }
 
-function check_there (pos) {
-  for (var tile of tiles) {
-    if (tile.position.x == pos.x && tile.position.y == pos.y && tile_types.includes (tile.type.emmissive)) {
-      return true;
-    }
+function generate_border () {
+  for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
+    right (curr_A);
+    down (curr_B);
+    left (curr_C);
+    up (curr_D);
   }
-  
-  return false;
 }
 
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
-
+      control.map.size = game.options.map_size * 5;
+      
+      generate_stones ();
+      
       break;
     case game.step % 30 === 0:
       for (var ship of game.ships) {
