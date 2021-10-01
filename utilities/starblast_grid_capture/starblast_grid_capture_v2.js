@@ -98,7 +98,7 @@ class Round {
     }
 }
 
-var corner_A, corner_B, corner_C, corner_D, center_tile, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
+var center_tile, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
 
 function generate_stones () {
   center_tile = new Tile ({
@@ -323,28 +323,38 @@ function hide_message (ship) {
 
 function general_update (ship) {
   if (ship.custom.pos) {
-    ship.set ({
-      x: ship.custom.pos.x,
-      y: ship.custom.pos.y
-    });
+    ship.set (ship.custom.pos);
   }
   
   generate_scoreboard (ship);
 }
 
 function generate_border () {
+  var curr_A = corner_tile_A;
+  var curr_B = corner_tile_A;
+  var curr_C = corner_tile_A;
+  var curr_D = corner_tile_A;
+  
   for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
-    right (curr_A);
-    down (curr_B);
-    left (curr_C);
-    up (curr_D);
+    curr_A = right (curr_A);
+    curr_B = down (curr_B);
+    curr_C = left (curr_C);
+    curr_D = up (curr_D);
   }
 }
 
 function generate_bases () {
-  control.tiles.base_spawn.push (
-    right ()
-  )
+  control.tiles.base_spawn[0] = right (right (corner_tile_A));
+  control.tiles.base_spawn[1] = down (down(corner_tile_A));
+  control.tiles.base_spawn[2] = left (left (corner_tile_A));
+  control.tiles.base_spawn[3] = up (up (corner_tile_A));
+  
+  for (let i = 0; i < 3; i++) {
+    control.tiles.base_spawn[0] = down (control.tiles.base_spawn[0], red_tile);
+    control.tiles.base_spawn[1] = left (control.tiles.base_spawn[1], yellow_tile);
+    control.tiles.base_spawn[2] = up (control.tiles.base_spawn[2], lime_tile);
+    control.tiles.base_spawn[3] = right (control.tiles.base_spawn[3], blue_tile);
+  }
 }
 
 this.tick = function (game) {
@@ -356,6 +366,7 @@ this.tick = function (game) {
       
       generate_border ();
       
+      generate_bases ();
       break;
     case game.step % 30 === 0:
       for (var ship of game.ships) {
@@ -363,7 +374,27 @@ this.tick = function (game) {
         
         switch (control.wait.started) {
           case true:
-            
+            ship.custom.left = { x: ship.custom.pos.x - control.tiles.size, y: ship.custom.pos.y };
+            ship.custom.right = { x: ship.custom.pos.x + control.tiles.size, y: ship.custom.pos.y };
+            ship.custom.up = { x: ship.custom.pos.x, y: ship.custom.pos.y + control.tiles.size };
+            ship.custom.down = { x: ship.custom.pos.x, y: ship.custom.pos.y - control.tiles.size };
+
+            ship.custom.left_avail = false;
+            ship.custom.right_avail = false;
+            ship.custom.up_avail = false;
+            ship.custom.down_avail = false;
+
+            for (var tile of tiles) {
+              if (check_there (ship.custom.left)) ship.custom.left_avail = true;
+              if (check_there (ship.custom.right)) ship.custom.right_avail = true;
+              if (check_there (ship.custom.up)) ship.custom.up_avail = true;
+              if (check_there (ship.custom.down)) ship.custom.down_avail = true;
+            }
+
+            ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
+            ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
+            ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
+            ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
             break;
           case false:
             if (game.ships.length >= control.wait.players) {
@@ -405,6 +436,8 @@ this.event = function (event, game) {
       
       ship.custom.team = control.teams.current;
       control.teams.current = control.teams.current < control.teams.length - 1 ? control.teams.current + 1 : 0;
+      
+      ship.custom.position = control.tiles.base_spawn[ship.custom.team].position;
       break;
   }
 }
