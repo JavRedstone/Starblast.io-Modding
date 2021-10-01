@@ -464,4 +464,4 @@ this.event = function (event, game) {
       }
       break;
   }
-}
+};
