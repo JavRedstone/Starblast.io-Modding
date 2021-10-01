@@ -24,6 +24,7 @@ var control = {
   },
   tiles: {
     size: 20,
+    base_spawn: [],
     tiles: [],
     tile_types: []
   },
@@ -100,41 +101,34 @@ class Round {
 var corner_A, corner_B, corner_C, corner_D, center_tile, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
 
 function generate_stones () {
-  var map_size = control.map.size;
-  
-  corner_A = { x: -map_size + control.tiles.size, y: map_size - control.tiles.size };
-  corner_B = { x: map_size - control.tiles.size, y: map_size - control.tiles.size };
-  corner_C = { x: map_size - control.tiles.size, y: -map_size + control.tiles.size };
-  corner_D = { x: -map_size + control.tiles.size, y: -map_size + control.tiles.size };
-  
   center_tile = new Tile ({
     id: "center_tile",
     type: white_tile,
-    position: { x: map_size, y: map_size }
+    position: { x: control.map.size;, y: control.map.size; }
   }).initiate(game);
   
   corner_tile_A = new Tile ({
     id: "corner_tile_A",
     type: white_tile,
-    position: { x: corner_A.x, y: corner_A.y }
+    position: { x: -control.map.size; + control.tiles.size, y: control.map.size; - control.tiles.size }
   }).initiate(game);
   
   corner_tile_B = new Tile ({
     id: "corner_tile_B",
     type: white_tile,
-    position: { x: corner_B.x, y: corner_B.y }
+    position: { x: control.map.size; - control.tiles.size, y: control.map.size; - control.tiles.size }
   }).initiate(game);
   
   corner_tile_C = new Tile ({
     id: "corner_tile_C",
     type: white_tile,
-    position: { x: corner_C.x, y: corner_C.y }
+    position: { x: control.map.size; - control.tiles.size, y: -control.map.size; + control.tiles.size }
   }).initiate(game);
   
   corner_tile_D = new Tile ({
     id: "corner_tile_D",
     type: white_tile,
-    position: { x: corner_D.x, y: corner_D.y }
+    position: { x: -control.map.size; + control.tiles.size, y: -control.map.size; + control.tiles.size }
   }).initiate(game);
 }
 
@@ -149,50 +143,50 @@ function check_there (pos) {
 }
 
 function left (tile, image = white_tile, remove = false) {
-  var pos = { x: tile.position.x - tile_size, y: tile.position.y };
+  var pos = { x: tile.position.x - control.tiles.size, y: tile.position.y };
   return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
       type: image,
       position: pos
-    }) : null
+    }).initiate (game) : null
   };
 }
 
 function right (tile, image = white_tile, remove = false) {
-  var pos = { x: tile.position.x + tile_size, y: tile.position.y };
-  return {
+  var pos = { x: tile.position.x + control.tiles.size, y: tile.position.y };
+return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
       type: image,
       position: pos
-    }) : null
+    }).initiate (game) : null
   };
 }
 
 function up (tile, image = white_tile, remove = false) {
-  var pos = { x: tile.position.x, y: tile.position.y + tile_size };
-  return {
+  var pos = { x: tile.position.x, y: tile.position.y + control.tiles.size };
+return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
       type: image,
       position: pos
-    }) : null
+    }).initiate (game) : null
   };
 }
 
 function down (tile, image = white_tile, remove = false) {
-  var pos = { x: tile.position.x, y: tile.position.y - tile_size };
-  return {
+  var pos = { x: tile.position.x, y: tile.position.y - control.tiles.size };
+return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
       type: image,
       position: pos
-    }) : null
+    }).initiate (game) : null
   };
 }
 
@@ -345,6 +339,12 @@ function generate_border () {
     left (curr_C);
     up (curr_D);
   }
+}
+
+function generate_bases () {
+  control.tiles.base_spawn.push (
+    right ()
+  )
 }
 
 this.tick = function (game) {
