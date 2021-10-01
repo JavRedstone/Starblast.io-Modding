@@ -15,6 +15,7 @@ var control = {
   },
   dirs: {
     length: 4,
+    tick: 30,
     names: ["left", "right", "up", "down"],
     values: ["🡸", "🡺", "🡹", "🡻"],
     shortcuts: ["A", "D", "W", "S"]
@@ -168,7 +169,7 @@ return {
 
 function up (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x, y: tile.position.y + control.tiles.size };
-return {
+  return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
@@ -180,7 +181,7 @@ return {
 
 function down (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x, y: tile.position.y - control.tiles.size };
-return {
+  return {
     check: check_there (pos),
     tile: remove ? new Tile ({
       id: `tile_${pos}`,
@@ -188,6 +189,34 @@ return {
       position: pos
     }).initiate (game) : null
   };
+}
+
+function generate_border () {
+  var curr_A = corner_tile_A;
+  var curr_B = corner_tile_A;
+  var curr_C = corner_tile_A;
+  var curr_D = corner_tile_A;
+  
+  for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
+    curr_A = right (curr_A);
+    curr_B = down (curr_B);
+    curr_C = left (curr_C);
+    curr_D = up (curr_D);
+  }
+}
+
+function generate_bases () {
+  control.tiles.base_spawn[0] = right (right (corner_tile_A));
+  control.tiles.base_spawn[1] = down (down(corner_tile_A));
+  control.tiles.base_spawn[2] = left (left (corner_tile_A));
+  control.tiles.base_spawn[3] = up (up (corner_tile_A));
+  
+  for (let i = 0; i < 3; i++) {
+    control.tiles.base_spawn[0] = down (control.tiles.base_spawn[0], red_tile);
+    control.tiles.base_spawn[1] = left (control.tiles.base_spawn[1], yellow_tile);
+    control.tiles.base_spawn[2] = up (control.tiles.base_spawn[2], lime_tile);
+    control.tiles.base_spawn[3] = right (control.tiles.base_spawn[3], blue_tile);
+  }
 }
 
 function generate_dirs (ship) {
@@ -329,32 +358,28 @@ function general_update (ship) {
   generate_scoreboard (ship);
 }
 
-function generate_border () {
-  var curr_A = corner_tile_A;
-  var curr_B = corner_tile_A;
-  var curr_C = corner_tile_A;
-  var curr_D = corner_tile_A;
-  
-  for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
-    curr_A = right (curr_A);
-    curr_B = down (curr_B);
-    curr_C = left (curr_C);
-    curr_D = up (curr_D);
-  }
-}
+function update_dirs (ship) {
+  ship.custom.left = { x: ship.custom.pos.x - control.tiles.size, y: ship.custom.pos.y };
+  ship.custom.right = { x: ship.custom.pos.x + control.tiles.size, y: ship.custom.pos.y };
+  ship.custom.up = { x: ship.custom.pos.x, y: ship.custom.pos.y + control.tiles.size };
+  ship.custom.down = { x: ship.custom.pos.x, y: ship.custom.pos.y - control.tiles.size };
 
-function generate_bases () {
-  control.tiles.base_spawn[0] = right (right (corner_tile_A));
-  control.tiles.base_spawn[1] = down (down(corner_tile_A));
-  control.tiles.base_spawn[2] = left (left (corner_tile_A));
-  control.tiles.base_spawn[3] = up (up (corner_tile_A));
-  
-  for (let i = 0; i < 3; i++) {
-    control.tiles.base_spawn[0] = down (control.tiles.base_spawn[0], red_tile);
-    control.tiles.base_spawn[1] = left (control.tiles.base_spawn[1], yellow_tile);
-    control.tiles.base_spawn[2] = up (control.tiles.base_spawn[2], lime_tile);
-    control.tiles.base_spawn[3] = right (control.tiles.base_spawn[3], blue_tile);
+  ship.custom.left_avail = false;
+  ship.custom.right_avail = false;
+  ship.custom.up_avail = false;
+  ship.custom.down_avail = false;
+
+  for (var tile of tiles) {
+    if (check_there (ship.custom.left)) ship.custom.left_avail = true;
+    if (check_there (ship.custom.right)) ship.custom.right_avail = true;
+    if (check_there (ship.custom.up)) ship.custom.up_avail = true;
+    if (check_there (ship.custom.down)) ship.custom.down_avail = true;
   }
+
+  ship.custom.left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
+  ship.custom.right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
+  ship.custom.up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
+  ship.custom.down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
 }
 
 this.tick = function (game) {
@@ -368,33 +393,13 @@ this.tick = function (game) {
       
       generate_bases ();
       break;
-    case game.step % 30 === 0:
+    case game.step % control.dirs.tick === 0:
       for (var ship of game.ships) {
         general_update (ship);
         
         switch (control.wait.started) {
           case true:
-            ship.custom.left = { x: ship.custom.pos.x - control.tiles.size, y: ship.custom.pos.y };
-            ship.custom.right = { x: ship.custom.pos.x + control.tiles.size, y: ship.custom.pos.y };
-            ship.custom.up = { x: ship.custom.pos.x, y: ship.custom.pos.y + control.tiles.size };
-            ship.custom.down = { x: ship.custom.pos.x, y: ship.custom.pos.y - control.tiles.size };
-
-            ship.custom.left_avail = false;
-            ship.custom.right_avail = false;
-            ship.custom.up_avail = false;
-            ship.custom.down_avail = false;
-
-            for (var tile of tiles) {
-              if (check_there (ship.custom.left)) ship.custom.left_avail = true;
-              if (check_there (ship.custom.right)) ship.custom.right_avail = true;
-              if (check_there (ship.custom.up)) ship.custom.up_avail = true;
-              if (check_there (ship.custom.down)) ship.custom.down_avail = true;
-            }
-
-            ship.custom.surr_left_avail ? enable_ui (0, ship) : disable_ui (0, ship);
-            ship.custom.surr_right_avail ? enable_ui (1, ship) : disable_ui (1, ship);
-            ship.custom.surr_up_avail ? enable_ui (2, ship) : disable_ui (2, ship);
-            ship.custom.surr_down_avail ? enable_ui (3, ship) : disable_ui (3, ship);
+            update_dirs (ship);
             break;
           case false:
             if (game.ships.length >= control.wait.players) {
@@ -438,6 +443,25 @@ this.event = function (event, game) {
       control.teams.current = control.teams.current < control.teams.length - 1 ? control.teams.current + 1 : 0;
       
       ship.custom.position = control.tiles.base_spawn[ship.custom.team].position;
+      break;
+    case "ui_component_clicked":
+      if (!ship.custom.ui_tick || game.step - ship.custom.ui_tick < control.dirs.tick) {
+        ship.custom.ui_tick = game.step;
+        switch (event.id) {
+          case "left":
+            if (ship.custom.left_avail) ship.custom.pos.x -= control.tiles.size;
+            break;
+          case "right":
+            if (ship.custom.right_avail) ship.custom.pos.x += control.tiles.size;
+            break;
+          case "up":
+            if (ship.custom.up_avail) ship.custom.pos.y += control.tiles.size;
+            break;
+          case "down":
+            if (ship.custom.down_avail) ship.custom.pos.y -= control.tiles.size;
+            break;
+        }
+      }
       break;
   }
 }
