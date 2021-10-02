@@ -1,7 +1,16 @@
+var Rock_101 = '{"name":"Rock","level":1,"model":1,"size":2,"zoom":0.8,"specs":{"shield":{"capacity":[1000,1000],"reload":[0.1,0.1]},"generator":{"capacity":[150,150],"reload":[150,150]},"ship":{"mass":1000,"speed":[1,1],"rotation":[1000,1000],"acceleration":[1,1]}},"bodies":{"arm":{"section_segments":6,"angle":0,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0,0],"y":[-90,-85,-70,-60,-10,10,60,70,85,90,85],"z":[0,0,0,0,0,0,0,0,0,0,0]},"width":[0,20,25,10,12,12,15,20,20,15,0],"height":[0,10,12,8,12,12,8,12,10,5,0],"texture":[2,1,12,2,4,2,12,16,17],"propeller":true},"cannon":{"section_segments":6,"offset":{"x":0,"y":-63,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-25,-30,-20,0,10,12],"z":[0,0,0,0,0,0]},"width":[0,5,5,7,6,0],"height":[0,5,5,7,6,0],"texture":[6,6,6,6,6],"laser":{"damage":[150,150],"rate":1,"type":1,"speed":[100,100],"number":1,"error":0}},"arm45":{"section_segments":6,"angle":45,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-90,-85,-70,-60,-10,10,60,70,85,90],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,20,25,10,12,12,10,25,20,0],"height":[0,10,12,8,12,12,8,12,10,0],"texture":[2,1,12,63,4,63,12,1,2]},"arm90":{"section_segments":6,"angle":90,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-90,-85,-70,-60,-10,10,60,70,85,90],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,20,25,10,12,12,10,25,20,0],"height":[0,10,12,8,12,12,8,12,10,0],"texture":[2,1,12,2,4,2,12,1,2]},"arm135":{"section_segments":6,"angle":-45,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-90,-85,-70,-60,-10,10,60,70,85,90],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,20,25,10,12,12,10,25,20,0],"height":[0,10,12,8,12,12,8,12,10,0],"texture":[2,1,12,63,4,63,12,1,2]}},"typespec":{"name":"Rock","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[1000,1000],"reload":[0.1,0.1]},"generator":{"capacity":[150,150],"reload":[150,150]},"ship":{"mass":1000,"speed":[1,1],"rotation":[1000,1000],"acceleration":[1,1]}},"shape":[3.724,3.541,3.474,1.242,3.349,3.52,3.6,3.568,3.485,3.01,3.164,3.5,3.598,3.6,3.5,3.164,3.01,3.485,3.568,3.6,3.52,3.349,1.515,3.502,3.637,3.607,3.637,3.502,1.515,3.349,3.52,3.6,3.568,3.485,3.01,3.164,3.5,3.598,3.6,3.5,3.164,3.01,3.485,3.568,3.6,3.52,3.349,1.242,3.474,3.541],"lasers":[{"x":0,"y":-3.72,"z":0,"angle":0,"damage":[150,150],"rate":1,"type":1,"speed":[100,100],"number":1,"spread":0,"error":0,"recoil":0}],"radius":3.724}}';
+
+var ships = [
+  Rock_101  
+];
+
 this.options = {
-  map_size: 30,
+  map_size: 20,
   custom_map: "",
-  weapons_store: false
+  weapons_store: false,
+  reset_tree: true,
+  ships: ships,
+  starting_ship: 801
 };
 
 var control = {
@@ -18,7 +27,8 @@ var control = {
     tick: 20,
     names: ["left", "right", "up", "down"],
     values: ["🡸", "🡺", "🡹", "🡻"],
-    shortcuts: ["A", "D", "W", "S"]
+    shortcuts: ["A", "D", "W", "S"],
+    list: []
   },
   map: {
     size: 0
@@ -32,12 +42,13 @@ var control = {
   rounds: {
     num: 0,
     tick: null,
-    tickrate: 1000,
+    tickrate: 2000,
+    ship_msg_tickrate: 500,
     curr: null,
   },
   wait: {
     started: false,
-    players: 4
+    players: 1
   },
 };
 
@@ -49,54 +60,56 @@ const blue_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Mo
 
 const goal_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Goal_Tile.png";
 const path_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Path_Tile.png";
+const disabled_path_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Disabled_Path_Tile.png";
 
-const grey_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Grey_Tile.png";
+const block_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Block_Tile.png";
 
-control.tiles.types = [red_tile, yellow_tile, lime_tile, blue_tile, white_tile, goal_tile, path_tile];
+control.tiles.types = [red_tile, yellow_tile, lime_tile, blue_tile, white_tile, goal_tile, path_tile, disabled_path_tile];
 
 class Tile {
-    constructor ({
+  constructor ({
+    id: id,
+    type: image,
+    position: { x: px, y: py },
+  }) {
+    this.id = id;
+    this.type = {
       id: id,
-      type: image,
-      position: { x: px, y: py },
-    }) {
-      this.id = id;
-      this.type = {
-        id: id,
-        obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-        emissive: image
-      };
-      this.position = { x: px, y: py, z: -20 };
-      this.rotation = { x: 0, y: Math.PI, z: Math.PI };
-      this.scale = { x: control.tiles.size, y: control.tiles.size, z: 0 };
-    }
+      obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+      emissive: image
+    };
+    this.position = { x: px, y: py, z: -20 };
+    this.rotation = { x: 0, y: Math.PI, z: Math.PI };
+    this.scale = { x: control.tiles.size, y: control.tiles.size, z: 0 };
+  }
+  
+  initiate () {
+    game.setObject ({
+      id: this.id,
+      type: this.type,
+      position: this.position,
+      rotation: this.rotation,
+      scale: this.scale 
+    });
     
-    initiate () {
-      game.setObject ({
-        id: this.id,
-        type: this.type,
-        position: this.position,
-        rotation: this.rotation,
-        scale: this.scale 
-      });
-      
-      control.tiles.tiles.push(this);
-      return this;
-    }
+    control.tiles.tiles.push(this);
+    return this;
+  }
 }
 
 class Round {
-    constructor() {
-      this.tiles = [];
-    }
-    
-    start() {
-      control.rounds.num++;
-      return this;
-    }
+  constructor() {
+    this.tiles = [];
+    this.captured = false;
+  }
+  
+  start() {
+    control.rounds.num++;
+    return this;
+  }
 }
 
-var center_tile, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
+var center_tile, center_tile_left, center_tile_right, center_tile_up, center_tile_down, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
 
 function generate_stones () {
   center_tile = new Tile ({
@@ -104,6 +117,11 @@ function generate_stones () {
     type: white_tile,
     position: { x: control.map.size, y: control.map.size }
   }).initiate ();
+  
+  center_tile_left = left (center_tile, block_tile);
+  center_tile_right = right (center_tile, block_tile);
+  center_tile_up = up (center_tile, block_tile);
+  center_tile_down = down (center_tile, block_tile);
   
   corner_tile_A = new Tile ({
     id: "corner_tile_A",
@@ -130,19 +148,22 @@ function generate_stones () {
   }).initiate ();
 }
 
-function check_there (pos) {
+function check_there (pos, block = false) {
   for (var tile of control.tiles.tiles) {
     if (tile.position.x == pos.x && tile.position.y == pos.y && control.tiles.types.includes (tile.type.emissive)) {
+      if (block && tile.type.emissive == block_tile) {
+        return true;
+      }
       return true;
     }
   }
   return false;
 }
 
-function left (tile, image = white_tile, remove = false) {
+function left (tile, image = white_tile, remove = false, grey = false) {
   var pos = { x: tile.position.x - control.tiles.size, y: tile.position.y };
   return {
-    check: check_there (pos),
+    check: check_there (pos, grey),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -151,10 +172,10 @@ function left (tile, image = white_tile, remove = false) {
   };
 }
 
-function right (tile, image = white_tile, remove = false) {
+function right (tile, image = white_tile, remove = false, grey = false) {
   var pos = { x: tile.position.x + control.tiles.size, y: tile.position.y };
   return {
-    check: check_there (pos),
+    check: check_there (pos, grey),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -163,10 +184,10 @@ function right (tile, image = white_tile, remove = false) {
   };
 }
 
-function up (tile, image = white_tile, remove = false) {
+function up (tile, image = white_tile, remove = false, grey = false) {
   var pos = { x: tile.position.x, y: tile.position.y + control.tiles.size };
   return {
-    check: check_there (pos),
+    check: check_there (pos, grey),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -175,10 +196,10 @@ function up (tile, image = white_tile, remove = false) {
   };
 }
 
-function down (tile, image = white_tile, remove = false) {
+function down (tile, image = white_tile, remove = false, grey = false) {
   var pos = { x: tile.position.x, y: tile.position.y - control.tiles.size };
   return {
-    check: check_there (pos),
+    check: check_there (pos, grey),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -186,6 +207,8 @@ function down (tile, image = white_tile, remove = false) {
     }).initiate () : null
   };
 }
+
+control.dirs.list = [left, right, up, down];
 
 function generate_border () {
   var curr_A = corner_tile_A;
@@ -327,10 +350,10 @@ function generate_scoreboard (ship) {
   ship.setUIComponent (scoreboard);
 }
 
-function generate_message (message, ship, color = "rgb(128, 181, 233)") {
+function generate_message (message, ship, color = "rgb(128, 181, 233)", pos = [0, 10, 100, 5]) {
   ship.setUIComponent ({
-    id: "message",
-    position: [0, 10, 100, 5],
+    id: `message_${pos[0]}_${pos[1]}_${pos[2]}_${pos[3]}`,
+    position: pos,
     visible: true,
     components: [
       {
@@ -343,9 +366,9 @@ function generate_message (message, ship, color = "rgb(128, 181, 233)") {
   });
 }
 
-function hide_message (ship) {
+function hide_message (ship, pos = [0, 10, 100, 5]) {
   ship.setUIComponent ({
-    id: "message",
+    id: `message_${pos[0]}_${pos[1]}_${pos[2]}_${pos[3]}`,
     visible: false,
   });
 }
@@ -394,6 +417,25 @@ this.tick = function (game) {
         switch (control.wait.started) {
           case true:
             update_dirs (ship);
+            
+            if (control.rounds.curr && control.rounds.curr.tiles[0].position.x == ship.custom.pos.x && control.rounds.curr.tiles[0].position.y == ship.custom.pos.y) {
+              for (var _ship of game.ships) {
+                _ship.custom.pos = get_base_pos (_ship.custom.team);
+                generate_message (`${ship.name} from ${control.teams.colors[ship.custom.team].toUpperCase()} team has scored a point!`, _ship, control.teams.colors[ship.custom.team]);
+                _ship.custom.msg_tick = game.step;
+              }
+              
+              control.teams.scores[ship.custom.team] += 1;
+              control.rounds.curr.captured = true;
+            }
+            
+            if (ship.custom.msg_tick && game.step - ship.custom.msg_tick == control.rounds.ship_msg_tickrate) {
+              hide_message (ship);
+            }
+            
+            if (ship.custom.rmsg_tick && game.step - ship.custom.rmsg_tick == control.rounds.ship_msg_tickrate) {
+              hide_message (ship, [0, 16, 100, 10]);
+            }
             break;
           case false:
             if (game.ships.length >= control.wait.players) {
@@ -416,33 +458,39 @@ this.tick = function (game) {
           control.rounds.tick = game.step;
         }
         
-        else if (game.step - control.rounds.tick >= control.rounds.tickrate) {
+        else if (game.step - control.rounds.tick >= control.rounds.tickrate || control.rounds.curr.captured) {
           if (control.rounds.curr) {
             for (var tile of control.rounds.curr.tiles) {
+              game.removeObject (tile.id);
               new Tile ({
-                id: tile.id,
-                type: grey_tile,
-                position: {}
+                id: `disabled_path_${tile.id}`,
+                type: disabled_path_tile,
+                position: tile.position
               }).initiate ();
             }
             
             control.rounds.curr = null;
           }
           
-          control.rounds.curr = new Round ().start();
+          control.rounds.curr = new Round ().start ();
+          
+          for (var ship of game.ships) {
+            generate_message (`Round ${control.rounds.num} has started!`, ship, "magenta", [0, 16, 100, 10]);
+            ship.custom.rmsg_tick = game.step;
+          }
           
           var goal_pos;
         
-          generate_pos ();
+          generate_goal_pos ();
           
-          function generate_pos () {
+          function generate_goal_pos () {
             goal_pos = {
-              x: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2,
-              y: tile_size * (Math.floor(Math.random() * (map_size / tile_size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + tile_size / 2
+              x: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2),
+              y: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2)
             }
             
             if (check_there (goal_pos)) {
-              return generate_pos ();
+              return generate_goal_pos ();
             }
           }
           
@@ -454,17 +502,16 @@ this.tick = function (game) {
           
           control.rounds.curr.tiles.push (goal);
           
-          var dir_link = directions[Math.round (Math.random () * (directions.length - 1))];
+          var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
           
           var path = goal;
-          
-          while (true) {
-            if (dir_link (path, white_tile, true).check) {
+          for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
+            if (dir_link (path, white_tile, true, true).check) {
               break;
             }
             
             else {
-              path = dir_link (path, path_tile, true).tile;
+              path = dir_link (path, path_tile).tile;
               control.rounds.curr.tiles.push (path);
             }
           }
@@ -489,17 +536,21 @@ this.event = function (event, game) {
         });
       }
       
-      generate_dirs (ship);
-      
-      generate_scoreboard (ship);
-      
-      ship.custom.team = control.teams.current;
-      control.teams.current = control.teams.current < control.teams.length - 1 ? control.teams.current + 1 : 0;
-      generate_team (ship);
-      
-      ship.set ({
-        hue: control.teams.hues[ship.custom.team]
-      });
+      if (!ship.custom.spawned) {
+        generate_dirs (ship);
+        
+        generate_scoreboard (ship);
+        
+        ship.custom.team = control.teams.current;
+        control.teams.current = control.teams.current < control.teams.length - 1 ? control.teams.current + 1 : 0;
+        generate_team (ship);
+        
+        ship.set ({
+          hue: control.teams.hues[ship.custom.team]
+        });
+        
+        ship.custom.spawned = true;
+      }
       
       ship.custom.pos = get_base_pos (ship.custom.team);
       break;
