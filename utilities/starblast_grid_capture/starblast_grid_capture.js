@@ -5,7 +5,7 @@ var ships = [
 ];
 
 this.options = {
-  map_size: 20,
+  map_size: 30,
   custom_map: "",
   weapons_store: false,
   reset_tree: true,
@@ -43,12 +43,12 @@ var control = {
     num: 0,
     tick: null,
     tickrate: 2000,
-    ship_msg_tickrate: 500,
+    ship_msg_tickrate: 400,
     curr: null,
   },
   wait: {
     started: false,
-    players: 1
+    players: 4
   },
 };
 
