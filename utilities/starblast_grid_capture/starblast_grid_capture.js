@@ -2,7 +2,7 @@ this.options = {
   map_size: 30,
   custom_map: "",
   weapons_store: false
-}
+};
 
 var control = {
   teams: {
@@ -350,14 +350,6 @@ function hide_message (ship) {
   });
 }
 
-function general_update (ship) {
-  if (ship.custom.pos) {
-    ship.set (ship.custom.pos);
-  }
-  
-  generate_scoreboard (ship);
-}
-
 function update_dirs (ship) {
   ship.custom.left = { x: ship.custom.pos.x - control.tiles.size, y: ship.custom.pos.y };
   ship.custom.right = { x: ship.custom.pos.x + control.tiles.size, y: ship.custom.pos.y };
@@ -393,13 +385,50 @@ this.tick = function (game) {
       break;
     case game.step % control.dirs.tick === 0:
       for (var ship of game.ships) {
-        general_update (ship);
+        if (ship.custom.pos) {
+          ship.set (ship.custom.pos);
+        }
         
+        generate_scoreboard (ship);
+        
+        switch (control.wait.started) {
+          case true:
+            update_dirs (ship);
+            break;
+          case false:
+            if (game.ships.length >= control.wait.players) {
+              for (var _ship of game.ships) {
+                hide_message (_ship);
+              }
+              
+              control.wait.started = true;
+            }
+            
+            else {
+              generate_message (`Waiting for more players... — ${control.wait.players - game.ships.length} player(s) remaining.`, ship);
+            }
+            break;
+        }
+      }
+      
+      if (control.wait.started) {
         if (!control.rounds.tick) {
           control.rounds.tick = game.step;
         }
         
         else if (game.step - control.rounds.tick >= control.rounds.tickrate) {
+          if (control.rounds.curr) {
+            for (var tile of control.rounds.curr.tiles) {
+              new Tile ({
+                id: tile.id,
+                type: grey_tile,
+                position: {}
+              }).initiate ();
+            }
+            
+            control.rounds.curr = null;
+          }
+          
           control.rounds.curr = new Round ().start();
           
           var goal_pos;
@@ -441,25 +470,6 @@ this.tick = function (game) {
           }
           
           control.rounds.tick = null;
-        }
-        
-        switch (control.wait.started) {
-          case true:
-            update_dirs (ship);
-            break;
-          case false:
-            if (game.ships.length >= control.wait.players) {
-              for (var _ship of game.ships) {
-                hide_message (_ship);
-              }
-              
-              control.wait.started = true;
-            }
-            
-            else {
-              generate_message (`Waiting for more players... — ${control.wait.players - game.ships.length} player(s) remaining.`, ship);
-            }
-            break;
         }
       }
       break;
