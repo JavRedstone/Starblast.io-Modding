@@ -57,7 +57,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 1
+    players: 4
   },
 };
 
@@ -484,7 +484,7 @@ this.tick = function (game) {
               control.rounds.curr.captured = true;
               
               if (control.rounds.num == control.rounds.total) {
-                generate_message (`${control.rounds.total} rounds have been reached! Good job to everyone who played!`, ship, "magenta", [0, 16, 100, 10]);
+                generate_message (`${control.rounds.total} rounds have been reached! Good game everyone!`, ship, "magenta", [0, 16, 100, 10]);
                 ship.custom.rmsg_tick = game.step;
               }
             }
@@ -572,17 +572,32 @@ this.tick = function (game) {
             
             control.rounds.curr.tiles.push (goal);
             
-            var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
+            generate_path ();
             
-            var path = goal;
-            for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
-              if (dir_link (path, white_tile, true).check) {
-                break;
-              }
+            function generate_path () {
+              var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
+            
+              var path = goal;
               
-              else {
-                path = dir_link (path, path_tile).tile;
-                control.rounds.curr.tiles.push (path);
+              let i = 0;
+              while (true) {
+                if (dir_link (path, white_tile, true).check) {
+                  break;
+                }
+                
+                else {
+                  path = dir_link (path, path_tile).tile;
+                  control.rounds.curr.tiles.push (path);
+                }
+                i++;
+                if (i > control.map.size * 2 / control.tiles.size - 3) {
+                  for (var tile of control.rounds.curr.tiles) {
+                    game.removeObject (tile.id);
+                    control.rounds.curr.tiles.splice (control.rounds.curr.tiles.indexOf (tile), 1);
+                    control.tiles.tiles.splice (control.tiles.tiles.indexOf (tile), 1);
+                  }
+                  return generate_path ();
+                }
               }
             }
           }
