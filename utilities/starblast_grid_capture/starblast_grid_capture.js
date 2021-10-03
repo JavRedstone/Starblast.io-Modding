@@ -484,7 +484,7 @@ this.tick = function (game) {
               control.rounds.curr.captured = true;
               
               if (control.rounds.num == control.rounds.total) {
-                generate_message (`${control.rounds.total} rounds have been reached! Good game everyone!`, ship, "magenta", [0, 16, 100, 10]);
+                generate_message (`${control.rounds.total} rounds have been reached! Good game!`, ship, "magenta", [0, 16, 100, 10]);
                 ship.custom.rmsg_tick = game.step;
               }
             }
