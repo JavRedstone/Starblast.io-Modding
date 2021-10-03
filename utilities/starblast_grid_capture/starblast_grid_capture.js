@@ -9,12 +9,14 @@ var ships = [
 ];
 
 this.options = {
+  map_name: "Starblast Grid Capture",
   map_size: 30,
   custom_map: "",
   weapons_store: false,
   reset_tree: true,
   ships: ships,
-  starting_ship: 801
+  starting_ship: 801,
+  radar_zoom: 1
 };
 
 var control = {
@@ -42,10 +44,12 @@ var control = {
     size: 20,
     base_spawn: [],
     tiles: [],
-    types: []
+    types: [],
+    colors: ["red", "yellow", "lime", "blue", "white", "magenta", "orchid", "grey", "brown"]
   },
   rounds: {
     num: 0,
+    total: 25,
     tick: null,
     tickrate: 2000,
     ship_msg_tickrate: 400,
@@ -53,7 +57,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 4
+    players: 1
   },
 };
 
@@ -69,7 +73,7 @@ const disabled_path_tile = "https://raw.githubusercontent.com/JavRedstone/Starbl
 
 const block_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/Block_Tile.png";
 
-control.tiles.types = [red_tile, yellow_tile, lime_tile, blue_tile, white_tile, goal_tile, path_tile, disabled_path_tile];
+control.tiles.types = [red_tile, yellow_tile, lime_tile, blue_tile, white_tile, goal_tile, path_tile, disabled_path_tile, block_tile];
 
 class Tile {
   constructor ({
@@ -117,17 +121,32 @@ class Round {
 var center_tile, center_tile_left, center_tile_right, center_tile_up, center_tile_down, corner_tile_A, corner_tile_B, corner_tile_C, corner_tile_D;
 
 function generate_stones () {
+  // Create four center tiles in the same position for radar pos
   center_tile = new Tile ({
     id: "center_tile",
-    type: white_tile,
+    type: block_tile,
     position: { x: control.map.size, y: control.map.size }
   }).initiate ();
   
-  center_tile_left = left (center_tile, block_tile);
-  center_tile_right = right (center_tile, block_tile);
-  center_tile_up = up (center_tile, block_tile);
-  center_tile_down = down (center_tile, block_tile);
+  center_tile = new Tile ({
+    id: "center_tile",
+    type: block_tile,
+    position: { x: -control.map.size, y: control.map.size }
+  }).initiate ();
   
+  center_tile = new Tile ({
+    id: "center_tile",
+    type: block_tile,
+    position: { x: control.map.size, y: -control.map.size }
+  }).initiate ();
+  
+  center_tile = new Tile ({
+    id: "center_tile",
+    type: block_tile,
+    position: { x: -control.map.size, y: -control.map.size }
+  }).initiate ();
+  
+  // Create the corner tiles
   corner_tile_A = new Tile ({
     id: "corner_tile_A",
     type: white_tile,
@@ -153,22 +172,19 @@ function generate_stones () {
   }).initiate ();
 }
 
-function check_there (pos, block = false) {
+function check_there (pos) {
   for (var tile of control.tiles.tiles) {
     if (tile.position.x == pos.x && tile.position.y == pos.y && control.tiles.types.includes (tile.type.emissive)) {
-      if (block && tile.type.emissive == block_tile) {
-        return true;
-      }
       return true;
     }
   }
   return false;
 }
 
-function left (tile, image = white_tile, remove = false, grey = false) {
+function left (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x - control.tiles.size, y: tile.position.y };
   return {
-    check: check_there (pos, grey),
+    check: check_there (pos),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -177,10 +193,10 @@ function left (tile, image = white_tile, remove = false, grey = false) {
   };
 }
 
-function right (tile, image = white_tile, remove = false, grey = false) {
+function right (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x + control.tiles.size, y: tile.position.y };
   return {
-    check: check_there (pos, grey),
+    check: check_there (pos),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -189,10 +205,10 @@ function right (tile, image = white_tile, remove = false, grey = false) {
   };
 }
 
-function up (tile, image = white_tile, remove = false, grey = false) {
+function up (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x, y: tile.position.y + control.tiles.size };
   return {
-    check: check_there (pos, grey),
+    check: check_there (pos),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -201,10 +217,10 @@ function up (tile, image = white_tile, remove = false, grey = false) {
   };
 }
 
-function down (tile, image = white_tile, remove = false, grey = false) {
+function down (tile, image = white_tile, remove = false) {
   var pos = { x: tile.position.x, y: tile.position.y - control.tiles.size };
   return {
-    check: check_there (pos, grey),
+    check: check_there (pos),
     tile: !remove ? new Tile ({
       id: `tile_${pos.x}_${pos.y}`,
       type: image,
@@ -294,7 +310,7 @@ function generate_team (ship) {
     components: [
       { type: "box", position: [0,0,100,100], stroke: team_color, width: 2},
       { type: "text", position: [5, 10, 90, 60], value: team_abbrev, color: team_color},
-      { type: "text", position: [5, 65, 90, 25], value: `[${team_color.toUpperCase()}]`, color: team_color}
+      { type: "text", position: [5, 65, 90, 25], value: `[${team_color.toUpperCase ()}]`, color: team_color}
     ]
   });
 }
@@ -338,7 +354,7 @@ function generate_scoreboard (ship) {
       {
         type: "text",
         position: [0, i * 15, 50, 15],
-        value: `${control.teams.colors[i].toUpperCase()}:`,
+        value: `${control.teams.colors[i].toUpperCase ()}:`,
         color: control.teams.colors[i],
         align: "left"
       },
@@ -353,6 +369,35 @@ function generate_scoreboard (ship) {
   }
   
   ship.setUIComponent (scoreboard);
+}
+
+
+function generate_tile_radar () {
+  var scale_pos = 100 / (game.options.map_size * 10);
+  var scale_size = 25 / game.options.map_size;
+  
+  var tile_radar = {
+    id: "radar_background",
+    components: []
+  };
+  
+  for (var tile of control.tiles.tiles) {
+    tile_radar.components.push (
+      {
+        type: "box",
+        position: [
+          47.5 + tile.position.x * scale_pos - control.tiles.size * scale_size / 10,
+          47.5 - tile.position.y * scale_pos - control.tiles.size * scale_size / 10,
+          control.tiles.size * scale_size / 2.5,
+          control.tiles.size * scale_size / 2.5
+        ],
+        stroke: control.tiles.colors[control.tiles.types.indexOf (tile.type.emissive)],
+        width: 2
+      }
+    );
+  }
+  
+  game.setUIComponent (tile_radar);
 }
 
 function generate_message (message, ship, color = "rgb(128, 181, 233)", pos = [0, 10, 100, 5]) {
@@ -388,12 +433,12 @@ function update_dirs (ship) {
   ship.custom.right_avail = false;
   ship.custom.up_avail = false;
   ship.custom.down_avail = false;
-
+  
   if (check_there (ship.custom.left)) ship.custom.left_avail = true;
   if (check_there (ship.custom.right)) ship.custom.right_avail = true;
   if (check_there (ship.custom.up)) ship.custom.up_avail = true;
   if (check_there (ship.custom.down)) ship.custom.down_avail = true;
-
+  
   ship.custom.left_avail ? enable_dir (0, ship) : disable_dir (0, ship);
   ship.custom.right_avail ? enable_dir (1, ship) : disable_dir (1, ship);
   ship.custom.up_avail ? enable_dir (2, ship) : disable_dir (2, ship);
@@ -414,7 +459,12 @@ this.tick = function (game) {
     case game.step % control.dirs.tick === 0:
       for (var ship of game.ships) {
         if (ship.custom.pos) {
-          ship.set (ship.custom.pos);
+          ship.set ({
+            x: ship.custom.pos.x,
+            y: ship.custom.pos.y,
+            vx: 0,
+            vy: 0
+          });
         }
         
         generate_scoreboard (ship);
@@ -426,12 +476,17 @@ this.tick = function (game) {
             if (control.rounds.curr && control.rounds.curr.tiles[0].position.x == ship.custom.pos.x && control.rounds.curr.tiles[0].position.y == ship.custom.pos.y) {
               for (var _ship of game.ships) {
                 _ship.custom.pos = get_base_pos (_ship.custom.team);
-                generate_message (`${ship.name} from ${control.teams.colors[ship.custom.team].toUpperCase()} team has scored a point!`, _ship, control.teams.colors[ship.custom.team]);
+                generate_message (`${ship.name} from ${control.teams.colors[ship.custom.team].toUpperCase ()} team has scored a point!`, _ship, control.teams.colors[ship.custom.team]);
                 _ship.custom.msg_tick = game.step;
               }
               
               control.teams.scores[ship.custom.team] += 1;
               control.rounds.curr.captured = true;
+              
+              if (control.rounds.num == control.rounds.total) {
+                generate_message (`${control.rounds.total} rounds have been reached! Good job to everyone who played!`, ship, "magenta", [0, 16, 100, 10]);
+                ship.custom.rmsg_tick = game.step;
+              }
             }
             
             if (ship.custom.msg_tick && game.step - ship.custom.msg_tick == control.rounds.ship_msg_tickrate) {
@@ -440,6 +495,13 @@ this.tick = function (game) {
             
             if (ship.custom.rmsg_tick && game.step - ship.custom.rmsg_tick == control.rounds.ship_msg_tickrate) {
               hide_message (ship, [0, 16, 100, 10]);
+              
+              if (control.rounds.num == control.rounds.total) {
+                ship.gameover ({
+                  "Team": control.teams.colors[ship.custom.team].toUpperCase (),
+                  "Points": control.teams.scores[ship.custom.team]
+                });
+              }
             }
             break;
           case false:
@@ -457,6 +519,8 @@ this.tick = function (game) {
             break;
         }
       }
+      
+      generate_tile_radar ();
       
       if (control.wait.started) {
         if (!control.rounds.tick) {
@@ -477,47 +541,49 @@ this.tick = function (game) {
             control.rounds.curr = null;
           }
           
-          control.rounds.curr = new Round ().start ();
-          
-          for (var ship of game.ships) {
-            generate_message (`Round ${control.rounds.num} has started!`, ship, "magenta", [0, 16, 100, 10]);
-            ship.custom.rmsg_tick = game.step;
-          }
-          
-          var goal_pos;
-        
-          generate_goal_pos ();
-          
-          function generate_goal_pos () {
-            goal_pos = {
-              x: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2),
-              y: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2)
+          if (control.rounds.num < control.rounds.total) {
+            control.rounds.curr = new Round ().start ();
+            
+            for (var ship of game.ships) {
+              generate_message (`Round ${control.rounds.num} has started!`, ship, "magenta", [0, 16, 100, 10]);
+              ship.custom.rmsg_tick = game.step;
             }
             
-            if (check_there (goal_pos)) {
-              return generate_goal_pos ();
-            }
-          }
+            var goal_pos;
           
-          var goal = new Tile ({
-            id: `goal_tile`,
-            type: goal_tile,
-            position: goal_pos
-          }).initiate ();
-          
-          control.rounds.curr.tiles.push (goal);
-          
-          var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
-          
-          var path = goal;
-          for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
-            if (dir_link (path, white_tile, true, true).check) {
-              break;
+            generate_goal_pos ();
+            
+            function generate_goal_pos () {
+              goal_pos = {
+                x: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2),
+                y: control.tiles.size * (Math.floor(Math.random() * (control.map.size / control.tiles.size))) * (Math.round(Math.random()) === 0 ? -1 : 1) + ((game.options.map_size / 10) % 2 === 0 ? 0 : control.tiles.size / 2)
+              }
+              
+              if (check_there (goal_pos)) {
+                return generate_goal_pos ();
+              }
             }
             
-            else {
-              path = dir_link (path, path_tile).tile;
-              control.rounds.curr.tiles.push (path);
+            var goal = new Tile ({
+              id: `${control.rounds.num}_goal_tile`,
+              type: goal_tile,
+              position: goal_pos
+            }).initiate ();
+            
+            control.rounds.curr.tiles.push (goal);
+            
+            var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
+            
+            var path = goal;
+            for (let i = 0; i < control.map.size * 2 / control.tiles.size - 3; i++) {
+              if (dir_link (path, white_tile, true).check) {
+                break;
+              }
+              
+              else {
+                path = dir_link (path, path_tile).tile;
+                control.rounds.curr.tiles.push (path);
+              }
             }
           }
           
