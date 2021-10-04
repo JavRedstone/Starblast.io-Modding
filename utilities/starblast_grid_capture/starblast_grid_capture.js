@@ -59,9 +59,9 @@ var control = {
   },
   rounds: {
     num: 0,
-    total: 50,
+    total: 2,
     tick: null,
-    tickrate: 30,
+    tickrate: 2000,
     ship_msg_tickrate: 400,
     curr: null,
   },
@@ -403,7 +403,7 @@ function generate_tile_radar () {
           control.tiles.size * scale_size / 2.5
         ],
         stroke: control.tiles.colors[control.tiles.types.indexOf (tile.type.emissive)],
-        width: 2
+        width: 3
       }
     );
   }
@@ -436,28 +436,29 @@ function hide_message (ship, pos = [0, 10, 100, 5]) {
 
 control.instructions = [
   `You will spawn with one of ${control.ships.length} ships.`,
-  "When they are enabled, use the arrow buttons to move",
+  "When the arrows are enabled, use them to move.",
   "Step on a magenta goal tile to win a point for your team.",
-  `When ${control.rounds.total} rounds have been reached, the team with the most amount of points wins the game.`,
+  `After ${control.rounds.total} rounds, the team with the most points wins.`,
 ];
 
 function generate_instructions (ship) {
   var instructions = {
     id: "instructions",
-    visiable: true,
+    visible: true,
     clickable: true,
-    position: [1, 60, 20, 39],
+    position: [1, 60, 30, 39],
     components: [
       {
         type: "box",
         position: [0, 0, 100, 100],
-        stroke: white,
+        fill: "rgba(23, 32, 42, 0.5)",
+        stroke: "white",
         width: 2
       },
       {
         type: "box",
         position: [0, 0, 100, 5],
-        stroke: white,
+        stroke: "rgba(241, 196, 15, 0.5)",
         width: 2
       },
       {
@@ -468,25 +469,26 @@ function generate_instructions (ship) {
       },
       {
         type: "box",
-        position: [30, 80, 40, 15],
-        stroke: white,
+        position: [40, 85, 20, 10],
+        stroke: "white",
         width: 2
       },
       {
         type: "text",
-        position: [30, 80, 40, 15],
-        value: "OK",
+        position: [40, 85, 20, 10],
+        value: "Got it",
         color: "white"
-      },
+      }
     ]
-  };
+  }
   
   for (let i = 0; i < control.instructions.length; i++) {
     instructions.components.push ({
       type: "text",
-      position: [0, 5 + 10 * i, 100, 10],
-      value: control.instructions[i],
-      color: "white"
+      position: [5, 5 + 10 * i, 90, 15],
+      value: `➢ ${control.instructions[i]}`,
+      color: "white",
+      align: "left"
     });
   }
   
@@ -582,7 +584,6 @@ this.tick = function (game) {
             
             if (control.rounds.curr && control.rounds.curr.tiles[0].position.x == ship.custom.pos.x && control.rounds.curr.tiles[0].position.y == ship.custom.pos.y) {
               for (var _ship of game.ships) {
-                _ship.custom.pos = get_base_pos (_ship.custom.team);
                 generate_message (`${ship.name} from ${control.teams.colors[ship.custom.team].toUpperCase ()} team has scored a point!`, _ship, control.teams.colors[ship.custom.team]);
                 _ship.custom.msg_tick = game.step;
               }
@@ -604,7 +605,7 @@ this.tick = function (game) {
             if (ship.custom.rmsg_tick && game.step - ship.custom.rmsg_tick == control.rounds.ship_msg_tickrate) {
               hide_message (ship, [0, 16, 100, 10]);
               
-              if (control.rounds.num == control.rounds.total) {
+              if (control.rounds.num == control.rounds.total + 1) {
                 ship.gameover ({
                   "Team": control.teams.colors[ship.custom.team].toUpperCase (),
                   "Points": control.teams.scores[ship.custom.team]
@@ -636,6 +637,7 @@ this.tick = function (game) {
         }
         
         else if (game.step - control.rounds.tick >= control.rounds.tickrate || control.rounds.curr.captured) {
+          
           if (control.rounds.curr) {
             for (var tile of control.rounds.curr.tiles) {
               game.removeObject (tile.id);
@@ -653,6 +655,7 @@ this.tick = function (game) {
             control.rounds.curr = new Round ().start ();
             
             for (var ship of game.ships) {
+              ship.custom.pos = get_base_pos (ship.custom.team);
               generate_message (`Round ${control.rounds.num} has started!`, ship, "magenta", [0, 16, 100, 10]);
               ship.custom.rmsg_tick = game.step;
             }
