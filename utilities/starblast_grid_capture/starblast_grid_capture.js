@@ -60,6 +60,7 @@ var control = {
     started: false,
     players: 1
   },
+  instructions: []
 };
 
 const white_tile = "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_grid_capture/White_Tile.png";
@@ -424,6 +425,73 @@ function hide_message (ship, pos = [0, 10, 100, 5]) {
   });
 }
 
+control.instructions = [
+  `You will spawn with one of ${control.ships.length} ships.`
+  "When they are enabled, use the arrow buttons to move`,
+  "Step on a magenta goal tile to win a point for your team.",
+  `When ${control.rounds.total} rounds have been reached, the team with the most amount of points wins the game.`,
+];
+
+function generate_instructions (ship) {
+  var instructions = {
+    id: `instructions`,
+    visiable: true,
+    clickable: true,
+    position: [1, 60, 20, 39],
+    components: [
+      {
+        type: "box",
+        position: [0, 0, 100, 100],
+        stroke: white,
+        width: 2
+      },
+      {
+        type: "box",
+        position: [0, 0, 100, 5],
+        stroke: white,
+        width: 2
+      },
+      {
+        type: "text",
+        position: [0, 0, 100, 5],
+        value: "Instructions"
+        color: "white"
+      },
+      {
+        type: "box",
+        position: [30, 80, 40, 15],
+        stroke: white,
+        width: 2
+      },
+      {
+        type: "text",
+        position: [30, 80, 40, 15],
+        value: "OK"
+        color: "white"
+      },
+    ]
+  };
+  
+  for (let i = 0; i < control.instructions.length; i++) {
+    instructions.components.push ({
+      type: "text",
+      position: [0, 5 + 10 * i, 100, 10],
+      value: control.instructions[i],
+      color: "white"
+    });
+  }
+  
+  ship.setUIComponent (instructions);
+}
+
+function hide_instructions (ship) {
+  ship.setUIComponent ({
+    id: "instructions",
+    visible: false,
+    clickable: false
+  });
+}
+
 function update_dirs (ship) {
   ship.custom.left = { x: ship.custom.pos.x - control.tiles.size, y: ship.custom.pos.y };
   ship.custom.right = { x: ship.custom.pos.x + control.tiles.size, y: ship.custom.pos.y };
@@ -672,8 +740,11 @@ this.event = function (event, game) {
       }
       
       ship.custom.pos = get_base_pos (ship.custom.team);
+      
+      generate_instructions (ship);
       break;
     case "ui_component_clicked":
+      // If arrow keys
       if (!ship.custom.ui_tick || game.step - ship.custom.ui_tick >= control.dirs.tick) {
         ship.custom.ui_tick = game.step;
         switch (event.id) {
@@ -690,6 +761,13 @@ this.event = function (event, game) {
             if (ship.custom.down_avail) ship.custom.pos.y -= control.tiles.size;
             break;
         }
+      }
+      
+      // If its other ui components
+      switch (event.id) {
+        case: "instructions":
+          hide_instructions (ship);
+          break;
       }
       break;
   }
