@@ -309,11 +309,13 @@ this.event = function(event, game) {
           }
           break;
         case "heal":
-          ship.set({
-            shield: 999,
-            crystals: get_crystals(ship.type),
-            stats: get_stats(ship.type)
-          });
+          if (!ship.custom.spectate && !ship.custom.admin) {
+            ship.set({
+              shield: 999,
+              crystals: get_crystals(ship.type),
+              stats: get_stats(ship.type)
+            });
+          }
           break;
         case "admin":
           if (!ship.custom.spectate) {
