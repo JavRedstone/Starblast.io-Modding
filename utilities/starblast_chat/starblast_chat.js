@@ -219,7 +219,7 @@ var chat = {
   }, {
     type: "text",
     position: [0, 85, 100, 15],
-    color: "rgb(255,255,0)",
+    color: "rgb(255, 255, 0)",
     value: ""
   }]
 };
