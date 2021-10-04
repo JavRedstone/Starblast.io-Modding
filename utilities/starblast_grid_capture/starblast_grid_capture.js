@@ -49,15 +49,15 @@ var control = {
   },
   rounds: {
     num: 0,
-    total: 25,
+    total: 50,
     tick: null,
-    tickrate: 2000,
+    tickrate: 30,
     ship_msg_tickrate: 400,
     curr: null,
   },
   wait: {
     started: false,
-    players: 4
+    players: 1
   },
 };
 
@@ -550,7 +550,7 @@ this.tick = function (game) {
             }
             
             var goal_pos;
-          
+            
             generate_goal_pos ();
             
             function generate_goal_pos () {
@@ -571,12 +571,13 @@ this.tick = function (game) {
             }).initiate ();
             
             control.rounds.curr.tiles.push (goal);
+              
+            generate_goal_path ();
             
-            generate_path ();
-            
-            function generate_path () {
+            function generate_goal_path () {
+              
               var dir_link = control.dirs.list[Math.round (Math.random () * (control.dirs.list.length - 1))];
-            
+              
               var path = goal;
               
               let i = 0;
@@ -596,7 +597,7 @@ this.tick = function (game) {
                     control.rounds.curr.tiles.splice (control.rounds.curr.tiles.indexOf (tile), 1);
                     control.tiles.tiles.splice (control.tiles.tiles.indexOf (tile), 1);
                   }
-                  return generate_path ();
+                  return generate_goal_path ();
                 }
               }
             }
