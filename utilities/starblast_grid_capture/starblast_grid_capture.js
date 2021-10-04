@@ -426,15 +426,15 @@ function hide_message (ship, pos = [0, 10, 100, 5]) {
 }
 
 control.instructions = [
-  `You will spawn with one of ${control.ships.length} ships.`
-  "When they are enabled, use the arrow buttons to move`,
+  `You will spawn with one of ${control.ships.length} ships.`,
+  "When they are enabled, use the arrow buttons to move",
   "Step on a magenta goal tile to win a point for your team.",
   `When ${control.rounds.total} rounds have been reached, the team with the most amount of points wins the game.`,
 ];
 
 function generate_instructions (ship) {
   var instructions = {
-    id: `instructions`,
+    id: "instructions",
     visiable: true,
     clickable: true,
     position: [1, 60, 20, 39],
@@ -454,7 +454,7 @@ function generate_instructions (ship) {
       {
         type: "text",
         position: [0, 0, 100, 5],
-        value: "Instructions"
+        value: "Instructions",
         color: "white"
       },
       {
@@ -466,7 +466,7 @@ function generate_instructions (ship) {
       {
         type: "text",
         position: [30, 80, 40, 15],
-        value: "OK"
+        value: "OK",
         color: "white"
       },
     ]
@@ -765,7 +765,7 @@ this.event = function (event, game) {
       
       // If its other ui components
       switch (event.id) {
-        case: "instructions":
+        case "instructions":
           hide_instructions (ship);
           break;
       }
