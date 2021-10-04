@@ -26,7 +26,8 @@ var control = {
     colors: ["red", "yellow", "lime", "blue"],
     abbrev: ["R", "Y", "L", "B"],
     hues: [0, 60, 120, 240],
-    scores: [0, 0, 0, 0]
+    scores: [0, 0, 0, 0],
+    winning_msg: ""
   },
   dirs: {
     length: 4,
@@ -445,6 +446,35 @@ function update_dirs (ship) {
   ship.custom.down_avail ? enable_dir (3, ship) : disable_dir (3, ship);
 }
 
+function get_winning_msg () {
+  var _team_colors = [...control.teams.colors];
+  var _scores = [...control.teams.scores];
+  
+  let n = _scores.length;
+  for (let i = 1; i < n; i++) {
+    let curr = _scores[i];
+    let j = i - 1; 
+    while (j > -1 && curr < _scores[j]) {
+      _scores[j + 1] = _scores[j];
+      _team_colors[j + 1] = _team_colors[j];
+      j--;
+    }
+    _scores[j + 1] = curr;
+  }
+  
+  control.teams.winning_msg = `[${_team_colors[0]}] `;
+  
+  for (let i = 1; i < _team_colors.length; i++) {
+    if (_scores[i] == _scores[0]) {
+      control.teams.winning_msg += `and [${_team_colors[i]}] `;
+    }
+  }
+  
+  control.teams.winning_msg += `have won with ${_scores[0]} points!`;
+  
+  return control.teams.winning_msg;
+}
+
 this.tick = function (game) {
   switch (true) {
     case game.step === 0:
@@ -484,7 +514,8 @@ this.tick = function (game) {
               control.rounds.curr.captured = true;
               
               if (control.rounds.num == control.rounds.total) {
-                generate_message (`${control.rounds.total} rounds have been reached! Good game!`, ship, "magenta", [0, 16, 100, 10]);
+                generate_message (`${control.rounds.total} rounds have been reached! Good game!`, ship);
+                generate_message (`${get_winning_msg ()}`, ship, "magenta", [0, 16, 100, 10]);
                 ship.custom.rmsg_tick = game.step;
               }
             }
