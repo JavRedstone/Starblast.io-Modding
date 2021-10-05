@@ -59,7 +59,7 @@ var control = {
   },
   rounds: {
     num: 0,
-    total: 2,
+    total: 25,
     tick: null,
     tickrate: 2000,
     ship_msg_tickrate: 400,
@@ -67,7 +67,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 1
+    players: 4
   },
   instructions: []
 };
