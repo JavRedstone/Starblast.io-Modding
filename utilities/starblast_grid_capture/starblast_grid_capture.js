@@ -397,8 +397,8 @@ function generate_tile_radar () {
       {
         type: "box",
         position: [
-          47.5 + tile.position.x * scale_pos - control.tiles.size * scale_size / 10,
-          47.5 - tile.position.y * scale_pos - control.tiles.size * scale_size / 10,
+          47 + tile.position.x * scale_pos - control.tiles.size * scale_size / 10,
+          47 - tile.position.y * scale_pos - control.tiles.size * scale_size / 10,
           control.tiles.size * scale_size / 2.5,
           control.tiles.size * scale_size / 2.5
         ],
