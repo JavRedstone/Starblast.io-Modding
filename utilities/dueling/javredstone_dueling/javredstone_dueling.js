@@ -40,16 +40,12 @@ var switch_arr = [1, 2, 4, 6, 7, 8, 4];
 
 this.options = {
   map_name: "Dueling by JavRedstone",
-  ships: ships,
-  starting_ship: 605,
-  reset_tree: false,
-  max_players: 60,
-  vocabulary: vocabulary,
-  lives: 5,
   map_size: 70,
   custom_map: "",
+  ships: ships,
+  starting_ship: 801,
+  vocabulary: vocabulary,
   crystal_value: 0,
-  asteroids_strength: 3,
   speed_mod: 1.2,
 };
 
