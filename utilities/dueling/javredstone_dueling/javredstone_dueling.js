@@ -47,7 +47,7 @@ this.options = {
   vocabulary: vocabulary,
   lives: 5,
   map_size: 70,
-  custom_map: [],
+  custom_map: "",
   crystal_value: 0,
   asteroids_strength: 3,
   speed_mod: 1.2,
