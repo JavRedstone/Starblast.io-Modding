@@ -13,8 +13,9 @@ var ships = [
 ];
 
 this.options = {
+  map_name: "Ring of Fire",
   map_size: 30,
-  custom_map: "Ring of Fire",
+  custom_map: "",
   ships: ships,
   reset_tree: true,
   starting_ship: 801
