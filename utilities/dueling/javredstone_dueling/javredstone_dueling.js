@@ -147,6 +147,7 @@ function remove_admin(ship_id) {
   }
   admin_invalid.setUIComponent({
     id: admin[0],
+    position: [0,0,0,0],
     clickable: false,
     visible: false
   });
