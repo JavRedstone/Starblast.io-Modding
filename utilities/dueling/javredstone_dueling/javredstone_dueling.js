@@ -118,13 +118,13 @@ function generate_ui(ship) {
   }
 }
 
-game.custom.find_user = function (ship_id) {
+function find_user (ship_id) {
   for (var ship of game.ships) {
     if (ship.id == ship_id) {
       return ship;
     }
   }
-};
+}
 
 game.custom.kick = function (ship_id) {
   find_user (ship_id).gameover ({ "": "" });
