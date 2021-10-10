@@ -42,14 +42,15 @@ this.options = {
   map_name: "Dueling by JavRedstone",
   map_size: 70,
   custom_map: "",
+  crystal_value: 0,
   ships: ships,
   starting_ship: 801,
   vocabulary: vocabulary,
-  crystal_value: 0,
+  // weapons_store: false,
   speed_mod: 1.2,
 };
 
-function get_crystals(type) {
+function get_crystals (type) {
   switch(Math.trunc(type/100)) {
     case 1:
       return 20;
@@ -68,7 +69,7 @@ function get_crystals(type) {
   }
 }
 
-function get_stats(type) {
+function get_stats (type) {
   switch(Math.trunc(type/100)) {
     case 1:
       return 11111111;
@@ -87,7 +88,9 @@ function get_stats(type) {
   }
 }
 
-function list_players() {
+
+
+function list_players () {
   var list = "PLAYER LIST:\n";
   for (var ship of game.ships) {
     list += `${ship.id}: ${ship.name}\n`;
@@ -100,7 +103,7 @@ var values = ["<", ">", "🏠", "🧐", "↩️", "💖"];
 
 function generate_ui(ship) {
   for (let i = 0; i < names.length; i++) {
-    ship.setUIComponent({
+    ship.setUIComponent ({
       id: names[i],
       position: [56 + i * 4, 1, 4, 6.4],
       clickable: names[i] != "admin",
@@ -115,16 +118,32 @@ function generate_ui(ship) {
   }
 }
 
-var admin = ["admin", "🔑"];
-
-function give_admin(ship_id) {
-  var admin_valid;
+function find_user (ship_id) {
   for (var ship of game.ships) {
     if (ship.id == ship_id) {
-      admin_valid = ship;
+      return ship;
     }
   }
-  admin_valid.setUIComponent({
+}
+
+game.custom.kick = function (ship_id) {
+  find_user (ship_id).gameover ({ "": "" });
+};
+
+game.custom.remove_weapons = function (ship_id) {
+  find_user (ship_id).emptyWeapons ();
+};
+
+game.custom.admins = [];
+
+var admin = ["admin", "🔑"];
+
+game.custom.give_admin = function (ship_id) {
+  if (!game.custom.admins.includes (ship_id)) {
+    game.custom.admins.push (ship_id);
+  }
+  var admin_valid = find_user (ship_id);
+  admin_valid.setUIComponent ({
     id: admin[0],
     position: [52, 1, 4, 6.4],
     clickable: true,
@@ -136,31 +155,28 @@ function give_admin(ship_id) {
       { type: "text", position: [5, 65, 90, 25], value: `[0]`, color: "white"}
     ]
   });
-}
+};
 
-function remove_admin(ship_id) {
-  var admin_invalid;
-  for (var ship of game.ships) {
-    if (ship.id == ship_id) {
-      admin_invalid = ship;
-    }
+game.custom.invalids = [];
+
+game.custom.remove_admin = function (ship_id) {
+  if (!game.custom.invalids.includes (ship_id)) {
+    game.custom.invalids.push (ship_id);
   }
-  admin_invalid.setUIComponent({
+  var admin_invalid = find_user (ship_id);
+  admin_invalid.setUIComponent ({
     id: admin[0],
     position: [0,0,0,0],
     clickable: false,
     visible: false
   });
-  admin_invalid.set({
-    type: 605,
+  admin_invalid.set ({
+    type: 101,
     shield: 999,
-    crystals: get_crystals(605),
-    stats: get_stats(605)
+    crystals: get_crystals (101),
+    stats: get_stats (101)
   });
-}
-
-var admins = [];
-var invalids = [];
+};
 
 this.tick = function(game) {
   switch(true) {
@@ -180,25 +196,22 @@ this.tick = function(game) {
             break;
         }
       }
-      // Space to give admin: (call the function give_admin(),
+      // NOTE: YOU CAN DO THIS IN TERMINAL AS WELL
+      
+      // Space to give admin: (call the function game.custom.give_admin(),
       // and enter the ship id that you want (it is printed inside the console
       // alongside their nickname))
       
       // Give the owner (usually the first player to join the game), admin.
       // If the owner leaves, it will NOT give the subsequent person admin :)
-      admins = [1]; // <- Assuming that you're the first to join
+      game.custom.give_admin (1) // <- Assuming that you're the first to join
       
-      for (var admin of admins) {
-        give_admin(admin);
-      }
-      // Space to remove admin: (call the function remove_admin(),
+      // Space to remove admin: (call the function game.custom.remove_admin(),
       // and enter the ship id that you want (it is printed inside the console
       // alongside their nickname))
-      invalids = [];
       
-      for (var invalid of invalids) {
-        remove_admin(invalid);
-      }
+      // List admin: game.custom.admins
+      // List invalids: game.custom.invalids
       break;
   }
 };
@@ -211,20 +224,20 @@ this.event = function(event, game) {
         x: 0,
         y: 0,
         invulnerable: 360,
-        crystals: get_crystals(ship.type),
-        stats: get_stats(ship.type)
+        crystals: get_crystals (ship.type),
+        stats: get_stats (ship.type)
       });
-      echo(list_players());
+      echo(list_players ());
       break;
     case "ship_destroyed":
-      echo(list_players());
+      echo(list_players ());
       break;
     case "ui_component_clicked":
       switch(event.id) {
         case "switch_left":
           var previous = 704;
-          if (`${ship.type}`.charAt(2) == '1') {
-            switch(Math.trunc(ship.type/100)) {
+          if (`${ship.type}`.charAt (2) == '1') {
+            switch(Math.trunc (ship.type/100)) {
               case 1:
                 break;
               case 2:
@@ -254,8 +267,8 @@ this.event = function(event, game) {
             ship.set({
               type: previous,
               shield: 999,
-              crystals: get_crystals(previous),
-              stats: get_stats(previous)
+              crystals: get_crystals (previous),
+              stats: get_stats (previous)
             });
           }
           break;
@@ -271,8 +284,8 @@ this.event = function(event, game) {
             ship.set({
               type: next,
               shield: 999,
-              crystals: get_crystals(next),
-              stats: get_stats(next)
+              crystals: get_crystals (next),
+              stats: get_stats (next)
             });
           }
           break;
@@ -285,15 +298,15 @@ this.event = function(event, game) {
         case "spectate":
           if (!ship.custom.admin) {
             ship.custom.spectate ? ship.set({
-              type: game.options.starting_ship,
-              crystals: get_crystals(game.options.starting_ship),
-              stats: get_stats(game.options.starting_ship),
+              type: 101,
+              crystals: get_crystals (101),
+              stats: get_stats (101),
               collider: true
             }) : ship.set({
               type: 102,
               crystals: 0,
               collider: false,
-              stats: get_stats(102)
+              stats: get_stats (102)
             });
             ship.custom.spectate = !ship.custom.spectate;
           }
@@ -303,8 +316,8 @@ this.event = function(event, game) {
             ship.set({
               type: 101,
               shield: 999,
-              crystals: get_crystals(101),
-              stats: get_stats(101)
+              crystals: get_crystals (101),
+              stats: get_stats (101)
             });
           }
           break;
@@ -312,18 +325,18 @@ this.event = function(event, game) {
           if (!ship.custom.spectate && !ship.custom.admin) {
             ship.set({
               shield: 999,
-              crystals: get_crystals(ship.type),
-              stats: get_stats(ship.type)
+              crystals: get_crystals (ship.type),
+              stats: get_stats (ship.type)
             });
           }
           break;
         case "admin":
-          if (!ship.custom.spectate && admins.includes (ship.id)) {
-            ship.custom.admin ? ship.set({
-              type: 605,
+          if (!ship.custom.spectate) {
+            ship.custom.admin || !game.custom.admins.includes (ship.id) ? ship.set({
+              type: 101,
               shield: 999,
-              crystals: get_crystals(605),
-              stats: get_stats(605)
+              crystals: get_crystals (101),
+              stats: get_stats (101)
             }) : ship.set({
               type: 791,
               crystals: 1248.2,
