@@ -158,6 +158,9 @@ function remove_admin(ship_id) {
   });
 }
 
+var admins = [];
+var invalids = [];
+
 this.tick = function(game) {
   switch(true) {
     case game.step % 30 === 0:
@@ -182,7 +185,7 @@ this.tick = function(game) {
       
       // Give the owner (usually the first player to join the game), admin.
       // If the owner leaves, it will NOT give the subsequent person admin :)
-      var admins = [1]; // <- Assuming that you're the first to join
+      admins = [1]; // <- Assuming that you're the first to join
       
       for (var admin of admins) {
         give_admin(admin);
@@ -190,7 +193,7 @@ this.tick = function(game) {
       // Space to remove admin: (call the function remove_admin(),
       // and enter the ship id that you want (it is printed inside the console
       // alongside their nickname))
-      var invalids = [];
+      invalids = [];
       
       for (var invalid of invalids) {
         remove_admin(invalid);
@@ -314,7 +317,7 @@ this.event = function(event, game) {
           }
           break;
         case "admin":
-          if (!ship.custom.spectate) {
+          if (!ship.custom.spectate && admins.includes (ship.id)) {
             ship.custom.admin ? ship.set({
               type: 605,
               shield: 999,
