@@ -88,8 +88,6 @@ function get_stats (type) {
   }
 }
 
-
-
 function list_players () {
   var list = "PLAYER LIST:\n";
   for (var ship of game.ships) {
