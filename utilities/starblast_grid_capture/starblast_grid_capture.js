@@ -499,6 +499,7 @@ function generate_instructions (ship) {
 function hide_instructions (ship) {
   ship.setUIComponent ({
     id: "instructions",
+    position: [0, 0, 0, 0],
     visible: false,
     clickable: false
   });
