@@ -411,7 +411,7 @@ function generate_tile_radar () {
   game.setUIComponent (tile_radar);
 }
 
-function generate_message (message, ship, color = "rgb(128, 181, 233)", pos = [0, 10, 100, 5]) {
+function generate_message (message, ship, color = "#cde", pos = [0, 10, 100, 5]) {
   ship.setUIComponent ({
     id: `message_${pos[0]}_${pos[1]}_${pos[2]}_${pos[3]}`,
     position: pos,
