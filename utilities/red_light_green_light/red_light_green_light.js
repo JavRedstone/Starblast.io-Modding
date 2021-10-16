@@ -20,7 +20,7 @@ this.options = {
   starting_ship_maxed: true
 };
 
-function generate_message (message, ship) {
+function generate_message (message) {
   ship.setUIComponent ({
     id: "message",
     position: [0, 10, 100, 5],
@@ -36,9 +36,9 @@ function generate_message (message, ship) {
   });
 }
 
-function hide_message (ship, pos = [0, 10, 100, 5]) {
+function hide_message () {
   ship.setUIComponent ({
-    id: `message_${pos[0]}_${pos[1]}_${pos[2]}_${pos[3]}`,
+    id: "message",
     visible: false,
   });
 }
@@ -51,7 +51,7 @@ this.tick = function(game) {
   }
 };
 
-this.event = function(event, game) {
+this.event = function(event) {
   var ship = event.ship;
   switch (event.name) {
     case "ship_spawned":
