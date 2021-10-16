@@ -430,6 +430,7 @@ function generate_message (message, ship, color = "#cde", pos = [0, 10, 100, 5])
 function hide_message (ship, pos = [0, 10, 100, 5]) {
   ship.setUIComponent ({
     id: `message_${pos[0]}_${pos[1]}_${pos[2]}_${pos[3]}`,
+    position: [0, 0, 0, 0],
     visible: false,
   });
 }
