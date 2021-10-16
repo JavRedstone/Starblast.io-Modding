@@ -145,7 +145,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 4,
+    players: 8,
     i: null
   },
   instructions: []
