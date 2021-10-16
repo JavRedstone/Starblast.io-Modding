@@ -554,7 +554,7 @@ function get_winning_msg () {
   return control.teams.winning_msg;
 }
 
-this.tick = function (game) {
+this.tick = function () {
   switch (true) {
     case game.step === 0:
       control.map.size = game.options.map_size * 5;
@@ -721,7 +721,7 @@ this.tick = function (game) {
   }
 };
 
-this.event = function (event, game) {
+this.event = function (event) {
   var ship = event.ship;
   switch (event.name) {
     case "ship_spawned":
