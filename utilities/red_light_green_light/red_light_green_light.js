@@ -1,3 +1,11 @@
+// Red light green light from squid game
+
+/*
+  Mod in 1 day challenge
+  
+  Enjoy!
+*/
+
 var map = "9999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999\n"+
 "                                                                                                    \n"+
 "                                                                                                    \n"+
@@ -145,7 +153,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 8,
+    players: 1,
     i: null
   },
   instructions: []
