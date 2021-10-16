@@ -153,7 +153,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 1,
+    players: 8,
     i: null
   },
   instructions: []
