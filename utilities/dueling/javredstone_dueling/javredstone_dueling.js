@@ -202,7 +202,7 @@ this.tick = function(game) {
       
       // Give the owner (usually the first player to join the game), admin.
       // If the owner leaves, it will NOT give the subsequent person admin :)
-      game.custom.give_admin (1) // <- Assuming that you're the first to join
+      game.custom.give_admin (1); // <- Assuming that you're the first to join
       
       // Space to remove admin: (call the function game.custom.remove_admin(),
       // and enter the ship id that you want (it is printed inside the console
