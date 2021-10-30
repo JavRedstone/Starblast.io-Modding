@@ -153,7 +153,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 8,
+    players: 4,
     i: null
   },
   instructions: []
@@ -393,12 +393,12 @@ this.tick = function() {
             for (var ship of game.ships) {
               if (ship.custom.finished) {
                 ship.gameover({
-                  "Congradulations": "You have passed"
+                  "Congratulations": "You have passed"
                 });
               }
               else {
                 ship.gameover({
-                  "Good play": "You are disqualified"
+                  "Good try": "You are disqualified"
                 });
               }
             }
