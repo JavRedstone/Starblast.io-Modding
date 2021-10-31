@@ -1,7 +1,6 @@
 const getcolor = function (color, alpha = 1) {
   return `hsla(${color},100%,50%,${alpha})`;
 };
-
 const rand = function (num) {
   return ~~(Math.random() * num);
 };
