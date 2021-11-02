@@ -3,8 +3,13 @@
 const rand = function (n) {
   return ~~(Math.random() * n);
 };
-const isWrongSpeed = function (car, vx, vy) {
-  return car.vx != vx || car.vy != vy;
+const hideUI = function (id, ship) {
+  ship.setUIComponent({
+    id: id,
+    position: [0, 0, 0, 0],
+    visible: false,
+    clickable: false
+  });
 };
 
 // End preliminary functions ----------
@@ -81,14 +86,14 @@ const maps = [{
       x: 242,
       y: 245
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -252,
       y: -260
     }, {
       x: 252,
       y: 260
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Walls",
@@ -160,14 +165,14 @@ const maps = [{
       x: 237,
       y: 0
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -280,
       y: 0
     }, {
       x: 280,
       y: 0
     }],
-    restrict_tiers: [1, 3, 4, 5, 6]
+    restrictTiers: [1, 3, 4, 5, 6]
   },
   {
     name: "Dots",
@@ -239,14 +244,14 @@ const maps = [{
       x: 0,
       y: 230
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: 0,
       y: -260
     }, {
       x: 0,
       y: 260
     }],
-    restrict_tiers: [1, 3, 4, 5, 6]
+    restrictTiers: [1, 3, 4, 5, 6]
   },
   {
     name: "Concentration",
@@ -318,14 +323,14 @@ const maps = [{
       x: 180,
       y: 0
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -210,
       y: 0
     }, {
       x: 210,
       y: 0
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Temple",
@@ -397,14 +402,14 @@ const maps = [{
       x: 0,
       y: 185
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: 0,
       y: -235
     }, {
       x: 0,
       y: 235
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Crop Circles",
@@ -476,14 +481,14 @@ const maps = [{
       x: 188,
       y: 190
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -220,
       y: -175
     }, {
       x: 220,
       y: 210
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Oblivion",
@@ -555,14 +560,14 @@ const maps = [{
       x: 265 - 80,
       y: 265 - 80
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -225,
       y: -222
     }, {
       x: 225,
       y: 222
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Fusion",
@@ -634,14 +639,14 @@ const maps = [{
       x: 232,
       y: 225
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -170,
       y: 110
     }, {
       x: 170,
       y: -110
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Stadium",
@@ -713,14 +718,14 @@ const maps = [{
       x: 135,
       y: 80
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -165,
       y: -222
     }, {
       x: 242,
       y: 150
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Agony",
@@ -792,119 +797,14 @@ const maps = [{
       x: 130,
       y: 180
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -200,
       y: -225
     }, {
       x: 200,
       y: 225
     }],
-    restrict_tiers: false
-  },
-  {
-    name: "Highway",
-    author: "GumZ",
-    map: "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999                                        9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999           99                    99           9999999\n" +
-      "999999            99                    99            999999\n" +
-      "99999                                                  99999\n" +
-      "99999                        99                        99999\n" +
-      "9999                         99                         9999\n" +
-      "9999                         99                         9999\n" +
-      "9999                         99                         9999\n" +
-      "9999                         99                         9999\n" +
-      "99999                        99                        99999\n" +
-      "99999                                                  99999\n" +
-      "999999            99                    99            999999\n" +
-      "9999999           99                    99           9999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                   99                   9999999999\n" +
-      "9999999999                                        9999999999\n" +
-      "9999999999        99                    99        9999999999\n" +
-      "9999999999        99                    99        9999999999",
-    flags: [{
-      x: -200,
-      y: 0
-    }, {
-      x: 200,
-      y: 0
-    }],
-    ship_spawn: [{
-      x: -243,
-      y: 0
-    }, {
-      x: 243,
-      y: 0
-    }],
-    traffic: function() {
-      let xpos = [-180, -140, -75, -35, 35, 75, 140, 180],
-        vol = [0.7, -0.9, 0.7, -0.8, 0.9, 0.7, 0.8, -0.8],
-        ypos = [
-          [280, 295, 250, 200, 225, 290, 100, 50],
-          [-200, 0, -50, -100, -90, 20, -250, -290]
-        ];
-      for (let i = 0; i < xpos.length; i++) {
-        for (let j = 0; j < 2; j++) {
-          game.addAsteroid({
-            x: xpos[i],
-            y: ypos[j][i],
-            size: 40,
-            vy: vol[i]
-          });
-        }
-      }
-    },
-    cars: function() {
-      let x = [-180, -180, -140, -140, -75, -75, -35, -35, 35, 35, 75, 75, 140, 140, 180, 180],
-        v = [0.7, 0.7, -0.9, -0.9, 0.7, 0.7, -0.8, -0.8, 0.9, 0.9, -0.7, -0.7, 0.8, 0.8, -0.8, -0.8];
-      game.asteroids.forEach((asteroid, i) => isWrongSpeed(asteroid, 0, v[i]) && asteroid.set({
-        vx: 0,
-        vy: v[i]
-      }));
-    },
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Boxes 2.0",
@@ -976,14 +876,14 @@ const maps = [{
       x: 190,
       y: 0
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -235,
       y: 0
     }, {
       x: 235,
       y: 0
     }],
-    restrict_tiers: [1, 3, 4, 5, 6]
+    restrictTiers: [1, 3, 4, 5, 6]
   },
   {
     name: "Fortress",
@@ -1055,14 +955,14 @@ const maps = [{
       x: -130,
       y: 275
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -5,
       y: 225
     }, {
       x: -225,
       y: 5
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
   {
     name: "Ladders",
@@ -1134,138 +1034,14 @@ const maps = [{
       x: -200,
       y: -200
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: 250,
       y: 250
     }, {
       x: -250,
       y: -250
     }],
-    restrict_tiers: false
-  },
-  {
-    name: "Shortcut",
-    author: "GumZ",
-    map: "  99999   99999  99999999 99999999 99999999  9999   99999   \n" +
-      " 99999   999999  99999    99999999 9999999   999   99999    \n" +
-      "99999   9999999  999       9999999 999999     9   99999     \n" +
-      "9999   999                  999999 99999   9     99999     9\n" +
-      "999   999    99         99   99999 9999   9 9   99999     99\n" +
-      "99   999     99  9  9  9999   9999 999   999     999     999\n" +
-      "9   999      99       999999   999 99   999   9   9     9999\n" +
-      "   999       99           999      9   9 9   999       99999\n" +
-      "  999     9  999   9      999      99   9   99999     99999 \n" +
-      " 999     99  9999      9       9 99999     99999     99999  \n" +
-      "999     99    9999    999      9   9999   99999     99999   \n" +
-      "999          9 9999  99999     999 999   99999     99999   9\n" +
-      "999             9999  999   9  999999   99999      9999   99\n" +
-      "999  99999       9999  9   999  9999   99999        99   999\n" +
-      "999  999999       9999          999   99999     99        99\n" +
-      "          99 9     9999        999   99999     9999    9    \n" +
-      "          999       9999999     9   99999     99999   99    \n" +
-      "999  999  9999       999999999     99999     99999   99   99\n" +
-      "999  999  9 999       999999999   99999     99999   9 9   99\n" +
-      "99    99  9  999 9         999   99999     99999   999     9\n" +
-      "              999           9   99999     99999   999   9   \n" +
-      "               999    999      99999     99999     9    9   \n" +
-      "99    99  9     999  99999    99999      9999   9          9\n" +
-      "999  99  999     999 99999   99999      9999   999    9   99\n" +
-      "999  9  99999     9999999   99999     99999   99999   99   9\n" +
-      "999    999 999     99999   99999     99999   9999999       9\n" +
-      "999   99 999999     999     999     99999   999999999    999\n" +
-      "9999  999    999     9       9     99999   99999999999  9999\n" +
-      "99999 999 999999  9               99999     999    999  9999\n" +
-      "999999999 9  999       9 9       99999      999 99 999999999\n" +
-      "999999999 99 999      99999       9 9       999  9 999999999\n" +
-      "9999  999    999     99999               9  999999 999 99999\n" +
-      "9999  99999999999   99999     9       9     999    999  9999\n" +
-      "999    999999999   99999     999     999     999999 99   999\n" +
-      "9       9999999   99999     99999   99999     999 999    999\n" +
-      "9   99   99999   99999     99999   9999999     99999  9  999\n" +
-      "99   9    999   9999      99999   99999 999     999  99  999\n" +
-      "9          9   9999      99999    99999  999     9  99    99\n" +
-      "   9    9     99999     99999      999    999               \n" +
-      "   9   999   99999     99999   9         9 999              \n" +
-      "9     999   99999     99999   999           999  9  99    99\n" +
-      "99   9 9   99999     99999   999999999       999 9  999  999\n" +
-      "99   99   99999     99999     999999999       9999  999  999\n" +
-      "    99   99999     99999   9     9999999     9 999          \n" +
-      "    9    9999     99999   99         9999       99          \n" +
-      "99        99     99999   9999         9999       999999  999\n" +
-      "999   99        99999   9999  999   9  9999       99999  999\n" +
-      "99   9999      99999   999999  9   999  9999             999\n" +
-      "9   99999     99999   999 999     99999  9999 9          999\n" +
-      "   99999     99999   9999   9      999    9999    99     999\n" +
-      "  99999     99999     99999 9       9      9999  99     999 \n" +
-      " 99999     99999   9   99      999      9   999  9     999  \n" +
-      "99999       999   9 9   9      999           99       999   \n" +
-      "9999     9   9   999   99 999   999999       99      999   9\n" +
-      "999     999     999   999 9999   9999  9  9  99     999   99\n" +
-      "99     99999   9 9   9999 99999   99         99    999   999\n" +
-      "9     99999     9   99999 999999                  999   9999\n" +
-      "     99999   9     999999 9999999       999  9999999   99999\n" +
-      "    99999   999   9999999 99999999    99999  999999   99999 \n" +
-      "   99999   9999  99999999 99999999 99999999  99999   99999  ",
-    flags: [{
-      x: -190,
-      y: 190
-    }, {
-      x: 190,
-      y: -190
-    }],
-    ship_spawn: [{
-      x: -220,
-      y: 220
-    }, {
-      x: 220,
-      y: -220
-    }],
-    traffic: function() {
-      for (let i = 0; i < 4; i++) game.addAsteroid({
-        x: 600 / 4 * i,
-        y: 600 / 4 * i,
-        vx: 0.25,
-        vy: 0.25,
-        size: 100
-      });
-      for (let i = 0; i < 7; i++) {
-        game.addAsteroid({
-          x: 600 / 7 * i,
-          y: 600 / 7 * i + 90,
-          vx: 0.5,
-          vy: 0.5,
-          size: 40
-        });
-        game.addAsteroid({
-          x: 600 / 7 * i,
-          y: 600 / 7 * i - 90,
-          vx: -0.5,
-          vy: -0.5,
-          size: 40
-        });
-      }
-    },
-    cars: function() {
-      for (let asteroid of game.asteroids) {
-        let x = asteroid.x,
-          y = asteroid.y;
-        if ((x - y - Math.abs(x - y - 30) == 30 && x - y - Math.abs(x - y - 480) != 480) || y - x - Math.abs(y - x - 480) == 480) isWrongSpeed(asteroid, -0.5, -0.5) && asteroid.set({
-          vx: -0.5,
-          vy: -0.5
-        });
-        else {
-          if (asteroid.size === 40) isWrongSpeed(asteroid, 0.5, 0.5) && asteroid.set({
-            vx: 0.5,
-            vy: 0.5
-          });
-          else isWrongSpeed(asteroid, 0.25, 0.25) && asteroid.set({
-            vx: 0.25,
-            vy: 0.25
-          });
-        }
-      }
-    },
-    restrict_tiers: [1, 3, 4, 5, 6]
+    restrictTiers: false
   },
   {
     name: "Paths",
@@ -1337,14 +1113,14 @@ const maps = [{
       x: 250,
       y: 0
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -180,
       y: 0
     }, {
       x: 180,
       y: 0
     }],
-    restrict_tiers: [1, 3, 4, 5, 6]
+    restrictTiers: [1, 3, 4, 5, 6]
   },
   {
     name: "Speedster's Rift",
@@ -1416,14 +1192,14 @@ const maps = [{
       x: 176,
       y: 220
     }],
-    ship_spawn: [{
+    shipSpawn: [{
       x: -220,
       y: -220
     }, {
       x: 210,
       y: 245
     }],
-    restrict_tiers: false
+    restrictTiers: false
   },
 ];
 const objects = {
@@ -1642,20 +1418,18 @@ const genRound = function () {
     colors: colors[rand(colors.length)]
   }).init();
   game.setCustomMap(currRound.map.map);
-  for (var asteroid of game.asteroids) {
-    asteroid.set({
-      size: 10,
-      kill: true
+};
+const waitPlayers = function () {
+  game.ships.forEach((ship) => {
+    ship.set({
+      x: currRound.map.shipSpawn[0].x,
+      y: currRound.map.shipSpawn[0].y,
+      idle: true,
+      collider: false
     });
-  }
-  if (currRound.map.traffic) {
-    currRound.map.traffic();
-  }
+  });
 };
-const waitPlayers = function () {};
-const runRound = function () {
-  currRound.map.cars();
-};
+const runRound = function () {};
 const endRound = function () {};
 
 // End functions for this.tick ----------
@@ -1663,9 +1437,8 @@ const endRound = function () {};
 this.tick = function () {
   switch (true) {
     case game.step % 100 == 0:
-      genRound();
       if (currRound) {
-        runRound()
+        echo(currRound.status)
         switch (currRound.status) {
           case 0:
             genRound();
