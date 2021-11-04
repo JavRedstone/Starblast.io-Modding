@@ -1574,12 +1574,12 @@ const idleRound = function () {
     ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
     ship.set({
       hue: ship.custom.hue,
-      // x: currRound.map.shipSpawn[ship.custom.teamNum].x,
-      // y: currRound.map.shipSpawn[ship.custom.teamNum].y,
-      // idle: true,
+      x: currRound.map.shipSpawn[ship.custom.teamNum].x,
+      y: currRound.map.shipSpawn[ship.custom.teamNum].y,
+      idle: true,
       collider: false
     });
-    uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`
+    uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
     if (!ship.custom.genChooseShips) {
       for (let i = 0; i < 3; i++) {
