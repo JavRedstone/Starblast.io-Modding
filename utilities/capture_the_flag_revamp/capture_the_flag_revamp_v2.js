@@ -1291,6 +1291,18 @@ const uis = {
       },
     ]
   },
+  chooseShipCountdown: {
+    id: "chooseShipCountdown",
+    position: [0, 75, 100, 10],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 100],
+        color: "#cde"
+      }
+    ]
+  },
   mapAuthor: {
     id: "mapAuthor",
     visible: true,
@@ -1497,6 +1509,10 @@ class Round {
         }]
       }
     };
+    this.idle = {
+      tick: null,
+      countdown: 900
+    };
   }
   init () {
     return this;
@@ -1589,21 +1605,31 @@ const genRound = function () {
   genFlagStands();
   game.ships.forEach((ship) => {
     ship.custom.genChooseShips = false;
+    ship.custom.hideChooseShips = false;
     ship.custom.chosenShip = null;
   });
 };
-const idleRound = function () {
+const prepShipRound = function () {
   game.ships.forEach((ship) => {
     ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
     ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
-    ship.set({
-      type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
-      x: currRound.map.shipSpawn[ship.custom.teamNum].x,
-      y: currRound.map.shipSpawn[ship.custom.teamNum].y,
-      hue: ship.custom.hue,
-      idle: true,
-      collider: false
-    });
+    if (!ship.custom.hideChooseShips) {
+      ship.set({
+        type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
+        team: ship.custom.teamNum,
+        hue: ship.custom.hue,
+        x: currRound.map.shipSpawn[ship.custom.teamNum].x,
+        y: currRound.map.shipSpawn[ship.custom.teamNum].y,
+        idle: true,
+        collider: false
+      });
+    }
+    else {
+      ship.set({
+        idle: false,
+        collider: true
+      });
+    }
     uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
     if (!ship.custom.genChooseShips) {
@@ -1615,8 +1641,45 @@ const idleRound = function () {
         ship.setUIComponent(uis.chooseShip);
       }
       ship.custom.genChooseShips = true;
+      ship.custom.chooseShipTick = game.step;
+      ship.custom.chooseShipCountdown = currRound.idle.countdown / 60;
+    }
+    else {
+      if (game.step - ship.custom.chooseShipTick >= 60) {
+        if (ship.custom.chooseShipCountdown > 0) {
+          ship.custom.chooseShipCountdown--;
+          ship.custom.chooseShipTick = game.step;
+          uis.chooseShipCountdown.components[0].value = ship.custom.chooseShipCountdown;
+          ship.setUIComponent(uis.chooseShipCountdown);
+        }
+        else {
+          currRound.teams.startShip.startShips.forEach((startShip) => {
+            hideUI(`chooseShip-${startShip}`, ship);
+          });
+          hideUI("chooseShipCountdown", ship);
+          ship.custom.chooseShipCountdown = null;
+          ship.custom.chooseShipTick = null;
+          if (!ship.custom.chosenShip) {
+            ship.custom.chosenShip = currRound.teams.startShip.startShips[rand(currRound.teams.startShip.startShips.length)];
+            ship.set({
+              type: ship.custom.chosenShip
+            });
+          }
+          ship.custom.hideChooseShips = true;
+        }
+      }
     }
   });
+};
+const idleRound = function () {
+  if (!currRound.idle.tick) {
+    currRound.idle.tick = game.step;
+  }
+  else {
+    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
+      currRound.status++;
+    }
+  }
 };
 const runRound = function () {};
 const endRound = function () {};
@@ -1629,15 +1692,14 @@ this.tick = function () {
       if (currRound) {
         switch (currRound.status) {
           case 0:
-            currRound.status = 1;
+            idleRound();
+            prepShipRound();
             break;
           case 1:
-            idleRound();
+            runRound();
+            prepShipRound();
             break;
           case 2:
-            runRound();
-            break;
-          case 3:
             endRound();
             currRound = null;
             break;
@@ -1657,7 +1719,10 @@ const prepPlayer = function (ship) {
     notFirstTime: true,
     
     genChooseShips: false,
+    hideChooseShips: false,
     chosenShip: null,
+    chooseShipTick: null,
+    chooseShipCountdown: null,
     
     teamNum: currRound ? rand(2) : null,
     team: null,
@@ -1685,11 +1750,7 @@ this.event = function (event) {
       if (event.id.substring(0, 10) == "chooseShip") {
         event.ship.custom.chosenShip = parseInt(event.id.substring(11));
         event.ship.set({
-          type: event.ship.custom.chosenShip,
-          invulnerable: 240
-        });
-        currRound.teams.startShip.startShips.forEach((startShip) => {
-          hideUI(`chooseShip-${startShip}`, event.ship);
+          type: event.ship.custom.chosenShip
         });
       }
       break;
