@@ -12,6 +12,9 @@ const rand = function (n) {
 const getColor = function (color, alpha = 1) {
   return `hsla(${color}, 100%, 50%, ${alpha})`;
 };
+const distance = function (x, y) {
+  return Math.sqrt(x * x + y * y);
+};
 const hideUI = function (id, ship) {
   ship.setUIComponent({
     id: id,
@@ -1426,8 +1429,8 @@ const genShips = function () {
   
   for (let i = 0; i < ships.length; i++) {
     var jship = JSON.parse(ships[i]);
-    jship.typespec.specs.ship.speed[0] /= 1.15;
-    jship.typespec.specs.ship.speed[1] /= 1.15;
+    jship.typespec.specs.ship.speed[0] *= 3; // /= 1.15
+    jship.typespec.specs.ship.speed[1] *= 3;
     ships[i] = JSON.stringify(jship);
   }
   
@@ -1489,6 +1492,10 @@ class Round {
   }) {
     this.status = 0;
     this.map = MAP;
+    this.objects = {
+      flags: [null, null],
+      flagStands: [null, null]
+    };
     let STARTSHIP = parseInt(`${STARTSHIPI + 1}00`) + STARTSHIPJ + 1;
     this.teams = {
       colors: COLORS,
@@ -1511,7 +1518,7 @@ class Round {
     };
     this.idle = {
       tick: null,
-      countdown: 900
+      countdown: 600
     };
   }
   init () {
@@ -1523,9 +1530,9 @@ class Round {
 
 // Start helper functions for in-game logic ----------
 
-const genFlags = function () {
+const genFlags = function (hide = [false, false]) {
   for (let i = 0; i < 2; i++) {
-    game.setObject({
+    currRound.objects.flags[i] = {
       id: `flag-${i}`,
       position: {
         x: currRound.teams.flags.positions[i].x,
@@ -1537,13 +1544,19 @@ const genFlags = function () {
         y: 0,
         z: 0
       },
-      scale: {
+      scale: hide[i] ? {
+        x: 0,
+        y: 0,
+        z: 0
+      } : {
         x: 1,
         y: 0.8,
         z: 1
       },
-      type: objects.flag
-    });
+      type: objects.flag,
+      hidden: hide[i]
+    };
+    game.setObject(currRound.objects.flags[i]);
   }
 };
 const genFlagStands = function () {
@@ -1556,7 +1569,7 @@ const genFlagStands = function () {
       emissiveColor: getColor(i == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2),
       transparent: objects.flagStand.transparent
     };
-    game.setObject({
+    currRound.objects.flagStands[i] = {
       id: `flagStand-${i}`,
       position: {
         x: currRound.map.flags[i].x,
@@ -1574,7 +1587,8 @@ const genFlagStands = function () {
         z: 30
       },
       type: flagStand
-    });
+    };
+    game.setObject(currRound.objects.flagStands[i]);
   }
 };
 
@@ -1607,6 +1621,8 @@ const genRound = function () {
     ship.custom.genChooseShips = false;
     ship.custom.hideChooseShips = false;
     ship.custom.chosenShip = null;
+    
+    ship.custom.flagged = false;
   });
 };
 const prepShipRound = function () {
@@ -1623,6 +1639,7 @@ const prepShipRound = function () {
           y: currRound.map.shipSpawn[ship.custom.teamNum].y,
           vx: 0,
           vy: 0,
+          shield: 1000,
           idle: true,
           collider: false
         });
@@ -1686,7 +1703,37 @@ const idleRound = function () {
     }
   }
 };
-const runRound = function () {};
+const runRound = function () {
+  game.ships.forEach((ship) => {
+    let flag1 = currRound.objects.flags[ship.custom.teamNum];
+    let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
+    if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden) {
+      ship.set({
+        hue: currRound.teams.colors.flagged[ship.custom.teamNum],
+        type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length
+      });
+      let hide = [false, false];
+      hide[ship.custom.teamNum ? 0 : 1] = true;
+      if (flag1.hidden) {
+        hide[ship.custom.teamNum] = true;
+      }
+      genFlags(hide);
+      ship.custom.flagged = true;
+    }
+    else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && ship.custom.flagged) {
+      ship.set({
+        hue: ship.custom.hue,
+        type: ship.custom.chosenShip
+      });
+      let hide = [false, false];
+      if (flag1.hidden) {
+        hide[ship.custom.teamNum] = true;
+      }
+      genFlags(hide);
+      ship.custom.flagged = false;
+    }
+  });
+};
 const endRound = function () {};
 
 // End functions for this.tick ----------
@@ -1728,6 +1775,8 @@ const prepPlayer = function (ship) {
     chosenShip: null,
     chooseShipTick: null,
     chooseShipCountdown: null,
+    
+    flagged: false,
     
     teamNum: currRound ? rand(2) : null,
     team: null,
