@@ -1322,6 +1322,31 @@ const uis = {
       width: 3,
       stroke: "#cde"
     }]
+  },
+  scoreboard: {
+    id: "scoreboard",
+    visible: true,
+    clickable: false,
+    components:[
+      {
+        type: "box",
+        position: [0, 0, 50, 8],
+      },
+      {
+        type: "text",
+        position: [0, 0, 50, 8],
+        color: "#000",
+      },
+      {
+        type: "box",
+        position: [50, 0, 50, 8],
+      },
+      {
+        type: "text",
+        position: [50, 0, 50, 8],
+        color: "#000",
+      }
+    ]
   }
 };
 const chooseShips = [
@@ -1731,6 +1756,7 @@ const runRound = function () {
       }
       genFlags(hide);
       ship.custom.flagged = false;
+      currRound.teams.scores[ship.custom.teamNum]++;
     }
   });
 };
