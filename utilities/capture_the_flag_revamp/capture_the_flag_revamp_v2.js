@@ -1524,7 +1524,7 @@ class Round {
 // Start helper functions for in-game logic ----------
 
 const genFlags = function () {
-  for (let i = 0; i < currRound.map.flags.length; i++) {
+  for (let i = 0; i < 2; i++) {
     game.setObject({
       id: `flag-${i}`,
       position: {
@@ -1547,7 +1547,7 @@ const genFlags = function () {
   }
 };
 const genFlagStands = function () {
-  for (let i = 0; i < currRound.map.flags.length; i++) {
+  for (let i = 0; i < 2; i++) {
     let flagStand = {
       id: `${objects.flagStand.id}-${i}`,
       obj: objects.flagStand.obj,
@@ -1611,30 +1611,35 @@ const genRound = function () {
 };
 const prepShipRound = function () {
   game.ships.forEach((ship) => {
-    ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
-    ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
-    if (!ship.custom.hideChooseShips) {
-      ship.set({
-        type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
-        team: ship.custom.teamNum,
-        hue: ship.custom.hue,
-        x: currRound.map.shipSpawn[ship.custom.teamNum].x,
-        y: currRound.map.shipSpawn[ship.custom.teamNum].y,
-        idle: true,
-        collider: false
-      });
-    }
-    else {
-      ship.set({
-        idle: false,
-        collider: true
-      });
+    if (ship.custom.teamNum != null) {
+      ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
+      ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
+      if (!ship.custom.hideChooseShips) {
+        ship.set({
+          type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
+          team: ship.custom.teamNum,
+          hue: ship.custom.hue,
+          x: currRound.map.shipSpawn[ship.custom.teamNum].x,
+          y: currRound.map.shipSpawn[ship.custom.teamNum].y,
+          vx: 0,
+          vy: 0,
+          idle: true,
+          collider: false
+        });
+      }
+      else {
+        ship.set({
+          stats: 99999999,
+          idle: false,
+          collider: true
+        });
+      }
     }
     uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
     if (!ship.custom.genChooseShips) {
       for (let i = 0; i < 3; i++) {
-        uis.chooseShip.id = `chooseShip-${currRound.teams.startShip.startShips[i]}`;
+        uis.chooseShip.id = `chooseShip-${i}`;
         uis.chooseShip.position = [20 * (i + 1.1), 25, 16, 50];
         uis.chooseShip.components[1].value = chooseShips[currRound.teams.startShip.i][currRound.teams.startShip.j + i];
         uis.chooseShip.components[2].value = currRound.teams.startShip.startShips[i];
@@ -1653,9 +1658,9 @@ const prepShipRound = function () {
           ship.setUIComponent(uis.chooseShipCountdown);
         }
         else {
-          currRound.teams.startShip.startShips.forEach((startShip) => {
-            hideUI(`chooseShip-${startShip}`, ship);
-          });
+          for (let i = 0; i < 3; i++) {
+            hideUI(`chooseShip-${i}`, ship);
+          }
           hideUI("chooseShipCountdown", ship);
           ship.custom.chooseShipCountdown = null;
           ship.custom.chooseShipTick = null;
@@ -1747,8 +1752,8 @@ this.event = function (event) {
       }
       break;
     case "ui_component_clicked":
-      if (event.id.substring(0, 10) == "chooseShip") {
-        event.ship.custom.chosenShip = parseInt(event.id.substring(11));
+      if (event.id.startsWith("chooseShip")) {
+        event.ship.custom.chosenShip = currRound.teams.startShip.startShips[parseInt(event.id.charAt(event.id.length - 1))];
         event.ship.set({
           type: event.ship.custom.chosenShip
         });
