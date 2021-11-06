@@ -1755,9 +1755,7 @@ const runRound = function () {
       });
       let hide = [false, false];
       hide[ship.custom.teamNum ? 0 : 1] = true;
-      if (flag1.hidden) {
-        hide[ship.custom.teamNum] = true;
-      }
+      hide[ship.custom.teamNum] = flag1.hidden;
       genFlags(hide);
       ship.custom.flagged = true;
     }
@@ -1767,9 +1765,7 @@ const runRound = function () {
         type: ship.custom.chosenShip
       });
       let hide = [false, false];
-      if (flag1.hidden) {
-        hide[ship.custom.teamNum] = true;
-      }
+      hide[ship.custom.teamNum] = flag1.hidden;
       genFlags(hide);
       ship.custom.flagged = false;
       currRound.teams.scores[ship.custom.teamNum]++;
@@ -1806,47 +1802,57 @@ this.tick = function () {
   }
 };
 
-// Start functions for this.event ----------
-
-const prepPlayer = function (ship) {
-  ship.custom = {
-    notFirstTime: true,
-    
-    genChooseShips: false,
-    hideChooseShips: false,
-    chosenShip: null,
-    chooseShipTick: null,
-    chooseShipCountdown: null,
-    
-    flagged: false,
-    
-    teamNum: currRound ? rand(2) : null,
-    team: null,
-    hue: null,
-    
-    points: 0,
-  };
-};
-const rePrepPlayer = function (ship) {};
-const selectShip = function (ship) {};
-
-// End functions for this.event ----------
-
 this.event = function (event) {
+  let ship = event.ship;
   switch (event.name) {
     case "ship_spawned":
-      if (!event.ship.custom.notFirstTime) {
-        prepPlayer(event.ship)
+      if (!ship.custom.notFirstTime) {
+        ship.custom = {
+          notFirstTime: true,
+          
+          genChooseShips: false,
+          hideChooseShips: false,
+          chosenShip: null,
+          chooseShipTick: null,
+          chooseShipCountdown: null,
+          
+          flagged: false,
+          
+          teamNum: currRound ? rand(2) : null,
+          team: null,
+          hue: null,
+          
+          points: 0,
+        };
       }
       else {
-        rePrepPlayer(event.ship);
+        ship.set({
+          type: ship.custom.chosenShip,
+          hue: ship.custom.hue,
+          x: currRound.map.shipSpawn[ship.custom.teamNum].x,
+          y: currRound.map.shipSpawn[ship.custom.teamNum].y,
+          crystals: getCrystals(ship)
+        });
+      }
+      break;
+    case "ship_destroyed":
+      if (ship.custom.flagged) {
+        ship.custom.flagged = false;
+        currRound.teams.flags.positions[ship.custom.teamNum] = {
+          x: ship.x,
+          y: ship.y
+        };
+        echo("THINKING")
+        let hide = [false, false];
+        hide[ship.custom.teamNum ? 0 : 1] = currRound.objects.flags[ship.custom.teamNum ? 0 : 1].hidden;
+        genFlags(hide);
       }
       break;
     case "ui_component_clicked":
       if (event.id.startsWith("chooseShip")) {
-        event.ship.custom.chosenShip = currRound.teams.startShip.startShips[parseInt(event.id.charAt(event.id.length - 1))];
-        event.ship.set({
-          type: event.ship.custom.chosenShip
+        ship.custom.chosenShip = currRound.teams.startShip.startShips[parseInt(event.id.charAt(event.id.length - 1))];
+        ship.set({
+          type: ship.custom.chosenShip
         });
       }
       break;
