@@ -23,6 +23,20 @@ const hideUI = function (id, ship) {
     clickable: false
   });
 };
+const getCrystals = function (ship) {
+  let lvl = Math.trunc(ship.type / 100);
+  var crystals;
+  if (lvl == 1 && ship.type != 121) {
+    crystals = 220;
+  }
+  else if (lvl == 2) {
+    crystals = 420;
+  }
+  else {
+    crystals = (((lvl || 0) ** 2) * 20) / 2;
+  }
+  return crystals;
+};
 
 // End preliminary functions ----------
 
@@ -1323,29 +1337,24 @@ const uis = {
       stroke: "#cde"
     }]
   },
-  scoreboard: {
-    id: "scoreboard",
+  scores: {
+    id: "scores",
+    position: [33, 5, 42, 40],
     visible: true,
-    clickable: false,
-    components:[
-      {
-        type: "box",
-        position: [0, 0, 50, 8],
+    components: [{
+        type: "text",
+        position: [2, 5, 80 / 1.5, 33 / 1.5],
       },
       {
         type: "text",
-        position: [0, 0, 50, 8],
-        color: "#000",
-      },
-      {
-        type: "box",
-        position: [50, 0, 50, 8],
+        position: [0, 0, 80, 33],
+        value: "-",
+        color: "#CDE"
       },
       {
         type: "text",
-        position: [50, 0, 50, 8],
-        color: "#000",
-      }
+        position: [25, 5, 80 / 1.5, 33 / 1.5],
+      },
     ]
   }
 };
@@ -1454,8 +1463,8 @@ const genShips = function () {
   
   for (let i = 0; i < ships.length; i++) {
     var jship = JSON.parse(ships[i]);
-    jship.typespec.specs.ship.speed[0] *= 3; // /= 1.15
-    jship.typespec.specs.ship.speed[1] *= 3;
+    jship.typespec.specs.ship.speed[0] /= 1.15;
+    jship.typespec.specs.ship.speed[1] /= 1.15;
     ships[i] = JSON.stringify(jship);
   }
   
@@ -1665,6 +1674,8 @@ const prepShipRound = function () {
           vx: 0,
           vy: 0,
           shield: 1000,
+          crystals: getCrystals(ship),
+          stats: 99999999,
           idle: true,
           collider: false
         });
@@ -1716,6 +1727,11 @@ const prepShipRound = function () {
         }
       }
     }
+    uis.scores.components[0].value = currRound.teams.scores[0];
+    uis.scores.components[2].value = currRound.teams.scores[1];
+    uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
+    uis.scores.components[2].color = getColor(currRound.teams.colors.hue2);
+    ship.setUIComponent(uis.scores)
   });
 };
 const idleRound = function () {
