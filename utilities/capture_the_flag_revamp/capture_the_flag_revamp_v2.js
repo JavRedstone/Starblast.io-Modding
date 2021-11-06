@@ -1842,7 +1842,6 @@ this.event = function (event) {
           x: ship.x,
           y: ship.y
         };
-        echo("THINKING")
         let hide = [false, false];
         hide[ship.custom.teamNum ? 0 : 1] = currRound.objects.flags[ship.custom.teamNum ? 0 : 1].hidden;
         genFlags(hide);
