@@ -1322,26 +1322,28 @@ const uis = {
   },
   mapAuthor: {
     id: "mapAuthor",
-    visible: true,
-    clickable: false,
     position: [55, 88, 24, 20],
-    components: [{
-      type: "text",
-      position: [0, 0, 100, 50],
-      color: "#cde"
-    },
-    {
-      type: "box",
-      position: [0, 10, 100, 30],
-      width: 3,
-      stroke: "#cde"
-    }]
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 50],
+        color: "#cde"
+      },
+      {
+        type: "box",
+        position: [0, 10, 100, 30],
+        width: 3,
+        stroke: "#cde"
+      }
+    ]
   },
   scores: {
     id: "scores",
     position: [33, 5, 42, 40],
     visible: true,
-    components: [{
+    components: [
+      {
         type: "text",
         position: [2, 5, 80 / 1.5, 33 / 1.5],
       },
@@ -1355,6 +1357,29 @@ const uis = {
         type: "text",
         position: [25, 5, 80 / 1.5, 33 / 1.5],
       },
+    ]
+  },
+  respawnMsg: {
+    id: "respawnMsg",
+    position: [39, 70, 22, 18],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 50],
+        value: "Please stand by",
+        color: "#ced"
+      },
+      {
+        type: "text",
+        position: [0, 100 / 3, 100, 25],
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 60, 100, 25],
+        color: "#cde"
+      }
     ]
   }
 };
@@ -1715,8 +1740,8 @@ const prepShipRound = function () {
             hideUI(`chooseShip-${i}`, ship);
           }
           hideUI("chooseShipCountdown", ship);
-          ship.custom.chooseShipCountdown = null;
           ship.custom.chooseShipTick = null;
+          ship.custom.chooseShipCountdown = null;
           if (!ship.custom.chosenShip) {
             ship.custom.chosenShip = currRound.teams.startShip.startShips[rand(currRound.teams.startShip.startShips.length)];
             ship.set({
@@ -1731,7 +1756,28 @@ const prepShipRound = function () {
     uis.scores.components[2].value = currRound.teams.scores[1];
     uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
     uis.scores.components[2].color = getColor(currRound.teams.colors.hue2);
-    ship.setUIComponent(uis.scores)
+    ship.setUIComponent(uis.scores);
+    if (ship.custom.respawnTick && ship.custom.respawnCountdown) {
+      if (!ship.custom.genRespawnMsg) {
+        uis.respawnMsg.components[1].value = respawnMsgs[rand(respawnMsgs.length)];
+        ship.custom.genRespawnMsg = true;
+      }
+      else {
+        if (game.step - ship.custom.respawnTick >= 60) {
+          if (ship.custom.respawnCountdown > 0) {
+            ship.custom.respawnCountdown--;
+            ship.custom.respawnTick = game.step;
+            uis.respawnMsg.components[2].value = ship.custom.respawnCountdown;
+            ship.setUIComponent(uis.respawnMsg);
+          }
+          else {
+            hideUI("respawnMsg", ship);
+            ship.custom.respawnTick = null;
+            ship.custom.respawnCountdown = null;
+          }
+        }
+      }
+    }
   });
 };
 const idleRound = function () {
@@ -1748,27 +1794,29 @@ const runRound = function () {
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
     let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
-    if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden) {
+    if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden && ship.alive) {
       ship.set({
         hue: currRound.teams.colors.flagged[ship.custom.teamNum],
-        type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length
+        type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length,
+        stats: 99999999
       });
+      ship.custom.flagged = true;
       let hide = [false, false];
       hide[ship.custom.teamNum ? 0 : 1] = true;
       hide[ship.custom.teamNum] = flag1.hidden;
       genFlags(hide);
-      ship.custom.flagged = true;
     }
-    else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && ship.custom.flagged) {
+    else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && ship.custom.flagged && ship.alive) {
       ship.set({
         hue: ship.custom.hue,
-        type: ship.custom.chosenShip
+        type: ship.custom.chosenShip,
+        stats: 99999999
       });
+      ship.custom.flagged = false;
       currRound.team.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
       let hide = [false, false];
       hide[ship.custom.teamNum] = flag1.hidden;
       genFlags(hide);
-      ship.custom.flagged = false;
       currRound.teams.scores[ship.custom.teamNum]++;
     }
   });
@@ -1817,13 +1865,15 @@ this.event = function (event) {
           chooseShipTick: null,
           chooseShipCountdown: null,
           
-          flagged: false,
-          
           teamNum: currRound ? rand(2) : null,
           team: null,
           hue: null,
           
-          points: 0,
+          flagged: false,
+          
+          genRespawnMsg: false,
+          respawnTick: null,
+          respawnCountdown: null
         };
       }
       else {
@@ -1834,6 +1884,8 @@ this.event = function (event) {
           y: currRound.map.shipSpawn[ship.custom.teamNum].y,
           crystals: getCrystals(ship)
         });
+        ship.custom.respawnTick = game.step;
+        ship.custom.respawnCountdown = 1 + rand(5);
       }
       break;
     case "ship_destroyed":
