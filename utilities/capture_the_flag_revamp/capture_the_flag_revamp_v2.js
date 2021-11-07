@@ -33,7 +33,7 @@ const getCrystals = function (ship) {
     crystals = 420;
   }
   else {
-    crystals = (((lvl || 0) ** 2) * 20) / 2;
+    crystals = ((Math.pow((lvl || 0), 2)) * 20) / 2;
   }
   return crystals;
 };
@@ -1764,6 +1764,7 @@ const runRound = function () {
         hue: ship.custom.hue,
         type: ship.custom.chosenShip
       });
+      currRound.team.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
       let hide = [false, false];
       hide[ship.custom.teamNum] = flag1.hidden;
       genFlags(hide);
@@ -1838,12 +1839,12 @@ this.event = function (event) {
     case "ship_destroyed":
       if (ship.custom.flagged) {
         ship.custom.flagged = false;
-        currRound.teams.flags.positions[ship.custom.teamNum] = {
+        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = {
           x: ship.x,
           y: ship.y
         };
         let hide = [false, false];
-        hide[ship.custom.teamNum ? 0 : 1] = currRound.objects.flags[ship.custom.teamNum ? 0 : 1].hidden;
+        hide[ship.custom.teamNum] = currRound.objects.flags[ship.custom.teamNum].hidden;
         genFlags(hide);
       }
       break;
