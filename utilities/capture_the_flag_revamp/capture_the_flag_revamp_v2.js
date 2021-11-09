@@ -1757,9 +1757,15 @@ const prepShipRound = function () {
     uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
     uis.scores.components[2].color = getColor(currRound.teams.colors.hue2);
     ship.setUIComponent(uis.scores);
-    if (ship.custom.respawnTick && ship.custom.respawnCountdown) {
+    if (ship.custom.respawnTick && ship.custom.respawnCountdown != null) {
+      ship.set({
+        idle: true,
+        collider: false
+      });
       if (!ship.custom.genRespawnMsg) {
         uis.respawnMsg.components[1].value = respawnMsgs[rand(respawnMsgs.length)];
+        uis.respawnMsg.components[2].value = ship.custom.respawnCountdown;
+        ship.setUIComponent(uis.respawnMsg);
         ship.custom.genRespawnMsg = true;
       }
       else {
@@ -1772,6 +1778,7 @@ const prepShipRound = function () {
           }
           else {
             hideUI("respawnMsg", ship);
+            ship.custom.genRespawnMsg = false;
             ship.custom.respawnTick = null;
             ship.custom.respawnCountdown = null;
           }
@@ -1794,30 +1801,37 @@ const runRound = function () {
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
     let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
-    if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden && ship.alive) {
-      ship.set({
-        hue: currRound.teams.colors.flagged[ship.custom.teamNum],
-        type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length,
-        stats: 99999999
-      });
-      ship.custom.flagged = true;
-      let hide = [false, false];
-      hide[ship.custom.teamNum ? 0 : 1] = true;
-      hide[ship.custom.teamNum] = flag1.hidden;
-      genFlags(hide);
-    }
-    else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && ship.custom.flagged && ship.alive) {
-      ship.set({
-        hue: ship.custom.hue,
-        type: ship.custom.chosenShip,
-        stats: 99999999
-      });
-      ship.custom.flagged = false;
-      currRound.team.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
-      let hide = [false, false];
-      hide[ship.custom.teamNum] = flag1.hidden;
-      genFlags(hide);
-      currRound.teams.scores[ship.custom.teamNum]++;
+    if (ship.alive) {
+      if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden) {
+        ship.set({
+          hue: currRound.teams.colors.flagged[ship.custom.teamNum],
+          type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length,
+          stats: 99999999
+        });
+        ship.custom.flagged = true;
+        let hide = [false, false];
+        hide[ship.custom.teamNum ? 0 : 1] = true;
+        hide[ship.custom.teamNum] = flag1.hidden;
+        genFlags(hide);
+      }
+      else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= 5 && ship.custom.flagged) {
+        ship.set({
+          hue: ship.custom.hue,
+          type: ship.custom.chosenShip,
+          stats: 99999999
+        });
+        ship.custom.flagged = false;
+        currRound.team.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
+        let hide = [false, false];
+        hide[ship.custom.teamNum] = flag1.hidden;
+        genFlags(hide);
+        currRound.teams.scores[ship.custom.teamNum]++;
+      }
+      else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
+        let hide = [false, false];
+        hide[ship.custom.teamNum ? 0 : 1] = flag2.hidden;
+        genFlags(hide);
+      }
     }
   });
 };
@@ -1827,7 +1841,7 @@ const endRound = function () {};
 
 this.tick = function () {
   switch (true) {
-    case game.step % 30 == 0:
+    case game.step % 15 == 0:
       if (currRound) {
         switch (currRound.status) {
           case 0:
