@@ -1785,6 +1785,9 @@ const prepShipRound = function () {
         }
       }
     }
+    if (!ship.custom.flagged) {
+      currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
+    }
   });
 };
 const idleRound = function () {
@@ -1813,6 +1816,7 @@ const runRound = function () {
         hide[ship.custom.teamNum ? 0 : 1] = true;
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
+        currRound.teams.flags.holders.push(ship.id);
       }
       else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= 5 && ship.custom.flagged) {
         ship.set({
@@ -1821,13 +1825,13 @@ const runRound = function () {
           stats: 99999999
         });
         ship.custom.flagged = false;
-        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
         currRound.teams.scores[ship.custom.teamNum]++;
       }
       else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
+        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum ? 0 : 1] = flag2.hidden;
         genFlags(hide);
