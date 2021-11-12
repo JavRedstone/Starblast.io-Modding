@@ -1825,13 +1825,14 @@ const runRound = function () {
           stats: 99999999
         });
         ship.custom.flagged = false;
+        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
         currRound.teams.scores[ship.custom.teamNum]++;
       }
       else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
-        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
+        currRound.teams.flags.positions[ship.custom.teamNum] = currRound.map.flags[ship.custom.teamNum];
         let hide = [false, false];
         hide[ship.custom.teamNum ? 0 : 1] = flag2.hidden;
         genFlags(hide);
