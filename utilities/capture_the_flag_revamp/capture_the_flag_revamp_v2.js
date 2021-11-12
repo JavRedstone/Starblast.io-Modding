@@ -1821,7 +1821,7 @@ const runRound = function () {
           stats: 99999999
         });
         ship.custom.flagged = false;
-        currRound.team.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
+        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
