@@ -1345,6 +1345,10 @@ const uis = {
     components: [
       {
         type: "text",
+        position: [0, 0, 100, 25]
+      },
+      {
+        type: "text",
         position: [0, 0, 25, 100],
       },
       {
@@ -1785,10 +1789,22 @@ const prepShipRound = function () {
         }
       }
     }
-    uis.scores.components[0].value = currRound.teams.scores[0];
-    uis.scores.components[2].value = currRound.teams.scores[1];
-    uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
-    uis.scores.components[2].color = getColor(currRound.teams.colors.hue2);
+    if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
+      uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
+      uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
+    }
+    else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
+      uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
+      uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
+    }
+    else {
+      uis.scores.components[0].value = "TIE";
+      uis.scores.components[0].color = "#cde";
+    }
+    uis.scores.components[1].value = currRound.teams.scores[0];
+    uis.scores.components[3].value = currRound.teams.scores[1];
+    uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
+    uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
     ship.setUIComponent(uis.scores);
     uis.totalScores.components[1].value = totalScores[0];
     uis.totalScores.components[3].value = totalScores[1];
