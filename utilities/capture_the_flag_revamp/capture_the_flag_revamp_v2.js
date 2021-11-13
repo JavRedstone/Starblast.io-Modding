@@ -1340,23 +1340,52 @@ const uis = {
   },
   scores: {
     id: "scores",
-    position: [33, 5, 42, 40],
+    position: [40, 5, 20, 15],
     visible: true,
     components: [
       {
         type: "text",
-        position: [2, 5, 80 / 1.5, 33 / 1.5],
+        position: [0, 0, 25, 100],
       },
       {
         type: "text",
-        position: [0, 0, 80, 33],
+        position: [25, 0, 50, 100],
         value: "-",
-        color: "#CDE"
+        color: "#cde"
       },
       {
         type: "text",
-        position: [25, 5, 80 / 1.5, 33 / 1.5],
+        position: [75, 0, 25, 100],
+      }
+    ]
+  },
+  totalScores: {
+    id: "totalScores",
+    position: [42.5, 17.5, 15, 10],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 25],
+        value: "Total Scores",
+        color: "#cde"
       },
+      {
+        type: "text",
+        position: [0, 0, 25, 100],
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [25, 0, 50, 100],
+        value: "-",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [75, 0, 25, 100],
+        color: "#cde"
+      }
     ]
   },
   respawnMsg: {
@@ -1368,7 +1397,7 @@ const uis = {
         type: "text",
         position: [0, 0, 100, 50],
         value: "Please stand by",
-        color: "#ced"
+        color: "#cde"
       },
       {
         type: "text",
@@ -1542,6 +1571,7 @@ this.options = {
 
 // Start classes/variables for in-game logic ----------
 
+var totalScores = [0, 0];
 var currRound = null;
 class Round {
   constructor({
@@ -1713,6 +1743,9 @@ const prepShipRound = function () {
         });
       }
     }
+    if (!ship.custom.flagged) {
+      currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
+    }
     uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
     if (!ship.custom.genChooseShips) {
@@ -1757,6 +1790,9 @@ const prepShipRound = function () {
     uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
     uis.scores.components[2].color = getColor(currRound.teams.colors.hue2);
     ship.setUIComponent(uis.scores);
+    uis.totalScores.components[1].value = totalScores[0];
+    uis.totalScores.components[3].value = totalScores[1];
+    ship.setUIComponent(uis.totalScores);
     if (ship.custom.respawnTick && ship.custom.respawnCountdown != null) {
       ship.set({
         idle: true,
@@ -1784,9 +1820,6 @@ const prepShipRound = function () {
           }
         }
       }
-    }
-    if (!ship.custom.flagged) {
-      currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
     }
   });
 };
