@@ -1421,11 +1421,20 @@ const uis = {
     components: [
       {
         type: "box",
-        position: [0, 0, 50, 5],
+        position: [0, 0, 50, 10],
       },
       {
         type: "text",
-        position: [0, 0, 50, 5],
+        position: [0, 0, 50, 10],
+        color: "black"
+      },
+      {
+        type: "box",
+        position: [50, 0, 50, 10],
+      },
+      {
+        type: "text",
+        position: [50, 0, 50, 10],
         color: "black"
       }
     ]
@@ -1804,26 +1813,6 @@ const prepShipRound = function () {
         }
       }
     }
-    if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
-      uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
-      uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
-    }
-    else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
-      uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
-      uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
-    }
-    else {
-      uis.scores.components[0].value = "TIE";
-      uis.scores.components[0].color = "#cde";
-    }
-    uis.scores.components[1].value = currRound.teams.scores[0];
-    uis.scores.components[3].value = currRound.teams.scores[1];
-    uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
-    uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
-    ship.setUIComponent(uis.scores);
-    uis.totalScores.components[1].value = totalScores[0];
-    uis.totalScores.components[3].value = totalScores[1];
-    ship.setUIComponent(uis.totalScores);
     if (ship.custom.respawnTick && ship.custom.respawnCountdown != null) {
       ship.set({
         idle: true,
@@ -1852,6 +1841,31 @@ const prepShipRound = function () {
         }
       }
     }
+    if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
+      uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
+      uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
+    }
+    else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
+      uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
+      uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
+    }
+    else {
+      uis.scores.components[0].value = "TIE";
+      uis.scores.components[0].color = "#cde";
+    }
+    uis.scores.components[1].value = currRound.teams.scores[0];
+    uis.scores.components[3].value = currRound.teams.scores[1];
+    uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
+    uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
+    ship.setUIComponent(uis.scores);
+    uis.totalScores.components[1].value = totalScores[0];
+    uis.totalScores.components[3].value = totalScores[1];
+    ship.setUIComponent(uis.totalScores);
+    uis.scoreboard.components[1].value = currRound.teams.colors.team.toUpperCase();
+    uis.scoreboard.components[3].value = currRound.teams.colors.team2.toUpperCase();
+    uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hue);
+    uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hue2);
+    ship.setUIComponent(uis.scoreboard);
   });
 };
 const idleRound = function () {
