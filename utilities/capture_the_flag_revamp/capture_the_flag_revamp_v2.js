@@ -37,6 +37,18 @@ const getCrystals = function (ship) {
   }
   return crystals;
 };
+function sortPlayers(players) {
+  let n = players.length;
+  for (let i = 1; i < n; i++) {
+    let curr = players[i];
+    let j = i - 1; 
+    while ((j > -1) && (curr.score < players[j].score)) {
+      players[j + 1] = players[j];
+      j--;
+    }
+  }
+  return players;
+}
 
 // End preliminary functions ----------
 
@@ -1421,20 +1433,20 @@ const uis = {
     components: [
       {
         type: "box",
-        position: [0, 0, 50, 10],
+        position: [0, 0, 100, 10],
       },
       {
         type: "text",
-        position: [0, 0, 50, 10],
+        position: [0, 0, 100, 10],
         color: "black"
       },
       {
         type: "box",
-        position: [50, 0, 50, 10],
+        position: [0, 50, 100, 10],
       },
       {
         type: "text",
-        position: [50, 0, 50, 10],
+        position: [0, 50, 100, 10],
         color: "black"
       }
     ]
@@ -1740,6 +1752,7 @@ const genRound = function () {
     ship.custom.chosenShip = null;
     
     ship.custom.flagged = false;
+    ship.custom.points = 0;
   });
 };
 const prepShipRound = function () {
@@ -1861,10 +1874,68 @@ const prepShipRound = function () {
     uis.totalScores.components[1].value = totalScores[0];
     uis.totalScores.components[3].value = totalScores[1];
     ship.setUIComponent(uis.totalScores);
+    ship.set({
+      score: ship.custom.points
+    });
     uis.scoreboard.components[1].value = currRound.teams.colors.team.toUpperCase();
     uis.scoreboard.components[3].value = currRound.teams.colors.team2.toUpperCase();
     uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hue);
     uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hue2);
+    uis.scoreboard.components.splice(4, uis.scoreboard.components.length - 5)
+    let players1 = [];
+    let players2 = [];
+    game.ships.forEach((_ship) => {
+      if (_ship.custom.teamNum == 0) {
+        players1.push(_ship);
+      }
+      else {
+        players2.push(_ship);
+      }
+    });
+    players1 = sortPlayers(players1);
+    players2 = sortPlayers(players2);
+    for (let i = 0; i < 4; i++) {
+      if (players1[i]) {
+        uis.scoreboard.components.push({
+          type: "player",
+          position: [0, (i + 1) * 10, 100, 10],
+          id: players1[i].id,
+          color: "#cde",
+          align: "left"
+        },
+        {
+          type: "text",
+          position: [0, (i + 1) * 10, 100, 10],
+          value: players1[i].score,
+          color: "#cde",
+          align: "right"
+        });
+      }
+      else {
+        break;
+      }
+    }
+    for (let i = 0; i < 4; i++) {
+      if (players2[i]) {
+        uis.scoreboard.components.push({
+          type: "player",
+          position: [0, 50 + (i + 1) * 10, 100, 10],
+          id: players2[i].id,
+          color: "#cde",
+          align: "left"
+        },
+        {
+          type: "text",
+          position: [0, 50 + (i + 1) * 10, 100, 10],
+          value: players2[i].score,
+          color: "#cde",
+          align: "right"
+        });
+      }
+      else {
+        break;
+      }
+    }
     ship.setUIComponent(uis.scoreboard);
   });
 };
@@ -1903,6 +1974,7 @@ const runRound = function () {
           stats: 99999999
         });
         ship.custom.flagged = false;
+        ship.custom.points++;
         currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
@@ -1967,6 +2039,7 @@ this.event = function (event) {
           hue: null,
           
           flagged: false,
+          points: 0,
           
           genRespawnMsg: false,
           respawnTick: null,
