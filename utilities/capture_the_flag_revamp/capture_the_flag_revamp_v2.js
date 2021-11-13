@@ -1338,6 +1338,29 @@ const uis = {
       }
     ]
   },
+  respawnMsg: {
+    id: "respawnMsg",
+    position: [39, 70, 22, 18],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 50],
+        value: "Please stand by",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 100 / 3, 100, 25],
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 60, 100, 25],
+        color: "#cde"
+      }
+    ]
+  },
   scores: {
     id: "scores",
     position: [40, 5, 20, 15],
@@ -1392,26 +1415,18 @@ const uis = {
       }
     ]
   },
-  respawnMsg: {
-    id: "respawnMsg",
-    position: [39, 70, 22, 18],
+  scoreboard: {
+    id: "scoreboard",
     visible: true,
     components: [
       {
-        type: "text",
-        position: [0, 0, 100, 50],
-        value: "Please stand by",
-        color: "#cde"
+        type: "box",
+        position: [0, 0, 50, 5],
       },
       {
         type: "text",
-        position: [0, 100 / 3, 100, 25],
-        color: "#cde"
-      },
-      {
-        type: "text",
-        position: [0, 60, 100, 25],
-        color: "#cde"
+        position: [0, 0, 50, 5],
+        color: "black"
       }
     ]
   }
