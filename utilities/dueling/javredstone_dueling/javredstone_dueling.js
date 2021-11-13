@@ -116,20 +116,12 @@ function generate_ui(ship) {
   }
 }
 
-function find_user (ship_id) {
-  for (var ship of game.ships) {
-    if (ship.id == ship_id) {
-      return ship;
-    }
-  }
-}
-
 game.custom.kick = function (ship_id) {
-  find_user (ship_id).gameover ({ "": "" });
+  game.findShip(ship_id).gameover ({ "": "" });
 };
 
 game.custom.remove_weapons = function (ship_id) {
-  find_user (ship_id).emptyWeapons ();
+  game.findShip(ship_id).emptyWeapons ();
 };
 
 game.custom.admins = [];
@@ -140,7 +132,7 @@ game.custom.give_admin = function (ship_id) {
   if (!game.custom.admins.includes (ship_id)) {
     game.custom.admins.push (ship_id);
   }
-  var admin_valid = find_user (ship_id);
+  var admin_valid = game.findShip(ship_id);
   admin_valid.setUIComponent ({
     id: admin[0],
     position: [52, 1, 4, 6.4],
@@ -161,7 +153,7 @@ game.custom.remove_admin = function (ship_id) {
   if (!game.custom.invalids.includes (ship_id)) {
     game.custom.invalids.push (ship_id);
   }
-  var admin_invalid = find_user (ship_id);
+  var admin_invalid = game.findShip(ship_id);
   admin_invalid.setUIComponent ({
     id: admin[0],
     position: [0,0,0,0],
