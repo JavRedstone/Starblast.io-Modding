@@ -1728,6 +1728,7 @@ const genFlagStands = function () {
 
 const genRound = function () {
   let chosenMap =  maps[rand(maps.length)];
+  
   var startShipI;
   const genStartShip = function () {
     startShipI = chosenMap.restrictTiers ? rand(chosenMap.restrictTiers.length) : rand(chooseShips.length);
@@ -1736,6 +1737,7 @@ const genRound = function () {
     }
   }
   genStartShip();
+  
   currRound = new Round({
     map: chosenMap,
     colors: colors[rand(colors.length)],
@@ -1744,9 +1746,11 @@ const genRound = function () {
       j: rand(chooseShips[startShipI].length - 3)
     }
   }).init();
+  
   game.setCustomMap(currRound.map.map);
   genFlags();
   genFlagStands();
+  
   game.ships.forEach((ship) => {
     ship.custom.genChooseShips = false;
     ship.custom.hideChooseShips = false;
@@ -1785,11 +1789,14 @@ const prepShipRound = function () {
         });
       }
     }
+    
     if (!ship.custom.flagged) {
       currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
     }
+    
     uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
+    
     if (!ship.custom.genChooseShips) {
       for (let i = 0; i < 3; i++) {
         uis.chooseShip.id = `chooseShip-${i}`;
@@ -1827,6 +1834,7 @@ const prepShipRound = function () {
         }
       }
     }
+    
     if (ship.custom.respawnTick && ship.custom.respawnCountdown != null) {
       ship.set({
         idle: true,
@@ -1855,6 +1863,7 @@ const prepShipRound = function () {
         }
       }
     }
+    
     if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
       uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
       uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
@@ -1872,9 +1881,11 @@ const prepShipRound = function () {
     uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
     uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
     ship.setUIComponent(uis.scores);
+    
     uis.totalScores.components[1].value = totalScores[0];
     uis.totalScores.components[3].value = totalScores[1];
     ship.setUIComponent(uis.totalScores);
+    
     ship.set({
       score: ship.custom.points
     });
