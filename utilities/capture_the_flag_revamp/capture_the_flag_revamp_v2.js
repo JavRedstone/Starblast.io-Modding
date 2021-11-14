@@ -1760,6 +1760,87 @@ const genRound = function () {
     ship.custom.points = 0;
   });
 };
+const prepUIs = function () {
+  if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
+    uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
+    uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
+  }
+  else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
+    uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
+    uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
+  }
+  else {
+    uis.scores.components[0].value = "TIE";
+    uis.scores.components[0].color = "#cde";
+  }
+  uis.scores.components[1].value = currRound.teams.scores[0];
+  uis.scores.components[3].value = currRound.teams.scores[1];
+  uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
+  uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
+  
+  uis.totalScores.components[1].value = totalScores[0];
+  uis.totalScores.components[3].value = totalScores[1];
+  
+  uis.scoreboard.components[1].value = currRound.teams.colors.team.toUpperCase();
+  uis.scoreboard.components[3].value = currRound.teams.colors.team2.toUpperCase();
+  uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hue);
+  uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hue2);
+  uis.scoreboard.components.splice(4, uis.scoreboard.components.length - 5);
+  let players1 = [];
+  let players2 = [];
+  game.ships.forEach((_ship) => {
+    if (_ship.custom.teamNum == 0) {
+      players1.push(_ship);
+    }
+    else {
+      players2.push(_ship);
+    }
+  });
+  players1 = sortPlayers(players1);
+  players2 = sortPlayers(players2);
+  for (let i = 0; i < 5; i++) {
+    if (players1[i]) {
+      uis.scoreboard.components.push({
+        type: "player",
+        position: [0, (i + 1) * 10, 100, 100 / 12],
+        id: players1[i].id,
+        color: "#cde",
+        align: "left"
+      },
+      {
+        type: "text",
+        position: [0, (i + 1) * 10, 100, 100 / 12],
+        value: players1[i].score,
+        color: "#cde",
+        align: "right"
+      });
+    }
+    else {
+      break;
+    }
+  }
+  for (let i = 0; i < 5; i++) {
+    if (players2[i]) {
+      uis.scoreboard.components.push({
+        type: "player",
+        position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
+        id: players2[i].id,
+        color: "#cde",
+        align: "left"
+      },
+      {
+        type: "text",
+        position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
+        value: players2[i].score,
+        color: "#cde",
+        align: "right"
+      });
+    }
+    else {
+      break;
+    }
+  }
+}
 const prepShipRound = function () {
   game.ships.forEach((ship) => {
     if (ship.custom.teamNum != null) {
@@ -1864,91 +1945,13 @@ const prepShipRound = function () {
       }
     }
     
-    if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
-      uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
-      uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
-    }
-    else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
-      uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
-      uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
-    }
-    else {
-      uis.scores.components[0].value = "TIE";
-      uis.scores.components[0].color = "#cde";
-    }
-    uis.scores.components[1].value = currRound.teams.scores[0];
-    uis.scores.components[3].value = currRound.teams.scores[1];
-    uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
-    uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
     ship.setUIComponent(uis.scores);
-    
-    uis.totalScores.components[1].value = totalScores[0];
-    uis.totalScores.components[3].value = totalScores[1];
     ship.setUIComponent(uis.totalScores);
+    ship.setUIComponent(uis.scoreboard);
     
     ship.set({
       score: ship.custom.points
     });
-    uis.scoreboard.components[1].value = currRound.teams.colors.team.toUpperCase();
-    uis.scoreboard.components[3].value = currRound.teams.colors.team2.toUpperCase();
-    uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hue);
-    uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hue2);
-    uis.scoreboard.components.splice(4, uis.scoreboard.components.length - 5)
-    let players1 = [];
-    let players2 = [];
-    game.ships.forEach((_ship) => {
-      if (_ship.custom.teamNum == 0) {
-        players1.push(_ship);
-      }
-      else {
-        players2.push(_ship);
-      }
-    });
-    players1 = sortPlayers(players1);
-    players2 = sortPlayers(players2);
-    for (let i = 0; i < 5; i++) {
-      if (players1[i]) {
-        uis.scoreboard.components.push({
-          type: "player",
-          position: [0, (i + 1) * 10, 100, 100 / 12],
-          id: players1[i].id,
-          color: "#cde",
-          align: "left"
-        },
-        {
-          type: "text",
-          position: [0, (i + 1) * 10, 100, 100 / 12],
-          value: players1[i].score,
-          color: "#cde",
-          align: "right"
-        });
-      }
-      else {
-        break;
-      }
-    }
-    for (let i = 0; i < 5; i++) {
-      if (players2[i]) {
-        uis.scoreboard.components.push({
-          type: "player",
-          position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
-          id: players2[i].id,
-          color: "#cde",
-          align: "left"
-        },
-        {
-          type: "text",
-          position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
-          value: players2[i].score,
-          color: "#cde",
-          align: "right"
-        });
-      }
-      else {
-        break;
-      }
-    }
-    ship.setUIComponent(uis.scoreboard);
   });
 };
 const idleRound = function () {
@@ -2008,15 +2011,17 @@ const endRound = function () {};
 
 this.tick = function () {
   switch (true) {
-    case game.step % 15 == 0:
+    case game.step % 20 == 0:
       if (currRound) {
         switch (currRound.status) {
           case 0:
             idleRound();
+            prepUIs();
             prepShipRound();
             break;
           case 1:
             runRound();
+            prepUIs();
             prepShipRound();
             break;
           case 2:
