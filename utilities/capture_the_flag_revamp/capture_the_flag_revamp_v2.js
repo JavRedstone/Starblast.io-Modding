@@ -41,11 +41,12 @@ function sortPlayers(players) {
   let n = players.length;
   for (let i = 1; i < n; i++) {
     let curr = players[i];
-    let j = i - 1; 
-    while ((j > -1) && (curr.score < players[j].score)) {
+    let j = i - 1;
+    while (j > -1 && players[j].custom.points < curr.custom.points) {
       players[j + 1] = players[j];
       j--;
     }
+    players[j + 1] = curr;
   }
   return players;
 }
@@ -1894,18 +1895,18 @@ const prepShipRound = function () {
     });
     players1 = sortPlayers(players1);
     players2 = sortPlayers(players2);
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       if (players1[i]) {
         uis.scoreboard.components.push({
           type: "player",
-          position: [0, (i + 1) * 10, 100, 10],
+          position: [0, (i + 1) * 10, 100, 100 / 12],
           id: players1[i].id,
           color: "#cde",
           align: "left"
         },
         {
           type: "text",
-          position: [0, (i + 1) * 10, 100, 10],
+          position: [0, (i + 1) * 10, 100, 100 / 12],
           value: players1[i].score,
           color: "#cde",
           align: "right"
@@ -1915,18 +1916,18 @@ const prepShipRound = function () {
         break;
       }
     }
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 5; i++) {
       if (players2[i]) {
         uis.scoreboard.components.push({
           type: "player",
-          position: [0, 50 + (i + 1) * 10, 100, 10],
+          position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
           id: players2[i].id,
           color: "#cde",
           align: "left"
         },
         {
           type: "text",
-          position: [0, 50 + (i + 1) * 10, 100, 10],
+          position: [0, 50 + (i + 1) * 10, 100, 100 / 12],
           value: players2[i].score,
           color: "#cde",
           align: "right"
