@@ -1,6 +1,9 @@
 // Start preliminary settings ----------
 
 const customShipsAllowed = true;
+const startPlayers = 2;
+const gameSkip = 20;
+const flagRange = 5;
 
 // End preliminary settings
 
@@ -1288,6 +1291,30 @@ const colors = [{
   }
 ];
 const uis = {
+  logo: {
+    id: "logo",
+    position: [20, 15, 60, 30],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 15],
+        value: "🏴CTF🏳️",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 15, 100, 15],
+        value: "Capture The Flag",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [20, 30, 60, 15],
+        value: "A collaboration between 45rfew and Bhpsngum",
+        color: "#cde"
+      }
+    ]
+  },
   chooseShip: {
     clickable: true,
     visible: true,
@@ -1451,6 +1478,18 @@ const uis = {
         color: "black"
       }
     ]
+  },
+  timer: {
+    id: "timer",
+    position: [3, 25, 15, 15],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 100],
+        color: "#cde"
+      }
+    ]
   }
 };
 const chooseShips = [
@@ -1612,7 +1651,10 @@ this.options = {
 
 // Start classes/variables for in-game logic ----------
 
+var started = false;
+
 var totalScores = [0, 0];
+
 var currRound = null;
 class Round {
   constructor({
@@ -1650,6 +1692,7 @@ class Round {
       tick: null,
       countdown: 600
     };
+    this.timer = 18000;
   }
   init () {
     return this;
@@ -1726,6 +1769,26 @@ const genFlagStands = function () {
 
 // Start functions for this.tick ----------
 
+const waitPlayers = function () {
+  if (game.ships.length < startPlayers) {
+    game.setUIComponent(uis.logo);
+    game.ships.forEach((ship) => {
+      ship.set({
+        x: 0,
+        y: 0,
+        vx: 0,
+        vy: 0,
+        type: 121,
+        idle: true,
+        collider: false
+      });
+    });
+  }
+  else {
+    hideUI("logo", game);
+    started = true;
+  }
+};
 const genRound = function () {
   let chosenMap =  maps[rand(maps.length)];
   
@@ -1759,6 +1822,16 @@ const genRound = function () {
     ship.custom.flagged = false;
     ship.custom.points = 0;
   });
+};
+const idleRound = function () {
+  if (!currRound.idle.tick) {
+    currRound.idle.tick = game.step;
+  }
+  else {
+    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
+      currRound.status++;
+    }
+  }
 };
 const prepUIs = function () {
   if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
@@ -1840,6 +1913,14 @@ const prepUIs = function () {
       break;
     }
   }
+  
+  let minutes = ~~(currRound.timer / 3600);
+  let seconds = ~~(currRound.timer / 60 % 60);
+  let secondsStr = `${seconds}`;
+  if (secondsStr.length == 1) {
+    secondsStr = `0${seconds}`;
+  }
+  uis.timer.components[0].value = `Time left: ${minutes}:${secondsStr}`;
 }
 const prepShipRound = function () {
   game.ships.forEach((ship) => {
@@ -1848,13 +1929,13 @@ const prepShipRound = function () {
       ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
       if (!ship.custom.hideChooseShips) {
         ship.set({
-          type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
-          team: ship.custom.teamNum,
-          hue: ship.custom.hue,
           x: currRound.map.shipSpawn[ship.custom.teamNum].x,
           y: currRound.map.shipSpawn[ship.custom.teamNum].y,
           vx: 0,
           vy: 0,
+          type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
+          team: ship.custom.teamNum,
+          hue: ship.custom.hue,
           shield: 1000,
           crystals: getCrystals(ship),
           stats: 99999999,
@@ -1952,24 +2033,17 @@ const prepShipRound = function () {
     ship.set({
       score: ship.custom.points
     });
+    
+    ship.setUIComponent(uis.timer);
   });
 };
-const idleRound = function () {
-  if (!currRound.idle.tick) {
-    currRound.idle.tick = game.step;
-  }
-  else {
-    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
-      currRound.status++;
-    }
-  }
-};
 const runRound = function () {
+  currRound.timer > 0 ? currRound.timer -= gameSkip : currRound.status++;
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
     let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
     if (ship.alive) {
-      if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= 5 && !ship.custom.flagged && !flag2.hidden) {
+      if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= flagRange && !ship.custom.flagged && !flag2.hidden) {
         ship.set({
           hue: currRound.teams.colors.flagged[ship.custom.teamNum],
           type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length,
@@ -1982,7 +2056,7 @@ const runRound = function () {
         genFlags(hide);
         currRound.teams.flags.holders.push(ship.id);
       }
-      else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= 5 && ship.custom.flagged) {
+      else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= flagRange && ship.custom.flagged) {
         ship.set({
           hue: ship.custom.hue,
           type: ship.custom.chosenShip,
@@ -1996,7 +2070,7 @@ const runRound = function () {
         genFlags(hide);
         currRound.teams.scores[ship.custom.teamNum]++;
       }
-      else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= 5 && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
+      else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= flagRange && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
         currRound.teams.flags.positions[ship.custom.teamNum] = currRound.map.flags[ship.custom.teamNum];
         let hide = [false, false];
         hide[ship.custom.teamNum ? 0 : 1] = flag2.hidden;
@@ -2011,27 +2085,32 @@ const endRound = function () {};
 
 this.tick = function () {
   switch (true) {
-    case game.step % 20 == 0:
-      if (currRound) {
-        switch (currRound.status) {
-          case 0:
-            idleRound();
-            prepUIs();
-            prepShipRound();
-            break;
-          case 1:
-            runRound();
-            prepUIs();
-            prepShipRound();
-            break;
-          case 2:
-            endRound();
-            currRound = null;
-            break;
+    case game.step % gameSkip == 0:
+      if (started) {
+        if (currRound) {
+          switch (currRound.status) {
+            case 0:
+              idleRound();
+              prepUIs();
+              prepShipRound();
+              break;
+            case 1:
+              runRound();
+              prepUIs();
+              prepShipRound();
+              break;
+            case 2:
+              endRound();
+              currRound = null;
+              break;
+          }
+        }
+        else {
+          genRound();
         }
       }
       else {
-        genRound();
+        waitPlayers();
       }
       break;
   }
