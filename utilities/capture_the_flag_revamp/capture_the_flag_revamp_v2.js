@@ -2089,17 +2089,17 @@ this.tick = function () {
       if (started) {
         if (currRound) {
           switch (currRound.status) {
-            case 0:
+            case 1:
               idleRound();
               prepUIs();
               prepShipRound();
               break;
-            case 1:
+            case 2:
               runRound();
               prepUIs();
               prepShipRound();
               break;
-            case 2:
+            case 3:
               endRound();
               currRound = null;
               break;
