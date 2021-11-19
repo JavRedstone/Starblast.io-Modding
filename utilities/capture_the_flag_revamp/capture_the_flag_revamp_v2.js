@@ -1711,7 +1711,7 @@ class Round {
       tick: null,
       countdown: 600
     };
-    this.timer = 600; // 18000
+    this.timer = 18000;
   }
   init () {
     return this;
