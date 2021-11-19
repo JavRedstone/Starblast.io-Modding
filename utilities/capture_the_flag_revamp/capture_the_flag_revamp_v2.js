@@ -1490,6 +1490,24 @@ const uis = {
         color: "#cde"
       }
     ]
+  },
+  endMsg: {
+    id: "endMsg",
+    position: [20, 30, 60, 30],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 15],
+        value: "The current round has finished!",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 15, 100, 15],
+        value: "A new round is starting...",
+        color: "#cde"
+      }
+    ]
   }
 };
 const chooseShips = [
@@ -1664,6 +1682,7 @@ class Round {
   }) {
     this.status = 0;
     this.map = MAP;
+    this.currTeam = 0;
     this.objects = {
       flags: [null, null],
       flagStands: [null, null]
@@ -1692,7 +1711,7 @@ class Round {
       tick: null,
       countdown: 600
     };
-    this.timer = 18000;
+    this.timer = 600; // 18000
   }
   init () {
     return this;
@@ -1779,10 +1798,15 @@ const waitPlayers = function () {
         vx: 0,
         vy: 0,
         type: 121,
+        crystals: getCrystals(ship),
+        stats: 99999999,
         idle: true,
         collider: false
       });
     });
+    if (!currRound) {
+      genRound();
+    }
   }
   else {
     hideUI("logo", game);
@@ -1830,6 +1854,7 @@ const idleRound = function () {
   else {
     if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
       currRound.status++;
+      currRound.idle.tick = null;
     }
   }
 };
@@ -2079,7 +2104,31 @@ const runRound = function () {
     }
   });
 };
-const endRound = function () {};
+const endRound = function () {
+  game.ships.forEach((ship) => {
+    ship.setUIComponent(uis.endMsg);
+    ship.set({
+      x: 0,
+      y: 0,
+      vx: 0,
+      vy: 0,
+      type: 121,
+      crystals: getCrystals(ship),
+      stats: 99999999,
+      idle: true,
+      collider: false
+    });
+  });
+  if (!currRound.idle.tick) {
+    currRound.idle.tick = game.step;
+  }
+  else {
+    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
+      currRound = null;
+      hideUI("endMsg", game);
+    }
+  }
+};
 
 // End functions for this.tick ----------
 
@@ -2089,19 +2138,18 @@ this.tick = function () {
       if (started) {
         if (currRound) {
           switch (currRound.status) {
-            case 1:
+            case 0:
               idleRound();
               prepUIs();
               prepShipRound();
               break;
-            case 2:
+            case 1:
               runRound();
               prepUIs();
               prepShipRound();
               break;
-            case 3:
+            case 2:
               endRound();
-              currRound = null;
               break;
           }
         }
@@ -2130,7 +2178,7 @@ this.event = function (event) {
           chooseShipTick: null,
           chooseShipCountdown: null,
           
-          teamNum: currRound ? rand(2) : null,
+          teamNum: currRound ? currRound.currTeam : null,
           team: null,
           hue: null,
           
@@ -2141,6 +2189,8 @@ this.event = function (event) {
           respawnTick: null,
           respawnCountdown: null
         };
+        
+        currRound.currTeam = !currRound.currTeam ? 1 : 0;
       }
       else {
         ship.set({
