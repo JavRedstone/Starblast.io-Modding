@@ -4,6 +4,8 @@ const customShipsAllowed = true;
 const startPlayers = 2;
 const gameSkip = 20;
 const flagRange = 5;
+const scoresReq = 5;
+const totalScoresReq = 3;
 
 // End preliminary settings
 
@@ -40,19 +42,6 @@ const getCrystals = function (ship) {
   }
   return crystals;
 };
-function sortPlayers(players) {
-  let n = players.length;
-  for (let i = 1; i < n; i++) {
-    let curr = players[i];
-    let j = i - 1;
-    while (j > -1 && players[j].custom.points < curr.custom.points) {
-      players[j + 1] = players[j];
-      j--;
-    }
-    players[j + 1] = curr;
-  }
-  return players;
-}
 
 // End preliminary functions ----------
 
@@ -1783,6 +1772,42 @@ const genFlagStands = function () {
     game.setObject(currRound.objects.flagStands[i]);
   }
 };
+function sortPlayers(players) {
+  let n = players.length;
+  for (let i = 1; i < n; i++) {
+    let curr = players[i];
+    let j = i - 1;
+    while (j > -1 && players[j].custom.points < curr.custom.points) {
+      players[j + 1] = players[j];
+      j--;
+    }
+    players[j + 1] = curr;
+  }
+  return players;
+}
+function getTeamStatus() {
+  var team, color, point;
+  if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
+    team = currRound.teams.colors.team.toUpperCase();
+    color = getColor(currRound.teams.colors.hue);
+    point = 0;
+  }
+  else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
+    team = currRound.teams.colors.team2.toUpperCase();
+    color = getColor(currRound.teams.colors.hue2);
+    point = 1;
+  }
+  else {
+    team = "TIE";
+    color = "#cde";
+    point = 2;
+  }
+  return {
+    team: team,
+    color: color,
+    point: point
+  }
+}
 
 // End helper functions for in-game logic ----------
 
@@ -1819,7 +1844,7 @@ const genRound = function () {
   var startShipI;
   const genStartShip = function () {
     startShipI = chosenMap.restrictTiers ? rand(chosenMap.restrictTiers.length) : rand(chooseShips.length);
-    if (customShipsAllowed && (startShipI == 0 || startShipI == 1)) {
+    if (!customShipsAllowed && (startShipI == 0 || startShipI == 1)) {
       return genStartShip();
     }
   }
@@ -1853,24 +1878,15 @@ const idleRound = function () {
   }
   else {
     if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
-      currRound.status++;
       currRound.idle.tick = null;
+      currRound.status++;
     }
   }
 };
 const prepUIs = function () {
-  if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
-    uis.scores.components[0].value = currRound.teams.colors.team.toUpperCase();
-    uis.scores.components[0].color = getColor(currRound.teams.colors.hue);
-  }
-  else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
-    uis.scores.components[0].value = currRound.teams.colors.team2.toUpperCase();
-    uis.scores.components[0].color = getColor(currRound.teams.colors.hue2);
-  }
-  else {
-    uis.scores.components[0].value = "TIE";
-    uis.scores.components[0].color = "#cde";
-  }
+  let teamStatus = getTeamStatus();
+  uis.scores.components[0].value = teamStatus.team;
+  uis.scores.components[0].color = teamStatus.color;
   uis.scores.components[1].value = currRound.teams.scores[0];
   uis.scores.components[3].value = currRound.teams.scores[1];
   uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
@@ -2063,6 +2079,9 @@ const prepShipRound = function () {
   });
 };
 const runRound = function () {
+  if (currRound.teams.scores.includes(scoresReq)) {
+    currRound.status++;
+  }
   currRound.timer > 0 ? currRound.timer -= gameSkip : currRound.status++;
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
@@ -2124,8 +2143,14 @@ const endRound = function () {
   }
   else {
     if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
-      currRound = null;
+      if (totalScores.includes(totalScoresReq)) {
+        
+      }
+      else {
+        totalScores[getTeamStatus().point]++;
+      }
       hideUI("endMsg", game);
+      currRound = null;
     }
   }
 };
