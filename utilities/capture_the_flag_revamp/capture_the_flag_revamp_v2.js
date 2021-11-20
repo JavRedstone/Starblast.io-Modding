@@ -4,8 +4,8 @@ const customShipsAllowed = true;
 const startPlayers = 2;
 const gameSkip = 20;
 const flagRange = 5;
-const scoresReq = 5;
-const totalScoresReq = 3;
+const scoresReq = 1;
+const totalScoresReq = 2;
 
 // End preliminary settings
 
@@ -1497,6 +1497,42 @@ const uis = {
         color: "#cde"
       }
     ]
+  },
+  suddenDeath: {
+    id: "suddenDeath",
+    position: [20, 30, 60, 30],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 15],
+        value: "💀 Sudden Death 💀",
+        color: "#fbb"
+      },
+      {
+        type: "text",
+        position: [0, 15, 100, 15],
+        value: "The tie breaker round is starting...",
+        color: "#fbb"
+      }
+    ]
+  },
+  gameOver: {
+    id: "gameOver",
+    position: [20, 30, 60, 30],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 15],
+        value: `${totalScoresReq} rounds reached!`,
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 15, 100, 15],
+        value: "Good job to everyone who played!",
+        color: "#cde"
+      }
+    ]
   }
 };
 const chooseShips = [
@@ -1701,6 +1737,7 @@ class Round {
       countdown: 600
     };
     this.timer = 18000;
+    this.scoreUpdated = false;
   }
   init () {
     return this;
@@ -1869,7 +1906,6 @@ const genRound = function () {
     ship.custom.chosenShip = null;
     
     ship.custom.flagged = false;
-    ship.custom.points = 0;
   });
 };
 const idleRound = function () {
@@ -2124,8 +2160,20 @@ const runRound = function () {
   });
 };
 const endRound = function () {
+  if (!currRound.scoreUpdated) {
+    totalScores[getTeamStatus().point]++;
+    currRound.scoreUpdated = true;
+  }
   game.ships.forEach((ship) => {
-    ship.setUIComponent(uis.endMsg);
+    if (totalScores.includes(totalScoresReq)) {
+      ship.setUIComponent(uis.gameOver);
+    }
+    else if (totalScores[0] == totalScores[1] && totalScores.includes(totalScoresReq - 1)) {
+      ship.setUIComponent(uis.suddenDeath);
+    }
+    else {
+      ship.setUIComponent(uis.endMsg);
+    }
     ship.set({
       x: 0,
       y: 0,
@@ -2143,12 +2191,18 @@ const endRound = function () {
   }
   else {
     if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
+      hideUI("suddenDeath", game);
+      hideUI("gameOver", game);
       hideUI("endMsg", game);
       if (totalScores.includes(totalScoresReq)) {
-        
+        game.ships.forEach((ship) => {
+          ship.gameover({
+            "Rounds Won": totalScores[ship.custom.teamNum],
+            "Flags Captured": ship.custom.points
+          });
+        });
       }
       else {
-        totalScores[getTeamStatus().point]++;
         currRound = null;
       }
     }
