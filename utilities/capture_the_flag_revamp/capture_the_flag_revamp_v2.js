@@ -2,7 +2,7 @@
 
 const customShipsAllowed = true;
 const startPlayers = 2;
-const gameSkip = 20;
+const gameSkip = 30;
 const flagRange = 5;
 const scoresReq = 1;
 const totalScoresReq = 2;
@@ -1480,6 +1480,28 @@ const uis = {
       }
     ]
   },
+  radar: {
+    id: "radar_background",
+    visible: true,
+    components: [
+      {
+        type: "round",
+        width: 2
+      },
+      {
+        type: "text",
+        value: "🏳️"
+      },
+      {
+        type: "round",
+        width: 2
+      },
+      {
+        type: "text",
+        value: "🏳️"
+      },
+    ]
+  },
   endMsg: {
     id: "endMsg",
     position: [20, 30, 60, 30],
@@ -1998,8 +2020,40 @@ const prepUIs = function () {
     secondsStr = `0${seconds}`;
   }
   uis.timer.components[0].value = `Time left: ${minutes}:${secondsStr}`;
+  
+  let scalePos = 10 / game.options.map_size;
+  let scaleSize = 25 / game.options.map_size;
+  let translate = 50;
+  let standSize = 8;
+  let flagSize = 5;
+  uis.radar.components[0].position = [
+    translate + currRound.map.flags[0].x * scalePos - standSize * scaleSize,
+    translate + currRound.map.flags[0].y * scalePos - standSize * scaleSize,
+    standSize,
+    standSize
+  ];
+  uis.radar.components[2].position = [
+    translate + currRound.map.flags[1].x * scalePos - standSize * scaleSize,
+    translate + currRound.map.flags[1].y * scalePos - standSize * scaleSize,
+    standSize,
+    standSize
+  ];
+  uis.radar.components[1].position = [
+    translate + currRound.teams.flags.positions[0].x * scalePos - flagSize * scaleSize,
+    translate + currRound.teams.flags.positions[0].y * scalePos - flagSize * scaleSize,
+    flagSize,
+    flagSize
+  ];
+  uis.radar.components[3].position = [
+    translate + currRound.teams.flags.positions[1].x * scalePos - flagSize * scaleSize,
+    translate + currRound.teams.flags.positions[1].y * scalePos - flagSize * scaleSize,
+    flagSize,
+    flagSize
+  ];
+  uis.radar.components[0].stroke = getColor(currRound.teams.colors.hue);
+  uis.radar.components[2].stroke = getColor(currRound.teams.colors.hue2);
 }
-const prepShipRound = function () {
+const updateShip = function () {
   game.ships.forEach((ship) => {
     if (ship.custom.teamNum != null) {
       ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
@@ -2112,6 +2166,8 @@ const prepShipRound = function () {
     });
     
     ship.setUIComponent(uis.timer);
+    
+    ship.setUIComponent(uis.radar);
   });
 };
 const runRound = function () {
@@ -2220,12 +2276,12 @@ this.tick = function () {
             case 0:
               idleRound();
               prepUIs();
-              prepShipRound();
+              updateShip();
               break;
             case 1:
               runRound();
               prepUIs();
-              prepShipRound();
+              updateShip();
               break;
             case 2:
               endRound();
