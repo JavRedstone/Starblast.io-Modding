@@ -2143,14 +2143,14 @@ const endRound = function () {
   }
   else {
     if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
+      hideUI("endMsg", game);
       if (totalScores.includes(totalScoresReq)) {
         
       }
       else {
         totalScores[getTeamStatus().point]++;
+        currRound = null;
       }
-      hideUI("endMsg", game);
-      currRound = null;
     }
   }
 };
