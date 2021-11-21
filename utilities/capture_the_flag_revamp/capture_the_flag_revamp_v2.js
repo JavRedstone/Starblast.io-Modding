@@ -1513,7 +1513,26 @@ const uis = {
       },
     ]
   },
-  
+  flagPointer: {
+    id: "flagPointer",
+    visible: true,
+    components: [
+      {
+        type: "text",
+        value: "🏳️"
+      },
+      {
+        type: "text",
+      },
+      {
+        type: "text",
+        value: "🏳️"
+      },
+      {
+        type: "text",
+      },
+    ]
+  },
   endMsg: {
     id: "endMsg",
     position: [20, 30, 60, 30],
