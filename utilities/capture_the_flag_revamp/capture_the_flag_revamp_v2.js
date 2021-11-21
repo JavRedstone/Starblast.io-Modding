@@ -1362,7 +1362,7 @@ const uis = {
     components: [
       {
         type: "text",
-        position: [0, 0, 100, 50],
+        position: [5, 0, 90, 50],
         color: "#cde"
       },
       {
@@ -1481,8 +1481,13 @@ const uis = {
     components: [
       {
         type: "text",
-        position: [0, 0, 100, 100],
+        position: [5, 0, 90, 100],
         color: "#cde"
+      },
+      {
+        type: "box",
+        position: [0, 30, 100, 40],
+        width: 2
       }
     ]
   },
@@ -1508,6 +1513,7 @@ const uis = {
       },
     ]
   },
+  
   endMsg: {
     id: "endMsg",
     position: [20, 30, 60, 30],
@@ -1533,7 +1539,7 @@ const uis = {
     components: [{
         type: "text",
         position: [0, 0, 100, 15],
-        value: "💀 Sudden Death 💀",
+        value: "💀Sudden Death💀",
         color: "#fbb"
       },
       {
@@ -1764,7 +1770,7 @@ class Round {
       tick: null,
       countdown: 600
     };
-    this.timer = 18000;
+    this.timer = 2400;//18000
     this.scoreUpdated = false;
   }
   init () {
@@ -1934,6 +1940,7 @@ const genRound = function () {
     ship.custom.chosenShip = null;
     
     ship.custom.flagged = false;
+    ship.custom.currPoints = 0;
   });
 };
 const idleRound = function () {
@@ -2026,6 +2033,14 @@ const prepUIs = function () {
     secondsStr = `0${seconds}`;
   }
   uis.timer.components[0].value = `Time left: ${minutes}:${secondsStr}`;
+  if (seconds < 10) {
+    uis.timer.components[0].color = "#fbb";
+    uis.timer.components[1].stroke = uis.timer.components[1].stroke == "#cde" ? "#fbb" : "#cde";
+  }
+  else {
+    uis.timer.components[0].color = "#cde";
+    uis.timer.components[1].stroke = "#cde";
+  }
   
   let scalePos = 10 / game.options.map_size;
   let scaleSize = 25 / game.options.map_size;
@@ -2168,7 +2183,7 @@ const updateShip = function () {
     ship.setUIComponent(uis.scoreboard);
     
     ship.set({
-      score: ship.custom.points
+      score: ship.custom.currPoints
     });
     
     ship.setUIComponent(uis.timer);
@@ -2205,7 +2220,8 @@ const runRound = function () {
           stats: 99999999
         });
         ship.custom.flagged = false;
-        ship.custom.points++;
+        ship.custom.currPoints++;
+        ship.custom.totalPoints++;
         currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
@@ -2260,7 +2276,7 @@ const endRound = function () {
         game.ships.forEach((ship) => {
           ship.gameover({
             "Rounds Won": totalScores[ship.custom.teamNum],
-            "Flags Captured": ship.custom.points
+            "Flags Captured": ship.custom.totalPoints
           });
         });
       }
@@ -2324,7 +2340,8 @@ this.event = function (event) {
           hue: null,
           
           flagged: false,
-          points: 0,
+          currPoints: 0,
+          totalPoints: 0,
           
           genRespawnMsg: false,
           respawnTick: null,
