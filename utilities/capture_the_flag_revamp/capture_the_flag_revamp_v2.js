@@ -4,8 +4,8 @@ const customShipsAllowed = true;
 const startPlayers = 2;
 const gameSkip = 30;
 const flagRange = 5;
-const scoresReq = 1;
-const totalScoresReq = 2;
+const scoresReq = 5;
+const totalScoresReq = 3;
 
 // End preliminary settings
 
@@ -1301,6 +1301,12 @@ const uis = {
         position: [20, 30, 60, 15],
         value: "A collaboration between 45rfew and Bhpsngum",
         color: "#cde"
+      },
+      {
+        type: "text",
+        position: [35, 45, 35, 15],
+        value: "Reworked by JavRedstone",
+        color: "#cde"
       }
     ]
   },
@@ -2028,25 +2034,25 @@ const prepUIs = function () {
   let flagSize = 5;
   uis.radar.components[0].position = [
     translate + currRound.map.flags[0].x * scalePos - standSize * scaleSize,
-    translate + currRound.map.flags[0].y * scalePos - standSize * scaleSize,
+    translate - currRound.map.flags[0].y * scalePos - standSize * scaleSize,
     standSize,
     standSize
   ];
   uis.radar.components[2].position = [
     translate + currRound.map.flags[1].x * scalePos - standSize * scaleSize,
-    translate + currRound.map.flags[1].y * scalePos - standSize * scaleSize,
+    translate - currRound.map.flags[1].y * scalePos - standSize * scaleSize,
     standSize,
     standSize
   ];
   uis.radar.components[1].position = [
     translate + currRound.teams.flags.positions[0].x * scalePos - flagSize * scaleSize,
-    translate + currRound.teams.flags.positions[0].y * scalePos - flagSize * scaleSize,
+    translate - currRound.teams.flags.positions[0].y * scalePos - flagSize * scaleSize,
     flagSize,
     flagSize
   ];
   uis.radar.components[3].position = [
     translate + currRound.teams.flags.positions[1].x * scalePos - flagSize * scaleSize,
-    translate + currRound.teams.flags.positions[1].y * scalePos - flagSize * scaleSize,
+    translate - currRound.teams.flags.positions[1].y * scalePos - flagSize * scaleSize,
     flagSize,
     flagSize
   ];
