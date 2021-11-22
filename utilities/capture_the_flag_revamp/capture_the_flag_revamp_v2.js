@@ -2052,7 +2052,7 @@ const prepUIs = function () {
     secondsStr = `0${seconds}`;
   }
   uis.timer.components[0].value = `Time left: ${minutes}:${secondsStr}`;
-  if (seconds < 10) {
+  if (minutes == 0 && seconds < 10) {
     uis.timer.components[0].color = "#fbb";
     uis.timer.components[1].stroke = uis.timer.components[1].stroke == "#cde" ? "#fbb" : "#cde";
   }
@@ -2092,8 +2092,6 @@ const prepUIs = function () {
   ];
   uis.radar.components[0].stroke = getColor(currRound.teams.colors.hue);
   uis.radar.components[2].stroke = getColor(currRound.teams.colors.hue2);
-  
-  
 }
 const updateShip = function () {
   game.ships.forEach((ship) => {
@@ -2322,6 +2320,7 @@ this.tick = function () {
               updateShip();
               break;
             case 1:
+              runRound();
               prepUIs();
               updateShip();
               break;
