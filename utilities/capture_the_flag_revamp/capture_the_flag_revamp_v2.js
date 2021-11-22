@@ -1789,7 +1789,7 @@ class Round {
       tick: null,
       countdown: 600
     };
-    this.timer = 2400;//18000
+    this.timer = 18000;
     this.scoreUpdated = false;
   }
   init () {
