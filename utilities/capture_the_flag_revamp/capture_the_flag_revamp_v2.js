@@ -2,7 +2,7 @@
 
 const customShipsAllowed = true;
 const startPlayers = 2;
-const gameSkip = 30;
+const gameSkip = 20;
 const flagRange = 5;
 const scoresReq = 5;
 const totalScoresReq = 3;
@@ -2092,6 +2092,8 @@ const prepUIs = function () {
   ];
   uis.radar.components[0].stroke = getColor(currRound.teams.colors.hue);
   uis.radar.components[2].stroke = getColor(currRound.teams.colors.hue2);
+  
+  
 }
 const updateShip = function () {
   game.ships.forEach((ship) => {
@@ -2320,7 +2322,6 @@ this.tick = function () {
               updateShip();
               break;
             case 1:
-              runRound();
               prepUIs();
               updateShip();
               break;
