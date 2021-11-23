@@ -2208,6 +2208,26 @@ const updateShip = function () {
     ship.setUIComponent(uis.timer);
     
     ship.setUIComponent(uis.radar);
+    
+    let anglePoint = [
+      Math.atan2(ship.y - currRound.map.flags[0].y, ship.x - currRound.map.flags[0].x) + 180 / Math.PI * 90,
+      Math.atan2(ship.y - currRound.map.flags[1].y, ship.x - currRound.map.flags[1].x) + 180 / Math.PI * 90
+    ];
+    let sizePoint = 3;
+    let scalePoint = 40;
+    let posPoint = [
+      [50 + Math.cos(anglePoint[0]) * scalePoint, 50 + Math.sin(anglePoint[0]) * scalePoint, sizePoint, sizePoint],
+      [50 + Math.cos(anglePoint[1]) * scalePoint, 50 + Math.sin(anglePoint[1]) * scalePoint, sizePoint, sizePoint]
+    ];
+    uis.flagPointer.components[0].position = posPoint[0];
+    uis.flagPointer.components[1].position = [posPoint[0][0], posPoint[0][1] + sizePoint, sizePoint, sizePoint];
+    uis.flagPointer.components[2].position = posPoint[1];
+    uis.flagPointer.components[3].position = [posPoint[1][0], posPoint[1][1] + sizePoint, sizePoint, sizePoint];
+    uis.flagPointer.components[1].value = currRound.teams.colors.team;
+    uis.flagPointer.components[3].value = currRound.teams.colors.team2;
+    uis.flagPointer.components[1].color = getColor(currRound.teams.colors.hue);
+    uis.flagPointer.components[3].color = getColor(currRound.teams.colors.hue2);
+    ship.setUIComponent(uis.flagPointer);
   });
 };
 const runRound = function () {
