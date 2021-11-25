@@ -7,6 +7,9 @@ const flagRange = 5;
 const scoresReq = 5;
 const totalScoresReq = 3;
 
+const chooseShipCountdown = 600;
+const instructionsCountdown = 600;
+
 // End preliminary settings
 
 // Start preliminary functions ----------
@@ -1310,6 +1313,36 @@ const uis = {
       }
     ]
   },
+  instructions: {
+    id: "instructions",
+    position: [10, 15, 80, 30],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 15],
+        value: "📜Instructions📜️",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 15, 100, 15],
+        value: "Capture the other team's flag and transport it back to your own flag to score a point",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 30, 100, 15],
+        value: `First team to score ${scoresReq} points wins the round`,
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 45, 100, 15],
+        value: `The game ends when one team wins ${totalScoreReq} rounds`,
+        color: "#cde"
+      }
+    ]
+  },
   chooseShip: {
     clickable: true,
     visible: true,
@@ -1785,12 +1818,14 @@ class Round {
         }]
       }
     };
-    this.idle = {
-      tick: null,
-      countdown: 600
+    this.timers = {
+      idle: chooseShipCountdown,
+      run: 18000,
+      end: 300
     };
-    this.timer = 18000;
-    this.scoreUpdated = false;
+    this.vars = {
+      scoreUpd: false
+    };
   }
   init () {
     return this;
@@ -1954,7 +1989,7 @@ const genRound = function () {
   genFlagStands();
   
   game.ships.forEach((ship) => {
-    ship.custom.genChooseShips = false;
+    ship.custom.chooseShipCountdown = chooseShipCountdown;
     ship.custom.hideChooseShips = false;
     ship.custom.chosenShip = null;
     
@@ -1963,15 +1998,7 @@ const genRound = function () {
   });
 };
 const idleRound = function () {
-  if (!currRound.idle.tick) {
-    currRound.idle.tick = game.step;
-  }
-  else {
-    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
-      currRound.idle.tick = null;
-      currRound.status++;
-    }
-  }
+  currRound.timers.idle > 0 ? currRound.timers.idle -= gameSkip : currRound.status++;
 };
 const prepUIs = function () {
   let teamStatus = getTeamStatus();
@@ -2045,8 +2072,8 @@ const prepUIs = function () {
     }
   }
   
-  let minutes = ~~(currRound.timer / 3600);
-  let seconds = ~~(currRound.timer / 60 % 60);
+  let minutes = ~~(currRound.timers.run / 3600);
+  let seconds = ~~(currRound.timers.run / 60 % 60);
   let secondsStr = `${seconds}`;
   if (secondsStr.length == 1) {
     secondsStr = `0${seconds}`;
@@ -2120,6 +2147,14 @@ const updateShip = function () {
           idle: false,
           collider: true
         });
+        
+        if (ship.custom.instructionsCountdown > 0) {
+          ship.setUIComponent(uis.instructions);
+          ship.custom.instructionsCountdown -= gameSkip;
+        }
+        else {
+          hideUI(uis.instructions, ship);
+        }
       }
     }
     
@@ -2130,7 +2165,7 @@ const updateShip = function () {
     uis.mapAuthor.components[0].value = `Map: ${currRound.map.name} by ${currRound.map.author}`;
     ship.setUIComponent(uis.mapAuthor);
     
-    if (!ship.custom.genChooseShips) {
+    if (ship.custom.chooseShipCountdown > 0) {
       for (let i = 0; i < 3; i++) {
         uis.chooseShip.id = `chooseShip-${i}`;
         uis.chooseShip.position = [20 * (i + 1.1), 25, 16, 50];
@@ -2138,34 +2173,22 @@ const updateShip = function () {
         uis.chooseShip.components[2].value = currRound.teams.startShip.startShips[i];
         ship.setUIComponent(uis.chooseShip);
       }
-      ship.custom.genChooseShips = true;
-      ship.custom.chooseShipTick = game.step;
-      ship.custom.chooseShipCountdown = currRound.idle.countdown / 60;
+      ship.custom.chooseShipCountdown -= gameSkip;
+      uis.chooseShipCountdown.components[0].value = ~~(ship.custom.chooseShipCountdown / 60);
+      ship.setUIComponent(uis.chooseShipCountdown);
     }
     else {
-      if (game.step - ship.custom.chooseShipTick >= 60) {
-        if (ship.custom.chooseShipCountdown > 0) {
-          ship.custom.chooseShipCountdown--;
-          ship.custom.chooseShipTick = game.step;
-          uis.chooseShipCountdown.components[0].value = ship.custom.chooseShipCountdown;
-          ship.setUIComponent(uis.chooseShipCountdown);
-        }
-        else {
-          for (let i = 0; i < 3; i++) {
-            hideUI(`chooseShip-${i}`, ship);
-          }
-          hideUI("chooseShipCountdown", ship);
-          ship.custom.chooseShipTick = null;
-          ship.custom.chooseShipCountdown = null;
-          if (!ship.custom.chosenShip) {
-            ship.custom.chosenShip = currRound.teams.startShip.startShips[rand(currRound.teams.startShip.startShips.length)];
-            ship.set({
-              type: ship.custom.chosenShip
-            });
-          }
-          ship.custom.hideChooseShips = true;
-        }
+      for (let i = 0; i < 3; i++) {
+        hideUI(`chooseShip-${i}`, ship);
       }
+      hideUI("chooseShipCountdown", ship);
+      if (!ship.custom.chosenShip) {
+        ship.custom.chosenShip = currRound.teams.startShip.startShips[rand(currRound.teams.startShip.startShips.length)];
+        ship.set({
+          type: ship.custom.chosenShip
+        });
+      }
+      ship.custom.hideChooseShips = true;
     }
     
     if (ship.custom.respawnTick && ship.custom.respawnCountdown != null) {
@@ -2210,14 +2233,14 @@ const updateShip = function () {
     ship.setUIComponent(uis.radar);
     
     let anglePoint = [
-      Math.atan2(ship.y - currRound.map.flags[0].y, ship.x - currRound.map.flags[0].x) + 180 / Math.PI * 90,
-      Math.atan2(ship.y - currRound.map.flags[1].y, ship.x - currRound.map.flags[1].x) + 180 / Math.PI * 90
+      Math.atan2(ship.y - currRound.map.flags[0].y, ship.x - currRound.map.flags[0].x) - Math.PI / 2,
+      Math.atan2(ship.y - currRound.map.flags[1].y, ship.x - currRound.map.flags[1].x) - Math.PI / 2
     ];
     let sizePoint = 3;
     let scalePoint = 40;
     let posPoint = [
-      [50 + Math.cos(anglePoint[0]) * scalePoint, 50 + Math.sin(anglePoint[0]) * scalePoint, sizePoint, sizePoint],
-      [50 + Math.cos(anglePoint[1]) * scalePoint, 50 + Math.sin(anglePoint[1]) * scalePoint, sizePoint, sizePoint]
+      [50 + Math.sin(anglePoint[0]) * scalePoint, 50 + Math.cos(anglePoint[0]) * scalePoint, sizePoint, sizePoint],
+      [50 + Math.sin(anglePoint[1]) * scalePoint, 50 + Math.cos(anglePoint[1]) * scalePoint, sizePoint, sizePoint]
     ];
     uis.flagPointer.components[0].position = posPoint[0];
     uis.flagPointer.components[1].position = [posPoint[0][0], posPoint[0][1] + sizePoint, sizePoint, sizePoint];
@@ -2234,7 +2257,7 @@ const runRound = function () {
   if (currRound.teams.scores.includes(scoresReq)) {
     currRound.status++;
   }
-  currRound.timer > 0 ? currRound.timer -= gameSkip : currRound.status++;
+  currRound.timers.run > 0 ? currRound.timers.run -= gameSkip : currRound.status++;
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
     let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
@@ -2277,9 +2300,9 @@ const runRound = function () {
   });
 };
 const endRound = function () {
-  if (!currRound.scoreUpdated) {
+  if (!currRound.vars.scoreUpd) {
     totalScores[getTeamStatus().point]++;
-    currRound.scoreUpdated = true;
+    currRound.vars.scoreUpd = true;
   }
   game.ships.forEach((ship) => {
     if (totalScores.includes(totalScoresReq)) {
@@ -2303,25 +2326,23 @@ const endRound = function () {
       collider: false
     });
   });
-  if (!currRound.idle.tick) {
-    currRound.idle.tick = game.step;
+  if (currRound.timers.end > 0) {
+    currRound.timers.end -= gameSkip;
   }
   else {
-    if (game.step - currRound.idle.tick >= currRound.idle.countdown) {
-      hideUI("suddenDeath", game);
-      hideUI("gameOver", game);
-      hideUI("endMsg", game);
-      if (totalScores.includes(totalScoresReq)) {
-        game.ships.forEach((ship) => {
-          ship.gameover({
-            "Rounds Won": totalScores[ship.custom.teamNum],
-            "Flags Captured": ship.custom.totalPoints
-          });
+    hideUI("suddenDeath", game);
+    hideUI("gameOver", game);
+    hideUI("endMsg", game);
+    if (totalScores.includes(totalScoresReq)) {
+      game.ships.forEach((ship) => {
+        ship.gameover({
+          "Rounds Won": totalScores[ship.custom.teamNum],
+          "Flags Captured": ship.custom.totalPoints
         });
-      }
-      else {
-        currRound = null;
-      }
+      });
+    }
+    else {
+      currRound = null;
     }
   }
 };
@@ -2368,11 +2389,11 @@ this.event = function (event) {
         ship.custom = {
           notFirstTime: true,
           
-          genChooseShips: false,
+          instructionsCountdown = null,
+          
           hideChooseShips: false,
           chosenShip: null,
-          chooseShipTick: null,
-          chooseShipCountdown: null,
+          chooseShipCountdown: chooseShipCountdown,
           
           teamNum: currRound ? currRound.currTeam : null,
           team: null,
@@ -2382,8 +2403,6 @@ this.event = function (event) {
           currPoints: 0,
           totalPoints: 0,
           
-          genRespawnMsg: false,
-          respawnTick: null,
           respawnCountdown: null
         };
         
