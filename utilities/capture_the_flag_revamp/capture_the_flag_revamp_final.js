@@ -1990,7 +1990,7 @@ const prepUIs = function () {
   });
   players1 = sortPlayers(players1);
   players2 = sortPlayers(players2);
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     if (players1[i]) {
       uis.scoreboard.components.push({
         type: "player",
@@ -2122,20 +2122,7 @@ const updateShip = function () {
       }
     }
     
-    if (ship.custom.flagged) {
-      if (ship.type != ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length) {
-        ship.set({
-          type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length
-        });
-      }
-    }
-    else {
-      if (ship.type != ship.custom.chosenShip) {
-        ship.set({
-          type: ship.custom.chosenShip
-        });
-      }
-      
+    if (!ship.custom.flagged) {
       currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
     }
     
@@ -2268,6 +2255,26 @@ const updateShip = function () {
     ship.setUIComponent(uis.flagPointer);
   });
 };
+const checkShip = function () {
+  game.ships.forEach((ship) => {
+    if (ship.custom.hideChooseShips) {
+      if (ship.custom.flagged) {
+        if (ship.type != ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length) {
+          ship.set({
+            type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length
+          });
+        }
+      }
+      else {
+        if (ship.type != ship.custom.chosenShip) {
+          ship.set({
+            type: ship.custom.chosenShip
+          });
+        }
+      }
+    }
+  });
+}
 const runRound = function () {
   if (currRound.teams.scores.includes(scoresReq)) {
     currRound.status++;
@@ -2432,6 +2439,7 @@ this.tick = function () {
           case 1:
             prepUIs();
             updateShip();
+            checkShip();
             break;
           case 2:
             endRound();
