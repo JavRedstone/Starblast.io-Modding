@@ -9,7 +9,8 @@ const totalScoresReq = 3;
 
 const chooseShipCountdown = 600;
 const instructionsCountdown = 600;
-const flagTimer = 10800;
+const flagCountdown = 10800;
+const notificationCountdown = 600;
 
 // End preliminary settings
 
@@ -2277,17 +2278,17 @@ const updateShip = function () {
     
     ship.setUIComponent(uis.timer);
     
-    if (ship.custom.flagTimer > 0) {
-      let mFlagTimer = ~~(ship.custom.flagTimer / 3600);
-      let sFlagTimer = ~~(ship.custom.flagTimer / 60 % 60);
-      let sFlagTimerStr = `${sFlagTimer}`;
-      if (sFlagTimerStr.length == 1) {
-        sFlagTimerStr = `0${sFlagTimer}`;
+    if (ship.custom.flagCountdown > 0) {
+      let mflagCountdown = ~~(ship.custom.flagCountdown / 3600);
+      let sflagCountdown = ~~(ship.custom.flagCountdown / 60 % 60);
+      let sflagCountdownStr = `${sflagCountdown}`;
+      if (sflagCountdownStr.length == 1) {
+        sflagCountdownStr = `0${sflagCountdown}`;
       }
-      uis.flagTimer.components[2].value = `${mFlagTimer}:${sFlagTimerStr}`;
+      uis.flagTimer.components[2].value = `${mflagCountdown}:${sflagCountdownStr}`;
       ship.setUIComponent(uis.flagTimer);
       
-      ship.custom.flagTimer -= gameSkip;
+      ship.custom.flagCountdown -= gameSkip;
     }
     else {
       if (ship.custom.flagged) {
@@ -2309,6 +2310,13 @@ const updateShip = function () {
     }
     
     ship.setUIComponent(uis.radar);
+    
+    if (ship.custom.notificationCountdown > 0) {
+      ship.custom.notificationCountdown -= gameSkip;
+    }
+    else {
+      hideUI("notification", ship);
+    }
     
     let anglePoint = [
       Math.atan2(ship.y - currRound.map.flags[0].y, ship.x - currRound.map.flags[0].x) - Math.PI / 2,
@@ -2340,7 +2348,7 @@ const runRound = function () {
   for (let i = 0; i < 2; i++) {
     if (currRound.teams.flags.positions[i].x != currRound.map.flags[i].x || currRound.teams.flags.positions[i].y != currRound.map.flags[i].y) {
       if (currRound.timers.flags[i] == null) {
-        currRound.timers.flags[i] = flagTimer;
+        currRound.timers.flags[i] = flagCountdown;
       }
     }
   }
@@ -2384,9 +2392,12 @@ const runRound = function () {
         
         uis.notification.components[0].value = `${ship.name} has stole ${ship.custom.oppTeam.toUpperCase()}'s flag!`;
         uis.notification.components[1].value = `Bring it back to ${ship.custom.team.toUpperCase()}'s flag to score a point`;
-        game.setUIComponent(uis.notification);
+        game.ships.forEach((ship_) => {
+          ship_.setUIComponent(uis.notification);
+          ship_.custom.notificationCountdown = notificationCountdown;
+        });
         
-        ship.custom.flagTimer = flagTimer;
+        ship.custom.flagCountdown = flagCountdown;
       }
       else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= flagRange && ship.custom.flagged) {
         ship.set({
@@ -2405,9 +2416,12 @@ const runRound = function () {
         
         uis.notification.components[0].value = `${ship.name} has captured ${ship.custom.oppTeam.toUpperCase()}'s flag!`;
         uis.notification.components[1].value = `${ship.custom.team.toUpperCase()} team will now have ${currRound.teams.scores[ship.custom.teamNum]} points`;
-        game.setUIComponent(uis.notification);
+        game.ships.forEach((ship_) => {
+          ship_.setUIComponent(uis.notification);
+          ship_.custom.notificationCountdown = notificationCountdown;
+        });
         
-        ship.custom.flagTimer = null;
+        ship.custom.flagCountdown = null;
         hideUI("flagTimer", ship);
       }
       else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= flagRange && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
@@ -2418,7 +2432,10 @@ const runRound = function () {
         
         uis.notification.components[0].value = `${ship.name} has returned ${ship.custom.team.toUpperCase()}'s flag!`;
         uis.notification.components[1].value = `Chance for ${ship.custom.oppTeam.toUpperCase()} team is now over`;
-        game.setUIComponent(uis.notification);
+        game.ships.forEach((ship_) => {
+          ship_.setUIComponent(uis.notification);
+          ship_.custom.notificationCountdown = notificationCountdown;
+        });
       }
     }
   });
@@ -2526,7 +2543,7 @@ this.event = function (event) {
           oppTeam: null,
           oppHue: null,
           
-          flagTimer: null,
+          flagCountdown: null,
           
           flagged: false,
           currPoints: 0,
@@ -2563,9 +2580,12 @@ this.event = function (event) {
         
         uis.notification.components[0].value = `${ship.name} has dropped ${ship.custom.oppTeam}'s flag!`;
         uis.notification.components[1].value = `Choose one: return it or steal it once more`;
-        game.setUIComponent(uis.notification);
+        game.ships.forEach((ship_) => {
+          ship_.setUIComponent(uis.notification);
+          ship_.custom.notificationCountdown = notificationCountdown;
+        });
         
-        ship.custom.flagTimer = null;
+        ship.custom.flagCountdown = null;
         hideUI("flagTimer", ship);
       }
       break;
