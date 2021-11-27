@@ -2,7 +2,8 @@
 
 const customShipsAllowed = true;
 const startPlayers = 2;
-const gameSkip = 20;
+const gameSkip = 60;
+const gameSkip2 = 20;
 const flagRange = 5;
 const scoresReq = 5;
 const totalScoresReq = 3;
@@ -2343,7 +2344,7 @@ const runRound = function () {
   if (currRound.teams.scores.includes(scoresReq)) {
     currRound.status++;
   }
-  currRound.timers.run > 0 ? currRound.timers.run -= gameSkip : currRound.status++;
+  currRound.timers.run > 0 ? currRound.timers.run -= gameSkip2 : currRound.status++;
   
   for (let i = 0; i < 2; i++) {
     if (currRound.teams.flags.positions[i].x != currRound.map.flags[i].x || currRound.teams.flags.positions[i].y != currRound.map.flags[i].y) {
@@ -2491,34 +2492,40 @@ const endRound = function () {
 // End functions for this.tick ----------
 
 this.tick = function () {
-  switch (true) {
-    case game.step % gameSkip == 0:
-      if (started) {
-        if (currRound) {
-          switch (currRound.status) {
-            case 0:
-              idleRound();
-              prepUIs();
-              updateShip();
-              break;
-            case 1:
-              runRound();
-              prepUIs();
-              updateShip();
-              break;
-            case 2:
-              endRound();
-              break;
-          }
-        }
-        else {
-          genRound();
+  if (game.step % gameSkip == 0) {
+    if (started) {
+      if (currRound) {
+        switch (currRound.status) {
+          case 0:
+            idleRound();
+            prepUIs();
+            updateShip();
+            break;
+          case 1:
+            prepUIs();
+            updateShip();
+            break;
+          case 2:
+            endRound();
+            break;
         }
       }
       else {
-        waitPlayers();
+        genRound();
       }
-      break;
+    }
+    else {
+      waitPlayers();
+    }
+  }
+  
+  if (game.step % gameSkip2 == 0) {
+    if (currRound) {
+      switch (currRound.status) {
+        case 1:
+          runRound();
+      }
+    }
   }
 };
 
