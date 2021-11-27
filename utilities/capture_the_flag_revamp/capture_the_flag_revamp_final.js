@@ -1318,7 +1318,7 @@ const uis = {
   },
   instructions: {
     id: "instructions",
-    position: [20, 65, 60, 20],
+    position: [25, 65, 50, 20],
     visible: true,
     components: [
       {
@@ -1435,7 +1435,7 @@ const uis = {
   },
   scores: {
     id: "scores",
-    position: [40, 5, 20, 15],
+    position: [42.5, 5, 15, 12],
     visible: true,
     components: [
       {
@@ -1460,7 +1460,7 @@ const uis = {
   },
   totalScores: {
     id: "totalScores",
-    position: [42.5, 17.5, 15, 10],
+    position: [45, 17, 10, 8],
     visible: true,
     components: [
       {
@@ -1530,24 +1530,24 @@ const uis = {
   },
   flagTimer: {
     id: "flagTimer",
-    position: [30, 70, 40, 15],
+    position: [40, 70, 20, 15],
     visible: true,
     components: [
       {
         type: "text",
-        position: [0, 0, 100, 20],
+        position: [0, 0, 100, 30],
         value: "The flag is heavy and will slow your ship down",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 20, 100, 40],
+        position: [0, 30, 100, 35],
         value: "Time left for holding the flag:",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 60, 100, 40],
+        position: [0, 65, 100, 35],
         color: "#cde"
       }
     ]
@@ -1596,7 +1596,7 @@ const uis = {
   },
   notification: {
     id: "notification",
-    position: [3, 80, 40, 15],
+    position: [3, 80, 30, 15],
     visible: true,
     components: [
       {
@@ -1606,7 +1606,7 @@ const uis = {
       },
       {
         type: "text",
-        position: [15, 70, 70, 30],
+        position: [10, 70, 80, 30],
         color: "#cde"
       }
     ]
@@ -2217,7 +2217,7 @@ const updateShip = function () {
     if (ship.custom.chooseShipCountdown > 0) {
       for (let i = 0; i < 3; i++) {
         uis.chooseShip.id = `chooseShip-${i}`;
-        uis.chooseShip.position = [20 * (i + 1.1), 25, 16, 50];
+        uis.chooseShip.position = [27.5 + 15 * (i + 0.1), 30, 12.5, 40];
         uis.chooseShip.components[1].value = chooseShips[currRound.teams.startShip.i][currRound.teams.startShip.j + i];
         uis.chooseShip.components[2].value = currRound.teams.startShip.startShips[i];
         ship.setUIComponent(uis.chooseShip);
@@ -2416,7 +2416,7 @@ const runRound = function () {
         currRound.teams.scores[ship.custom.teamNum]++;
         
         uis.notification.components[0].value = `${ship.name} has captured ${ship.custom.oppTeam.toUpperCase()}'s flag!`;
-        uis.notification.components[1].value = `${ship.custom.team.toUpperCase()} team will now have ${currRound.teams.scores[ship.custom.teamNum]} points`;
+        uis.notification.components[1].value = `${ship.custom.team.toUpperCase()} team now has ${currRound.teams.scores[ship.custom.teamNum]} point(s)`;
         game.ships.forEach((ship_) => {
           ship_.setUIComponent(uis.notification);
           ship_.custom.notificationCountdown = notificationCountdown;
