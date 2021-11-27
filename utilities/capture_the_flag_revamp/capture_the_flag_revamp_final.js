@@ -9,6 +9,7 @@ const totalScoresReq = 3;
 
 const chooseShipCountdown = 600;
 const instructionsCountdown = 600;
+const flagTimer = 10800;
 
 // End preliminary settings
 
@@ -1315,30 +1316,31 @@ const uis = {
   },
   instructions: {
     id: "instructions",
-    position: [10, 15, 80, 30],
+    position: [20, 65, 60, 20],
     visible: true,
-    components: [{
+    components: [
+      {
         type: "text",
-        position: [0, 0, 100, 15],
+        position: [0, 0, 100, 40],
         value: "📜Instructions📜️",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 15, 100, 15],
+        position: [0, 40, 100, 20],
         value: "Capture the other team's flag and transport it back to your own flag to score a point",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 30, 100, 15],
+        position: [0, 60, 100, 20],
         value: `First team to score ${scoresReq} points wins the round`,
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 45, 100, 15],
-        value: `The game ends when one team wins ${totalScoreReq} rounds`,
+        position: [0, 80, 100, 20],
+        value: `The game ends when one team wins ${totalScoresReq} rounds`,
         color: "#cde"
       }
     ]
@@ -1390,17 +1392,17 @@ const uis = {
   },
   mapAuthor: {
     id: "mapAuthor",
-    position: [55, 88, 24, 20],
+    position: [55, 90, 24, 5],
     visible: true,
     components: [
       {
         type: "text",
-        position: [5, 0, 90, 50],
+        position: [5, 0, 90, 100],
         color: "#cde"
       },
       {
         type: "box",
-        position: [0, 10, 100, 30],
+        position: [0, 0, 100, 100],
         width: 3,
         stroke: "#cde"
       }
@@ -1524,6 +1526,30 @@ const uis = {
       }
     ]
   },
+  flagTimer: {
+    id: "flagTimer",
+    position: [30, 70, 40, 15],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 20],
+        value: "The flag is heavy and will slow your ship down",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 20, 100, 40],
+        value: "Time left for holding the flag:",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 60, 100, 40],
+        color: "#cde"
+      }
+    ]
+  },
   radar: {
     id: "radar_background",
     visible: true,
@@ -1564,6 +1590,23 @@ const uis = {
       {
         type: "text",
       },
+    ]
+  },
+  notification: {
+    id: "notification",
+    position: [3, 80, 40, 15],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [5, 0, 90, 100],
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [15, 70, 70, 30],
+        color: "#cde"
+      }
     ]
   },
   endMsg: {
@@ -1821,6 +1864,7 @@ class Round {
     this.timers = {
       idle: chooseShipCountdown,
       run: 18000,
+      flags: [null, null],
       end: 300
     };
     this.vars = {
@@ -2072,14 +2116,14 @@ const prepUIs = function () {
     }
   }
   
-  let minutes = ~~(currRound.timers.run / 3600);
-  let seconds = ~~(currRound.timers.run / 60 % 60);
-  let secondsStr = `${seconds}`;
-  if (secondsStr.length == 1) {
-    secondsStr = `0${seconds}`;
+  let mTimer = ~~(currRound.timers.run / 3600);
+  let sTimer = ~~(currRound.timers.run / 60 % 60);
+  let sTimerStr = `${sTimer}`;
+  if (sTimerStr.length == 1) {
+    sTimerStr = `0${sTimer}`;
   }
-  uis.timer.components[0].value = `Time left: ${minutes}:${secondsStr}`;
-  if (minutes == 0 && seconds < 10) {
+  uis.timer.components[0].value = `Time left: ${mTimer}:${sTimerStr}`;
+  if (mTimer == 0 && sTimer < 10) {
     uis.timer.components[0].color = "#fbb";
     uis.timer.components[1].stroke = uis.timer.components[1].stroke == "#cde" ? "#fbb" : "#cde";
   }
@@ -2125,6 +2169,9 @@ const updateShip = function () {
     if (ship.custom.teamNum != null) {
       ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
       ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
+      ship.custom.oppTeam = ship.custom.teamNum == 0 ? currRound.teams.colors.team2 : currRound.teams.colors.team;
+      ship.custom.oppHue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue2 : currRound.teams.colors.hue;
+
       if (!ship.custom.hideChooseShips) {
         ship.set({
           x: currRound.map.shipSpawn[ship.custom.teamNum].x,
@@ -2153,7 +2200,7 @@ const updateShip = function () {
           ship.custom.instructionsCountdown -= gameSkip;
         }
         else {
-          hideUI(uis.instructions, ship);
+          hideUI("instructions", ship);
         }
       }
     }
@@ -2230,6 +2277,37 @@ const updateShip = function () {
     
     ship.setUIComponent(uis.timer);
     
+    if (ship.custom.flagTimer > 0) {
+      let mFlagTimer = ~~(ship.custom.flagTimer / 3600);
+      let sFlagTimer = ~~(ship.custom.flagTimer / 60 % 60);
+      let sFlagTimerStr = `${sFlagTimer}`;
+      if (sFlagTimerStr.length == 1) {
+        sFlagTimerStr = `0${sFlagTimer}`;
+      }
+      uis.flagTimer.components[2].value = `${mFlagTimer}:${sFlagTimerStr}`;
+      ship.setUIComponent(uis.flagTimer);
+      
+      ship.custom.flagTimer -= gameSkip;
+    }
+    else {
+      if (ship.custom.flagged) {
+        ship.custom.flagged = false;
+        ship.set({
+          type: ship.custom.chosenShip,
+          hue: ship.custom.hue
+        });
+        currRound.teams.flags.positions[ship.custom.oppTeamNum] = {
+          x: currRound.map.flags[ship.custom.oppTeamNum].x,
+          y: currRound.map.flags[ship.custom.oppTeamNum].y
+        };
+        let hide = [false, false];
+        hide[ship.custom.teamNum] = currRound.objects.flags[ship.custom.teamNum].hidden;
+        genFlags(hide);
+        
+        hideUI("flagTimer", ship);
+      }
+    }
+    
     ship.setUIComponent(uis.radar);
     
     let anglePoint = [
@@ -2258,9 +2336,36 @@ const runRound = function () {
     currRound.status++;
   }
   currRound.timers.run > 0 ? currRound.timers.run -= gameSkip : currRound.status++;
+  
+  for (let i = 0; i < 2; i++) {
+    if (currRound.teams.flags.positions[i].x != currRound.map.flags[i].x || currRound.teams.flags.positions[i].y != currRound.map.flags[i].y) {
+      if (currRound.timers.flags[i] == null) {
+        currRound.timers.flags[i] = flagTimer;
+      }
+    }
+  }
+  
+  for (let i = 0; i < 2; i++) {
+    if (currRound.timers.flags[i] != null) {
+      if (currRound.timers.flags[i] > 0) {
+        currRound.timers.flags[i] -= gameSkip;
+      }
+      else {
+        currRound.teams.flags.positions[i] = {
+          x: currRound.map.flags[i].x,
+          y: currRound.map.flags[i].y
+        };
+        let hide = [false, false];
+        hide[i ? 0 : 1] = currRound.objects.flags[i ? 0 : 1].hidden;
+        genFlags(hide);
+        
+        currRound.timers.flags[i] = null;
+      }
+    }
+  }
   game.ships.forEach((ship) => {
     let flag1 = currRound.objects.flags[ship.custom.teamNum];
-    let flag2 = currRound.objects.flags[ship.custom.teamNum ? 0 : 1];
+    let flag2 = currRound.objects.flags[ship.custom.oppTeamNum];
     if (ship.alive) {
       if (distance(ship.x - flag2.position.x, ship.y - flag2.position.y) <= flagRange && !ship.custom.flagged && !flag2.hidden) {
         ship.set({
@@ -2270,10 +2375,18 @@ const runRound = function () {
         });
         ship.custom.flagged = true;
         let hide = [false, false];
-        hide[ship.custom.teamNum ? 0 : 1] = true;
+        hide[ship.custom.oppTeamNum] = true;
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
         currRound.teams.flags.holders.push(ship.id);
+        
+        currRound.timers.flags[ship.custom.teamNum] = null;
+        
+        uis.notification.components[0].value = `${ship.name} has stole ${ship.custom.oppTeam.toUpperCase()}'s flag!`;
+        uis.notification.components[1].value = `Bring it back to ${ship.custom.team.toUpperCase()}'s flag to score a point`;
+        game.setUIComponent(uis.notification);
+        
+        ship.custom.flagTimer = flagTimer;
       }
       else if (distance(ship.x - currRound.map.flags[ship.custom.teamNum].x, ship.y - currRound.map.flags[ship.custom.teamNum].y) <= flagRange && ship.custom.flagged) {
         ship.set({
@@ -2284,17 +2397,28 @@ const runRound = function () {
         ship.custom.flagged = false;
         ship.custom.currPoints++;
         ship.custom.totalPoints++;
-        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = currRound.map.flags[ship.custom.teamNum ? 0 : 1];
+        currRound.teams.flags.positions[ship.custom.oppTeamNum] = currRound.map.flags[ship.custom.oppTeamNum];
         let hide = [false, false];
         hide[ship.custom.teamNum] = flag1.hidden;
         genFlags(hide);
         currRound.teams.scores[ship.custom.teamNum]++;
+        
+        uis.notification.components[0].value = `${ship.name} has captured ${ship.custom.oppTeam.toUpperCase()}'s flag!`;
+        uis.notification.components[1].value = `${ship.custom.team.toUpperCase()} team will now have ${currRound.teams.scores[ship.custom.teamNum]} points`;
+        game.setUIComponent(uis.notification);
+        
+        ship.custom.flagTimer = null;
+        hideUI("flagTimer", ship);
       }
       else if (distance(ship.x - flag1.position.x, ship.y - flag1.position.y) <= flagRange && (flag1.position.x != currRound.map.flags[ship.custom.teamNum].x && flag1.position.y != currRound.map.flags[ship.custom.teamNum].y)) {
         currRound.teams.flags.positions[ship.custom.teamNum] = currRound.map.flags[ship.custom.teamNum];
         let hide = [false, false];
-        hide[ship.custom.teamNum ? 0 : 1] = flag2.hidden;
+        hide[ship.custom.oppTeamNum] = flag2.hidden;
         genFlags(hide);
+        
+        uis.notification.components[0].value = `${ship.name} has returned ${ship.custom.team.toUpperCase()}'s flag!`;
+        uis.notification.components[1].value = `Chance for ${ship.custom.oppTeam.toUpperCase()} team is now over`;
+        game.setUIComponent(uis.notification);
       }
     }
   });
@@ -2389,15 +2513,20 @@ this.event = function (event) {
         ship.custom = {
           notFirstTime: true,
           
-          instructionsCountdown = null,
+          instructionsCountdown: instructionsCountdown,
           
           hideChooseShips: false,
           chosenShip: null,
           chooseShipCountdown: chooseShipCountdown,
           
           teamNum: currRound ? currRound.currTeam : null,
+          oppTeamNum: null,
           team: null,
           hue: null,
+          oppTeam: null,
+          oppHue: null,
+          
+          flagTimer: null,
           
           flagged: false,
           currPoints: 0,
@@ -2406,7 +2535,8 @@ this.event = function (event) {
           respawnCountdown: null
         };
         
-        currRound.currTeam = !currRound.currTeam ? 1 : 0;
+        ship.custom.oppTeamNum = ship.custom.teamNum ? 0 : 1;
+        currRound.currTeam = currRound.currTeam ? 0 : 1;
       }
       else {
         ship.set({
@@ -2423,13 +2553,20 @@ this.event = function (event) {
     case "ship_destroyed":
       if (ship.custom.flagged) {
         ship.custom.flagged = false;
-        currRound.teams.flags.positions[ship.custom.teamNum ? 0 : 1] = {
+        currRound.teams.flags.positions[ship.custom.oppTeamNum] = {
           x: ship.x,
           y: ship.y
         };
         let hide = [false, false];
         hide[ship.custom.teamNum] = currRound.objects.flags[ship.custom.teamNum].hidden;
         genFlags(hide);
+        
+        uis.notification.components[0].value = `${ship.name} has dropped ${ship.custom.oppTeam}'s flag!`;
+        uis.notification.components[1].value = `Choose one: return it or steal it once more`;
+        game.setUIComponent(uis.notification);
+        
+        ship.custom.flagTimer = null;
+        hideUI("flagTimer", ship);
       }
       break;
     case "ui_component_clicked":
