@@ -13,6 +13,9 @@ const instructionsCountdown = 600;
 const flagCountdown = 10800;
 const notificationCountdown = 600;
 
+const flagSizePoint = 3;
+const flagScalePoint = 35;
+
 // End preliminary settings
 
 // Start preliminary functions ----------
@@ -1002,85 +1005,6 @@ const maps = [{
     restrictTiers: false
   },
   {
-    name: "Ladders",
-    author: "RED SUN",
-    map: "                                                            \n" +
-      "                                       99999999999999999999 \n" +
-      "                                      999999999999999999999 \n" +
-      "                                     999                 99 \n" +
-      "                                    999                  99 \n" +
-      "                                   999                   99 \n" +
-      "                                  999    9999999999999   99 \n" +
-      "                                 999    99999999999999   99 \n" +
-      "                                999    999          99   99 \n" +
-      "                               999    999           99   99 \n" +
-      "                              999    999            99   99 \n" +
-      "                             999    999    999999   99   99 \n" +
-      "                            999    999    9999999   99   99 \n" +
-      "                           999    999    999  999   99   99 \n" +
-      "               99999999999999    999    999  999    99   99 \n" +
-      "               9999999999999    999    99999999    999   99 \n" +
-      "               999              99        9999    999    99 \n" +
-      "               99               99         99    999     999\n" +
-      "               99               99         99   999    99999\n" +
-      "               99   99999999    99999999   99   99    999  9\n" +
-      "               99   99999999    99999999   99   99   999   9\n" +
-      "               99        999    999        99   99  999    9\n" +
-      "               99         99    99         99   99  99     9\n" +
-      "               999        99    99        999   99  99  9  9\n" +
-      "   99999999999999999999   99    99   99999999   99  99  9  9\n" +
-      "  999999999999999999999   99    99   99999999   99  99  9  9\n" +
-      " 999          9999        99    99        999   99  99  9  9\n" +
-      "9999           99         99    99         99   99  99  9  9\n" +
-      "9999  99       99        999    99         99   99  99  9  9\n" +
-      "   9  99  99   99   99999999    99999999   99   99  99  9   \n" +
-      "   9  99  99   99   99999999    99999999   99   99  99  9   \n" +
-      "9  9  99  99   99        999    999        99       99  9999\n" +
-      "9  9  99  99   99         99    99         99           9999\n" +
-      "9  9  99  99   999        99    99        9999          999 \n" +
-      "9  9  99  99   99999999   99    99   999999999999999999999  \n" +
-      "9  9  99  99   99999999   99    99   99999999999999999999   \n" +
-      "9  9  99  99   999        99    99        999               \n" +
-      "9     99  99   99         99    99         99               \n" +
-      "9    999  99   99        999    999        99               \n" +
-      "9   999   99   99   99999999    99999999   99               \n" +
-      "9  999    99   99   99999999    99999999   99               \n" +
-      "99999    999   99         99               99               \n" +
-      "9999    999    99         99               99               \n" +
-      " 99    999    9999        99              999               \n" +
-      " 99   999    99999999    999    9999999999999               \n" +
-      " 99   99    999  999    999    99999999999999               \n" +
-      " 99   99   999  999    999    999                           \n" +
-      " 99   99   9999999    999    999                            \n" +
-      " 99   99   999999    999    999                             \n" +
-      " 99   99            999    999                              \n" +
-      " 99   99           999    999                               \n" +
-      " 99   99          999    999                                \n" +
-      " 99   99999999999999    999                                 \n" +
-      " 99   9999999999999    999                                  \n" +
-      " 99                   999                                   \n" +
-      " 99                  999                                    \n" +
-      " 99                 999                                     \n" +
-      " 999999999999999999999                                      \n" +
-      " 99999999999999999999                                       \n" +
-      "                                                            ",
-    flags: [{
-      x: 200,
-      y: 200
-    }, {
-      x: -200,
-      y: -200
-    }],
-    shipSpawn: [{
-      x: 250,
-      y: 250
-    }, {
-      x: -250,
-      y: -250
-    }],
-    restrictTiers: false
-  },
-  {
     name: "Paths",
     author: "Healer",
     map: "   999999999999999999999            999999999999999999999   \n" +
@@ -1256,32 +1180,25 @@ const objects = {
     transparent: false,
   }
 };
-const colors = [{
-    team: "Red",
-    hue: 0,
-    team2: "Blue",
-    hue2: 240,
+const colors = [
+  {
+    teams: ["Red", "Blue"],
+    hues: [0, 240],
     flagged: [40, 180]
   },
   {
-    team: "Green",
-    hue: 120,
-    team2: "Purple",
-    hue2: 270,
+    teams: ["Green", "Purple"],
+    hues: [120, 270],
     flagged: [80, 310]
   },
   {
-    team: "Yellow",
-    hue: 60,
-    team2: "Pink",
-    hue2: 300,
+    teams: ["Yellow", "Pink"],
+    hues: [60, 300],
     flagged: [100, 340]
   },
   {
-    team: "Aqua",
-    hue: 150,
-    team2: "Orange",
-    hue2: 30,
+    team: ["Aqua", "Orange"],
+    hues: [150, 30],
     flagged: [190, 0]
   }
 ];
@@ -1535,19 +1452,19 @@ const uis = {
     components: [
       {
         type: "text",
-        position: [0, 0, 100, 30],
-        value: "The flag is heavy and will slow your ship down",
+        position: [0, 0, 100, 100 / 3],
+        value: "The flag is heavy and slows your ship down",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 30, 100, 35],
+        position: [0, 30, 100, 100 / 3],
         value: "Time left for holding the flag:",
         color: "#cde"
       },
       {
         type: "text",
-        position: [0, 65, 100, 35],
+        position: [0, 65, 100, 100 / 3],
         color: "#cde"
       }
     ]
@@ -1596,7 +1513,7 @@ const uis = {
   },
   notification: {
     id: "notification",
-    position: [3, 80, 30, 15],
+    position: [3, 85, 30, 10],
     visible: true,
     components: [
       {
@@ -1918,7 +1835,7 @@ const genFlagStands = function () {
       obj: objects.flagStand.obj,
       diffuse: objects.flagStand.diffuse,
       emissive: objects.flagStand.emissive,
-      emissiveColor: getColor(i == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2),
+      emissiveColor: getColor(currRound.teams.colors.hues[i]),
       transparent: objects.flagStand.transparent
     };
     currRound.objects.flagStands[i] = {
@@ -1957,27 +1874,25 @@ function sortPlayers(players) {
   return players;
 }
 function getTeamStatus() {
-  var team, color, point;
   if (currRound.teams.scores[0] > currRound.teams.scores[1]) {
-    team = currRound.teams.colors.team.toUpperCase();
-    color = getColor(currRound.teams.colors.hue);
-    point = 0;
+    return {
+      team: currRound.teams.colors.teams[0].toUpperCase(),
+      color: getColor(currRound.teams.colors.hues[0]),
+      point: 0
+    };
   }
   else if (currRound.teams.scores[1] > currRound.teams.scores[0]) {
-    team = currRound.teams.colors.team2.toUpperCase();
-    color = getColor(currRound.teams.colors.hue2);
-    point = 1;
+    return {
+      team: currRound.teams.colors.teams[1].toUpperCase(),
+      color: getColor(currRound.teams.colors.hues[1]),
+      point: 1
+    };
   }
-  else {
-    team = "TIE";
-    color = "#cde";
-    point = 2;
-  }
-  return {
-    team: team,
-    color: color,
-    point: point
-  }
+  return { 
+    team: "TIE",
+    color: "#cde",
+    point: 2
+  };
 }
 
 // End helper functions for in-game logic ----------
@@ -2052,16 +1967,16 @@ const prepUIs = function () {
   uis.scores.components[0].color = teamStatus.color;
   uis.scores.components[1].value = currRound.teams.scores[0];
   uis.scores.components[3].value = currRound.teams.scores[1];
-  uis.scores.components[1].color = getColor(currRound.teams.colors.hue);
-  uis.scores.components[3].color = getColor(currRound.teams.colors.hue2);
+  uis.scores.components[1].color = getColor(currRound.teams.colors.hues[0]);
+  uis.scores.components[3].color = getColor(currRound.teams.colors.hues[1]);
   
   uis.totalScores.components[1].value = totalScores[0];
   uis.totalScores.components[3].value = totalScores[1];
   
-  uis.scoreboard.components[1].value = currRound.teams.colors.team.toUpperCase();
-  uis.scoreboard.components[3].value = currRound.teams.colors.team2.toUpperCase();
-  uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hue);
-  uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hue2);
+  uis.scoreboard.components[1].value = currRound.teams.colors.teams[0].toUpperCase();
+  uis.scoreboard.components[3].value = currRound.teams.colors.teams[1].toUpperCase();
+  uis.scoreboard.components[0].fill = getColor(currRound.teams.colors.hues[0]);
+  uis.scoreboard.components[2].fill = getColor(currRound.teams.colors.hues[1]);
   uis.scoreboard.components.splice(4, uis.scoreboard.components.length - 5);
   let players1 = [];
   let players2 = [];
@@ -2163,17 +2078,17 @@ const prepUIs = function () {
     flagSize,
     flagSize
   ];
-  uis.radar.components[0].stroke = getColor(currRound.teams.colors.hue);
-  uis.radar.components[2].stroke = getColor(currRound.teams.colors.hue2);
+  uis.radar.components[0].stroke = getColor(currRound.teams.colors.hues[0]);
+  uis.radar.components[2].stroke = getColor(currRound.teams.colors.hues[1]);
 }
 const updateShip = function () {
   game.ships.forEach((ship) => {
     if (ship.custom.teamNum != null) {
-      ship.custom.team = ship.custom.teamNum == 0 ? currRound.teams.colors.team : currRound.teams.colors.team2;
-      ship.custom.hue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue : currRound.teams.colors.hue2;
-      ship.custom.oppTeam = ship.custom.teamNum == 0 ? currRound.teams.colors.team2 : currRound.teams.colors.team;
-      ship.custom.oppHue = ship.custom.teamNum == 0 ? currRound.teams.colors.hue2 : currRound.teams.colors.hue;
-
+      ship.custom.team = currRound.teams.colors.teams[ship.custom.teamNum];
+      ship.custom.hue = currRound.teams.colors.hues[ship.custom.teamNum];
+      ship.custom.oppTeam = currRound.teams.colors.teams[ship.custom.oppTeamNum];
+      ship.custom.oppHue = currRound.teams.colors.hues[ship.custom.oppTeamNum];
+      
       if (!ship.custom.hideChooseShips) {
         ship.set({
           x: currRound.map.shipSpawn[ship.custom.teamNum].x,
@@ -2183,7 +2098,7 @@ const updateShip = function () {
           type: !ship.custom.chosenShip & !ship.custom.chosenShip ? 121 : ship.custom.chosenShip,
           team: ship.custom.teamNum,
           hue: ship.custom.hue,
-          shield: 1000,
+          shield: 10000,
           crystals: getCrystals(ship),
           stats: 99999999,
           idle: true,
@@ -2207,7 +2122,20 @@ const updateShip = function () {
       }
     }
     
-    if (!ship.custom.flagged) {
+    if (ship.custom.flagged) {
+      if (ship.type != ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length) {
+        ship.set({
+          type: ship.custom.chosenShip + chooseShips[currRound.teams.startShip.i].length
+        });
+      }
+    }
+    else {
+      if (ship.type != ship.custom.chosenShip) {
+        ship.set({
+          type: ship.custom.chosenShip
+        });
+      }
+      
       currRound.teams.flags.holders.splice(currRound.teams.flags.holders.indexOf(ship.id), 1);
     }
     
@@ -2234,7 +2162,9 @@ const updateShip = function () {
       if (!ship.custom.chosenShip) {
         ship.custom.chosenShip = currRound.teams.startShip.startShips[rand(currRound.teams.startShip.startShips.length)];
         ship.set({
-          type: ship.custom.chosenShip
+          type: ship.custom.chosenShip,
+          shield: 10000,
+          crystals: getCrystals(ship)
         });
       }
       ship.custom.hideChooseShips = true;
@@ -2319,24 +2249,22 @@ const updateShip = function () {
       hideUI("notification", ship);
     }
     
-    let anglePoint = [
+    let flagAnglePoint = [
       Math.atan2(ship.y - currRound.map.flags[0].y, ship.x - currRound.map.flags[0].x) - Math.PI / 2,
       Math.atan2(ship.y - currRound.map.flags[1].y, ship.x - currRound.map.flags[1].x) - Math.PI / 2
     ];
-    let sizePoint = 3;
-    let scalePoint = 40;
     let posPoint = [
-      [50 + Math.sin(anglePoint[0]) * scalePoint, 50 + Math.cos(anglePoint[0]) * scalePoint, sizePoint, sizePoint],
-      [50 + Math.sin(anglePoint[1]) * scalePoint, 50 + Math.cos(anglePoint[1]) * scalePoint, sizePoint, sizePoint]
+      [50 + Math.sin(flagAnglePoint[0]) * flagScalePoint, 50 + Math.cos(flagAnglePoint[0]) * flagScalePoint, flagSizePoint, flagSizePoint],
+      [50 + Math.sin(flagAnglePoint[1]) * flagScalePoint, 50 + Math.cos(flagAnglePoint[1]) * flagScalePoint, flagSizePoint, flagSizePoint]
     ];
     uis.flagPointer.components[0].position = posPoint[0];
-    uis.flagPointer.components[1].position = [posPoint[0][0], posPoint[0][1] + sizePoint, sizePoint, sizePoint];
+    uis.flagPointer.components[1].position = [posPoint[0][0], posPoint[0][1] + flagSizePoint, flagSizePoint, flagSizePoint];
     uis.flagPointer.components[2].position = posPoint[1];
-    uis.flagPointer.components[3].position = [posPoint[1][0], posPoint[1][1] + sizePoint, sizePoint, sizePoint];
-    uis.flagPointer.components[1].value = currRound.teams.colors.team;
-    uis.flagPointer.components[3].value = currRound.teams.colors.team2;
-    uis.flagPointer.components[1].color = getColor(currRound.teams.colors.hue);
-    uis.flagPointer.components[3].color = getColor(currRound.teams.colors.hue2);
+    uis.flagPointer.components[3].position = [posPoint[1][0], posPoint[1][1] + flagSizePoint, flagSizePoint, flagSizePoint];
+    uis.flagPointer.components[1].value = currRound.teams.colors.teams[0];
+    uis.flagPointer.components[3].value = currRound.teams.colors.teams[1];
+    uis.flagPointer.components[1].color = getColor(currRound.teams.colors.hues[0]);
+    uis.flagPointer.components[3].color = getColor(currRound.teams.colors.hues[1]);
     ship.setUIComponent(uis.flagPointer);
   });
 };
@@ -2600,7 +2528,9 @@ this.event = function (event) {
       if (event.id.startsWith("chooseShip")) {
         ship.custom.chosenShip = currRound.teams.startShip.startShips[parseInt(event.id.charAt(event.id.length - 1))];
         ship.set({
-          type: ship.custom.chosenShip
+          type: ship.custom.chosenShip,
+          shield: 10000,
+          crystals: getCrystals(ship)
         });
       }
       break;
