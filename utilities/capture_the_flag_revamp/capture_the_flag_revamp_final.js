@@ -1782,7 +1782,7 @@ class Round {
     };
     this.timers = {
       idle: chooseShipCountdown,
-      run: 18000,
+      run: 300,//18000
       flags: [null, null],
       end: 300
     };
@@ -2011,7 +2011,7 @@ const prepUIs = function () {
       break;
     }
   }
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 4; i++) {
     if (players2[i]) {
       uis.scoreboard.components.push({
         type: "player",
