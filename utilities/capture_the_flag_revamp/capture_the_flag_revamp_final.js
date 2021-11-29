@@ -1700,7 +1700,6 @@ let started = false;
 let totalScores = [0, 0];
 
 let currRound = null;
-let roundNum = 0;
 class Round {
   constructor({
     map: MAP,
@@ -1745,7 +1744,6 @@ class Round {
     };
   }
   init () {
-    roundNum++;
     return this;
   }
 }
@@ -1803,7 +1801,7 @@ const genFlagStands = function () {
         z: 30
       },
       type: {
-        id: `flagStand-${roundNum}-${i}`,
+        id: `flagStand-${i}`,
         obj: "https://raw.githubusercontent.com/45rfew/Capture-The-Flag/master/Flags/flagstand.obj",
         diffuse: "https://raw.githubusercontent.com/45rfew/Starblast-mods-n-objs/master/Img/Ship%20lambert%20orange.png",
         emissive: "https://raw.githubusercontent.com/45rfew/Starblast-mods-n-objs/master/Img/Ship%20emissive%20(5).jpg",
