@@ -2115,8 +2115,7 @@ const waitPlayers = function () {
   }
 };
 const genRound = function () {
-  // let chosenMap = maps[rand(maps.length)];
-  let chosenMap = maps[rand(3)];
+  let chosenMap = maps[rand(maps.length)];
   
   var startShipI;
   const genStartShip = function () {
