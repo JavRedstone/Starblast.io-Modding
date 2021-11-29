@@ -2326,7 +2326,7 @@ const updateShip = function () {
         ship.set({
           type: ship.custom.chosenShip,
           shield: 10000,
-          crystals: getCrystals(ship)
+          crystals: getCrystals({ type: ship.custom.chosenShip })
         });
       }
       ship.custom.hideChooseShips = true;
