@@ -368,7 +368,7 @@ const maps = [
       x: -100,
       y: 170
     }, {
-      x: 100
+      x: 100,
       y: -170
     }],
     restrictTiers: false
