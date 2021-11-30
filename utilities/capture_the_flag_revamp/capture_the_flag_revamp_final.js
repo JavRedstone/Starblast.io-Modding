@@ -2132,7 +2132,7 @@ class Round {
     };
     this.timers = {
       idle: chooseShipCountdown,
-      run: 18000,
+      run: 21600,
       flags: [null, null],
       end: 300
     };
@@ -2643,7 +2643,7 @@ const runRound = function () {
   currRound.timers.run > 0 ? currRound.timers.run -= gameSkip2 : currRound.status++;
   
   for (let i = 0; i < 2; i++) {
-    if (currRound.teams.flags.positions[i].x != currRound.map.flags[i].x || currRound.teams.flags.positions[i].y != currRound.map.flags[i].y) {
+    if (!currRound.objects.flags[i].hidden && (currRound.teams.flags.positions[i].x != currRound.map.flags[i].x || currRound.teams.flags.positions[i].y != currRound.map.flags[i].y)) {
       if (currRound.timers.flags[i] == null) {
         currRound.timers.flags[i] = flagCountdown;
       }
@@ -2759,6 +2759,12 @@ const endRound = function () {
       uis.endMsg.components[1].value = "The tie breaker round is starting...";
       uis.endMsg.components[0].color = "#fbb";
       uis.endMsg.components[1].color = "#fbb";
+    }
+    else if (currRound.timers.run == 0) {
+      uis.endMsg.components[0].value = "Time's up!";
+      uis.endMsg.components[1].value = "A new round is starting...";
+      uis.endMsg.components[0].color = "#fda";
+      uis.endMsg.components[1].color = "#cde";
     }
     else {
       uis.endMsg.components[0].value = "The current round has finished!";
