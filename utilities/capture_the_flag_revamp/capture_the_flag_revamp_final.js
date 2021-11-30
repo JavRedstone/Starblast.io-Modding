@@ -2498,6 +2498,13 @@ const updateShip = function () {
         let hide = [false, false];
         hide[ship.custom.teamNum] = currRound.objects.flags[ship.custom.teamNum].hidden;
         genFlags(hide);
+        
+        uis.notification.components[0].value = `${ship.name} has ran out of time holding ${ship.custom.oppTeam}'s flag!`;
+        uis.notification.components[1].value = `The flag has been returned to its home spot`;
+        game.ships.forEach((ship_) => {
+          ship_.setUIComponent(uis.notification);
+          ship_.custom.notificationCountdown = notificationCountdown;
+        });
       }
       hideUI("flagTimer", ship);
     }
