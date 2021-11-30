@@ -1938,6 +1938,7 @@ let started = false;
 let totalScores = [0, 0];
 
 let currRound = null;
+let roundNum = 0;
 class Round {
   constructor({
     map: MAP,
@@ -1982,6 +1983,7 @@ class Round {
     };
   }
   init () {
+    roundNum++;
     return this;
   }
 }
@@ -2021,6 +2023,7 @@ const genFlags = function (hide = [false, false]) {
 };
 const genFlagStands = function () {
   for (let i = 0; i < 2; i++) {
+    game.removeObject(`flagStand-${i}`);
     currRound.objects.flagStands[i] = {
       id: `flagStand-${i}`,
       position: {
@@ -2039,7 +2042,7 @@ const genFlagStands = function () {
         z: 30
       },
       type: {
-        id: `flagStand-${i}`,
+        id: `flagStand-${roundNum}-${i}`,
         obj: "https://raw.githubusercontent.com/45rfew/Capture-The-Flag/master/Flags/flagstand.obj",
         diffuse: "https://raw.githubusercontent.com/45rfew/Starblast-mods-n-objs/master/Img/Ship%20lambert%20orange.png",
         emissive: "https://raw.githubusercontent.com/45rfew/Starblast-mods-n-objs/master/Img/Ship%20emissive%20(5).jpg",
