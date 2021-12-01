@@ -2396,7 +2396,7 @@ class Round {
     };
     this.timers = {
       idle: chooseShipCountdown,
-      run: 21600,
+      run: 28800,
       flags: [null, null],
       end: 300
     };
