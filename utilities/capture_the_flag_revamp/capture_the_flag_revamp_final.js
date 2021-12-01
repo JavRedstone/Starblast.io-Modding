@@ -367,11 +367,11 @@ const maps = [
       y: -210
     }],
     shipSpawn: [{
-      x: -100,
-      y: 170
+      x: -230,
+      y: 90
     }, {
-      x: 100,
-      y: -170
+      x: 230,
+      y: -90
     }],
     restrictTiers: false
   },
