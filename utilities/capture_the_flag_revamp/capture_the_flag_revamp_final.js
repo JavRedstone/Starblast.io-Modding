@@ -2925,23 +2925,24 @@ const runRound = function () {
   
   for (let i = 0; i < 2; i++) {
     if (currRound.timers.flags[i] != null) {
-      if (currRound.timers.flags[i] > 0) {
-        currRound.timers.flags[i] -= gameSkip;
-      }
-      else {
-        currRound.teams.flags.positions[i] = {
-          x: currRound.map.flags[i].x,
-          y: currRound.map.flags[i].y
-        };
-        let hide = [false, false];
-        hide[i ? 0 : 1] = currRound.objects.flags[i ? 0 : 1].hidden;
-        genFlags(hide);
-        
-        currRound.timers.flags[i] = null;
-      }
-      
       if (currRound.teams.flags.holders[i ? 0 : 1] != null) {
         currRound.timers.flags[i] = null;
+      }
+      else {
+        if (currRound.timers.flags[i] > 0) {
+          currRound.timers.flags[i] -= gameSkip;
+        }
+        else {
+          currRound.teams.flags.positions[i] = {
+            x: currRound.map.flags[i].x,
+            y: currRound.map.flags[i].y
+          };
+          let hide = [false, false];
+          hide[i ? 0 : 1] = currRound.objects.flags[i ? 0 : 1].hidden;
+          genFlags(hide);
+          
+          currRound.timers.flags[i] = null;
+        }
       }
     }
     
