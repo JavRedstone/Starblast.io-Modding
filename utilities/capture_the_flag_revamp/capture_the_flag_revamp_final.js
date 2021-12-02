@@ -2083,7 +2083,7 @@ const uis = {
   },
   timer: {
     id: "timer",
-    position: [3, 25, 15, 10],
+    position: [3, 25, 15, 15],
     visible: true,
     components: [
       {
