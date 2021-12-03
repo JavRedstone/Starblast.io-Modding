@@ -2181,11 +2181,25 @@ const uis = {
       }
     ]
   },
+  timesUp: {
+    id: "timesUp",
+    position: [40, 25, 20, 10],
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [0, 0, 100, 100],
+        value: "Time's Up!",
+        color: "#fbb"
+      }
+    ]
+  },
   endMsg: {
     id: "endMsg",
-    position: [20, 30, 60, 30],
+    position: [20, 35, 60, 30],
     visible: true,
-    components: [{
+    components: [
+      {
         type: "text",
         position: [0, 0, 100, 15]
       },
@@ -3030,6 +3044,9 @@ const endRound = function () {
     currRound.vars.scoreUpd = true;
   }
   game.ships.forEach((ship) => {
+    if (currRound.timers.run == 0) {
+      ship.setUIComponent(uis.timesUp);
+    }
     if (totalScores.includes(totalScoresReq)) {
       uis.endMsg.components[0].value = `${totalScoresReq} rounds reached!`;
       uis.endMsg.components[1].value = "Good job to everyone who played!";
@@ -3041,12 +3058,6 @@ const endRound = function () {
       uis.endMsg.components[1].value = "The tie breaker round is starting...";
       uis.endMsg.components[0].color = "#fbb";
       uis.endMsg.components[1].color = "#fbb";
-    }
-    else if (currRound.timers.run == 0) {
-      uis.endMsg.components[0].value = "Time's up!";
-      uis.endMsg.components[1].value = "A new round is starting...";
-      uis.endMsg.components[0].color = "#fda";
-      uis.endMsg.components[1].color = "#cde";
     }
     else {
       uis.endMsg.components[0].value = "The current round has finished!";
@@ -3076,6 +3087,7 @@ const endRound = function () {
     currRound.timers.end -= gameSkip2;
   }
   else {
+    hideUI("timesUp", game);
     hideUI("endMsg", game);
     if (totalScores.includes(totalScoresReq)) {
       game.ships.forEach((ship) => {
