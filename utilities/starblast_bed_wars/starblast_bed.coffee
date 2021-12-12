@@ -12,7 +12,7 @@ return model =
         y: [-100, -100, -50, 150, 150]
         z: [0, 0, 0, 0]
       width: [0, 100, 100, 100, 0]
-      height: [0, 20, 20, 20, 20]
+      height: [0, 20, 20, 20, 0]
       texture: [1, 1, 63]
     base:
       section_segments: [45, 135, 225, 315]
