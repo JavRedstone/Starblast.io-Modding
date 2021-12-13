@@ -14,17 +14,17 @@ const objects = {
   block: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/starblast_block.obj",
   bed: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/starblast_bed.obj"
 };
-const diffuseTexs = {
+const emissiveTexs = {
   block: [
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_block1.png",
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_block2.png",
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_block3.png"
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_block1.png",
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_block2.png",
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_block3.png"
   ],
   bed: [
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_bed1.png",
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_bed2.png",
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_bed3.png",
-    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/diffuse_bed4.png"
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed1.png",
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed2.png",
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed3.png",
+    "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed4.png"
   ]
 };
 const sizes = {
@@ -51,13 +51,13 @@ class Block {
     rotation: ROTATION,
     scale: SCALE,
     obj: OBJ,
-    diffuse: DIFFUSE
+    emissive: EMISSIVE
   }) {
     this.id = `block-${blocks.length}`;
     this.position = POSITION;
     this.rotation = ROTATION;
     this.scale = SCALE;
-    this.type = { id: this.id, obj: OBJ, diffuse: DIFFUSE };
+    this.type = { id: this.id, obj: OBJ, emissive: EMISSIVE };
   }
   
   init () {
@@ -82,7 +82,7 @@ let seeds = {
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: scaleSize, y: scaleSize, z: scaleSize },
     obj: objects.block,
-    diffuse: diffuseTexs.block[rand(diffuseTexs.block.length)]
+    emissive: emissiveTexs.block[rand(emissiveTexs.block.length)]
   }).init()
 };
 
@@ -125,7 +125,7 @@ const move = function (block, dir = "left", auto = true, remove = false) {
     rotation: { x: 0, y: 0, z: 0 },
     scale: { x: scaleSize, y: scaleSize, z: scaleSize },
     obj: objects.block,
-    diffuse: diffuseTexs.block[rand(diffuseTexs.block.length)]
+    emissive: emissiveTexs.block[rand(emissiveTexs.block.length)]
   });
   let checkResult = checkThere(newBlock);
   if (auto && !checkResult) {
