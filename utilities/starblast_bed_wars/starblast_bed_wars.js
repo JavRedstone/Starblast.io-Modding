@@ -1,4 +1,5 @@
 // Start preliminary settings ----------
+
 const gameSkip = 30;
 
 // End preliminary settings ----------
@@ -10,6 +11,12 @@ const rand = function(n) {
 };
 
 // End preliminary functions ----------
+
+// Start preliminary variables ----------
+
+let genFinished = false;
+
+// End preliminary variables ----------
 
 // Start object settings ----------
 
@@ -31,10 +38,28 @@ const bedProps = {
 
 // End object settings ----------
 
+// Start preliminary position constants ----------
+
+const sizes = {
+	centre: 16
+};
+const dists = {
+	base: 100,
+	spawn: sizes.base / 2,
+	bed: sizes.base * 3 / 4
+};
+const seedPos = {
+	centre: { x: 0, y: 0 }
+};
+
+// End preliminary position constants ----------
+
 // Start object storage variables ----------
 
 const blocks = [];
 const beds = [];
+
+const seeds = [];
 
 // End object storage variables ----------
 
@@ -121,9 +146,70 @@ class Bed {
 
 // End object classes ----------
 
+// Start helper functions for this.tick ----------
+
+const checkThere = function (block) {
+	blocks.forEach((b) => {
+		if (b.pos.x == block.pos.x && b.pos.y == block.pos.y) {
+			return true;
+		}
+	});
+	return false;
+};
+
+const move = function (block, dir = "left", remove = false, auto = true) {
+	let newPos = {};
+	switch (dir) {
+		case "left":
+			newPos = { x: block.pos.x - blockProps.size, y: block.pos.y };
+			break;
+		case "right":
+			newPos = { x: block.pos.x + blockProps.size, y: block.pos.y };
+			break;
+		case "up":
+			newPos = { x: block.pos.x, y: block.pos.y + blockProps.size };
+			break;
+		case "down":
+			newPos = { x: block.pos.x, y: block.pos.y - blockProps.size };
+			break;
+	}
+	let newBlock = new Block({
+		pos: newPos,
+		auto: true
+	});
+	let checkRes = checkThere(newBlock);
+	if (!remove) {
+		if (auto) {
+			if (!checkRes) {
+				newBlock.init();
+			}
+		}
+		else {
+			newBlock.init();
+		}
+	}
+	return newBlock;
+};
+
+// End helper functions for this.tick ----------
+
 // Start functions for this.tick ----------
 
-
+const genIsle = function (seed, size) {
+	let flip = 0;
+	let currBlock = new Block({
+		pos: { x: seed.pos.x + size, y: seed.pos.y + size },
+		auto: true
+	});
+	for (let i = 0; i < 2 * size; i++) {
+		for (let j = 0; j < 2 * size - 1; j++) {
+			currBlock = flip == 0 ? move(currBlock, "down") : move(currBlock, "up");
+		}
+		if (i < size * 2 - 1) {
+			currBlock = move(currBlock, "left");
+		}
+	}
+};
 
 // End functions for this.tick ----------
 
@@ -136,7 +222,7 @@ class Bed {
 this.options = {
   root_mode: "",
   friendly_colors: 4,
-  map_size: 100,
+  map_size: 50,
   custom_map: "",
   asteroids_strength: 1000000,
 
@@ -147,7 +233,12 @@ this.options = {
 
 this.tick = function() {
   if (game.step % gameSkip == 0) {
-
+		if (genFinished) {
+		
+		}
+		else {
+			genFinished = true;
+		}
   }
 };
 
