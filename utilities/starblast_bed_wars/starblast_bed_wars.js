@@ -47,7 +47,7 @@ const sizes = {
 };
 const dists = {
 	base: 100,
-	median: 40
+	median: 40,
 	
 	spawn: sizes.base / 2,
 	bed: sizes.base * 3 / 4
@@ -212,7 +212,7 @@ const move = function (block, dir = "left", remove = false, auto = true) {
 const genSeeds = function () {
 	for (let seed in seedPos) {
 		seeds[seed] = new Block({
-			pos: { x: seedPos[seed].pos.x, y: seedPos[seed].pos.y },
+			pos: { x: seedPos[seed].x, y: seedPos[seed].y },
 			auto: true
 		});
 	}
@@ -231,6 +231,7 @@ const genIsle = function (seed, size) {
 		if (i < size * 2 - 1) {
 			currBlock = move(currBlock, "left");
 		}
+		flip = flip == 0 ? 1 : 0;
 	}
 };
 
