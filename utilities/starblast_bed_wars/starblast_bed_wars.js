@@ -1,12 +1,11 @@
 // Start preliminary settings ----------
-
 const gameSkip = 30;
 
 // End preliminary settings ----------
 
 // Start preliminary functions ----------
 
-const rand = function (n) {
+const rand = function(n) {
   return ~~(Math.random() * n);
 };
 
@@ -23,11 +22,11 @@ const blockProps = {
 
 const bedProps = {
   size: 10,
-	depth: -7.5,
-	obj: "",
-	tex: "",
-	
-	maxHP: 1000
+  depth: -7.5,
+  obj: "",
+  tex: "",
+
+  maxHP: 1000
 };
 
 // End object settings ----------
@@ -50,15 +49,31 @@ class Block {
     this.pos = POS;
     this.auto = AUTO;
   }
-  
-  init () {
+
+  init() {
     blocks.push(this);
     game.setObject({
       id: this.id,
-      position: { x: this.pos.x * blockProps.size, y: this.pos.y * blockProps.size, z: blockProps.depth },
-      rotation: { x: 0, y: 0, z: 0},
-      scale: { x: blockProps.size, y: blockProps.size, z: blockProps.size },
-      type: { id: this.id, obj: blockProps.obj, emissiveColor: blockProps.colors[rand(blockProps.colors.length)] }
+      position: {
+        x: this.pos.x * blockProps.size,
+        y: this.pos.y * blockProps.size,
+        z: blockProps.depth
+      },
+      rotation: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      scale: {
+        x: blockProps.size,
+        y: blockProps.size,
+        z: blockProps.size
+      },
+      type: {
+        id: this.id,
+        obj: blockProps.obj,
+        emissiveColor: blockProps.colors[rand(blockProps.colors.length)]
+      }
     });
     return this;
   }
@@ -70,19 +85,35 @@ class Bed {
     rot: ROT
   }) {
     this.id = `bed-${beds.length}`;
-		this.pos = POS;
-		this.rot = ROT;
-		this.HP = bedProps.maxHP;
+    this.pos = POS;
+    this.rot = ROT;
+    this.HP = bedProps.maxHP;
   }
-  
-  init () {
+
+  init() {
     beds.push(this);
     game.setObject({
       id: this.id,
-      position: { x: this.pos.x * bedProps.size, y: this.pos.y * bedProps.size, z: bedProps.depth },
-      rotation: { x: 0, y: 0, z: 0},
-      scale: { x: bedProps.size, y: bedProps.size, z: bedProps.size },
-      type: { id: this.id, obj: bedProps.obj, emissive: bedProps.tex }
+      position: {
+        x: this.pos.x * bedProps.size,
+        y: this.pos.y * bedProps.size,
+        z: bedProps.depth
+      },
+      rotation: {
+        x: 0,
+        y: 0,
+        z: 0
+      },
+      scale: {
+        x: bedProps.size,
+        y: bedProps.size,
+        z: bedProps.size
+      },
+      type: {
+        id: this.id,
+        obj: bedProps.obj,
+        emissive: bedProps.tex
+      }
     });
     return this;
   }
@@ -103,23 +134,23 @@ class Bed {
 // End functions for this.event
 
 this.options = {
-	root_mode: "",
-	friendly_colors: 4,
+  root_mode: "",
+  friendly_colors: 4,
   map_size: 100,
   custom_map: "",
-	asteroids_strength: 1000000,
-	
-	radar_zoom: 1,
-	
-	max_players: 20
+  asteroids_strength: 1000000,
+
+  radar_zoom: 1,
+
+  max_players: 20
 };
 
-this.tick = function () {
+this.tick = function() {
   if (game.step % gameSkip == 0) {
-    
-	}
+
+  }
 };
 
-this.event = function (event) {
-  
+this.event = function(event) {
+
 };
