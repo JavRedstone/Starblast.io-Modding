@@ -22,14 +22,14 @@ let genFinished = false;
 
 const blockProps = {
   size: 5,
-  depth: -10,
+  depth: -50,
   obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-  colors: ["3a3", "3b3", "3c3", "3d3", "3e3", "3f3"]
+  colors: ["#1a3", "#2a3", "#3a3", "#4a3", "#5a3", "#6a3", "#7a3", "#8a3", "#9a3"]
 };
 
 const bedProps = {
   size: 10,
-  depth: -7.5,
+  depth: -45,
   obj: "",
   tex: "",
 
@@ -41,13 +41,13 @@ const bedProps = {
 // Start preliminary position constants ----------
 
 const sizes = {
-	centre: 16,
-	median: 4,
-	base: 8
+	centre: 8,
+	median: 2,
+	base: 4
 };
 const dists = {
-	base: 100,
-	median: 40,
+	base: 25,
+	median: 15,
 	
 	spawn: sizes.base / 2,
 	bed: sizes.base * 3 / 4
@@ -63,7 +63,7 @@ const seedPos = {
 	base1: { x: -dists.base, y: 0 },
 	base2: { x: 0, y: dists.base },
 	base3: { x: dists.base, y: 0 },
-	base4: { x: 0, y: -dists.median }
+	base4: { x: 0, y: -dists.base }
 };
 
 // End preliminary position constants ----------
@@ -175,16 +175,16 @@ const move = function (block, dir = "left", remove = false, auto = true) {
 	let newPos = {};
 	switch (dir) {
 		case "left":
-			newPos = { x: block.pos.x - blockProps.size, y: block.pos.y };
+			newPos = { x: block.pos.x - 1, y: block.pos.y };
 			break;
 		case "up":
-			newPos = { x: block.pos.x, y: block.pos.y + blockProps.size };
+			newPos = { x: block.pos.x, y: block.pos.y + 1 };
 			break;
 		case "right":
-			newPos = { x: block.pos.x + blockProps.size, y: block.pos.y };
+			newPos = { x: block.pos.x + 1, y: block.pos.y };
 			break;
 		case "down":
-			newPos = { x: block.pos.x, y: block.pos.y - blockProps.size };
+			newPos = { x: block.pos.x, y: block.pos.y - 1 };
 			break;
 	}
 	let newBlock = new Block({
@@ -223,7 +223,7 @@ const genIsle = function (seed, size) {
 	let currBlock = new Block({
 		pos: { x: seed.pos.x + size, y: seed.pos.y + size },
 		auto: true
-	});
+	}).init();
 	for (let i = 0; i < 2 * size; i++) {
 		for (let j = 0; j < 2 * size - 1; j++) {
 			currBlock = flip == 0 ? move(currBlock, "down") : move(currBlock, "up");
