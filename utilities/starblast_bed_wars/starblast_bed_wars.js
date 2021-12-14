@@ -41,15 +41,29 @@ const bedProps = {
 // Start preliminary position constants ----------
 
 const sizes = {
-	centre: 16
+	centre: 16,
+	median: 4,
+	base: 8
 };
 const dists = {
 	base: 100,
+	median: 40
+	
 	spawn: sizes.base / 2,
 	bed: sizes.base * 3 / 4
 };
 const seedPos = {
-	centre: { x: 0, y: 0 }
+	centre: { x: 0, y: 0 },
+	
+	median1: { x: -dists.median, y: 0 },
+	median2: { x: 0, y: dists.median },
+	median3: { x: dists.median, y: 0 },
+	median4: { x: 0, y: -dists.median },
+	
+	base1: { x: -dists.base, y: 0 },
+	base2: { x: 0, y: dists.base },
+	base3: { x: dists.base, y: 0 },
+	base4: { x: 0, y: -dists.median }
 };
 
 // End preliminary position constants ----------
@@ -59,7 +73,7 @@ const seedPos = {
 const blocks = [];
 const beds = [];
 
-const seeds = [];
+const seeds = {};
 
 // End object storage variables ----------
 
@@ -163,11 +177,11 @@ const move = function (block, dir = "left", remove = false, auto = true) {
 		case "left":
 			newPos = { x: block.pos.x - blockProps.size, y: block.pos.y };
 			break;
-		case "right":
-			newPos = { x: block.pos.x + blockProps.size, y: block.pos.y };
-			break;
 		case "up":
 			newPos = { x: block.pos.x, y: block.pos.y + blockProps.size };
+			break;
+		case "right":
+			newPos = { x: block.pos.x + blockProps.size, y: block.pos.y };
 			break;
 		case "down":
 			newPos = { x: block.pos.x, y: block.pos.y - blockProps.size };
@@ -194,6 +208,15 @@ const move = function (block, dir = "left", remove = false, auto = true) {
 // End helper functions for this.tick ----------
 
 // Start functions for this.tick ----------
+
+const genSeeds = function () {
+	for (let seed in seedPos) {
+		seeds[seed] = new Block({
+			pos: { x: seedPos[seed].pos.x, y: seedPos[seed].pos.y },
+			auto: true
+		});
+	}
+};
 
 const genIsle = function (seed, size) {
 	let flip = 0;
@@ -237,6 +260,20 @@ this.tick = function() {
 		
 		}
 		else {
+			genSeeds();
+			
+			genIsle(seeds.centre, sizes.centre);
+			
+			genIsle(seeds.median1, sizes.median);
+			genIsle(seeds.median2, sizes.median);
+			genIsle(seeds.median3, sizes.median);
+			genIsle(seeds.median4, sizes.median);
+			
+			genIsle(seeds.base1, sizes.base);
+			genIsle(seeds.base2, sizes.base);
+			genIsle(seeds.base3, sizes.base);
+			genIsle(seeds.base4, sizes.base);
+			
 			genFinished = true;
 		}
   }
