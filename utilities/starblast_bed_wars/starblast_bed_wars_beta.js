@@ -2,12 +2,16 @@
 
 const gameStep = 30;
 
-const blockWidth = 10;
-const scaleSize = blockWidth * 2 / 3;
-const blockDepth = -50;
-
-const baseDist = 200;
-const spawnDist = 5
+const sizes = {
+  centre: 16,
+  median: 4,
+  base: 8
+};
+const blockWidth = 5;
+const scaleSize = blockWidth * 1 / 2;
+const blockDepth = -2;
+const baseDist = 20;
+const spawnDist = sizes.base / 2;
 
 // End preliminary settings ----------
 
@@ -29,11 +33,6 @@ const emissiveTexs = {
     "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed3.png",
     "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/emissive_bed4.png"
   ]
-};
-const sizes = {
-  centre: 16,
-  median: 4,
-  base: 8
 };
 
 // End preliminary constants ----------
@@ -57,7 +56,7 @@ class Block {
     emissive: EMISSIVE
   }) {
     this.id = `block-${blocks.length}`;
-    this.position = POSITION;
+    this.position = { x: POSITION.x * blockWidth, y: POSITION.y * blockWidth, z: POSITION.z * blockWidth};
     this.rotation = ROTATION;
     this.scale = SCALE;
     this.type = { id: this.id, obj: OBJ, emissive: EMISSIVE };
@@ -80,7 +79,7 @@ let gameStarted = false;
 
 let blocks = [];
 
-let seeds = {
+let seedPos = {
   centre: { x: sizes.centre, y: sizes.centre },
   
   median1: { x: sizes.median - baseDist / 2, y: sizes.median },
@@ -93,6 +92,7 @@ let seeds = {
   base3: { x: sizes.base + baseDist, y: sizes.base },
   base4: { x: sizes.base, y: sizes.base - baseDist }
 };
+let seeds = {};
 
 let spawns = [
   { x: -baseDist - spawnDist, y: 0 },
@@ -157,16 +157,16 @@ const move = function (block, dir = "left", auto = true, remove = false) {
 // Start functions for this.tick ----------
 
 const genSeeds = function () {
-  for (let seed in seeds) {
-    seed = new Block({
-      position: { x: seed.x, y: seed.y, z: blockDepth },
+  for (let seed in seedPos) {
+    seeds[seed] = new Block({
+      position: { x: seedPos[seed].x, y: seedPos[seed].y, z: blockDepth },
       rotation: { x: 0, y: 0, z: 0 },
       scale: { x: scaleSize, y: scaleSize, z: scaleSize },
       obj: objects.block,
       emissive: emissiveTexs.block[rand(emissiveTexs.block.length)]
     }).init();
   }
-}
+};
 
 const genIsle = function (seed, size) {
   let flip = 0;
@@ -175,8 +175,8 @@ const genIsle = function (seed, size) {
     for (let j = 0; j < size - 1; j++) {
       currBlock = flip == 0 ? move(currBlock, "down") : move(currBlock, "up");
     }
-    if (i < size) {
-      move(currBlock, "left");
+    if (i < size - 1) {
+      currBlock = move(currBlock, "left");
     }
     flip = flip == 0 ? 1 : 0;
   }
@@ -193,16 +193,16 @@ this.tick = function () {
       genSeeds();
       
       genIsle(seeds.centre, sizes.centre);
-      genIsle(seeds.median1, sizes.median1);
-      genIsle(seeds.median2, sizes.median2);
-      genIsle(seeds.median3, sizes.median3);
-      genIsle(seeds.median4, sizes.median4);
-      genIsle(seeds.base1, sizes.base1);
-      genIsle(seeds.base2, sizes.base2);
-      genIsle(seeds.base3, sizes.base3);
-      genIsle(seeds.base4, sizes.base4);
+      genIsle(seeds.median1, sizes.median);
+      genIsle(seeds.median2, sizes.median);
+      genIsle(seeds.median3, sizes.median);
+      genIsle(seeds.median4, sizes.median);
+      genIsle(seeds.base1, sizes.base);
+      genIsle(seeds.base2, sizes.base);
+      genIsle(seeds.base3, sizes.base);
+      genIsle(seeds.base4, sizes.base);
       
-      started = true;
+      genFinished = true;
     }
   }
 };
@@ -212,7 +212,7 @@ this.event = function (event) {
   switch (event.name) {
     case "ship_spawned":
       ship.custom = {
-        teamNum: 
+        teamNum: rand(2)
       };
       
       break;
