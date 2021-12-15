@@ -53,7 +53,7 @@ const customMap = "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999";
 const customShips = {
-  waiter: '{"name":"Waiter","level":1.1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1.1,"model":1,"code":121,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
+  waiter: '{"name":"Waiter","level":1.1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1.1,"model":1,"code":111,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
 };
 
 const playersReq = 4;
@@ -198,6 +198,12 @@ class Block {
     this.id = `block-${blocks.length}`;
     this.pos = POS;
     this.auto = AUTO;
+		this.range = {
+			x1: POS.x - blockProps.size / 2,
+			y1: POS.y - blockProps.size / 2,
+			x2: POS.x + blockProps.size / 2,
+			y2: POS.y + blockProps.size / 2
+		};
   }
 
   init() {
@@ -378,6 +384,21 @@ const waitPlayers = function () {
   }
 };
 
+const preventFall = function () {
+	game.ships.forEach((ship) => {
+		let on = false;
+		blocks.forEach((block) => {
+			if ((ship.x >= block.range.x1 && ship.y >= block.range.y1) && (ship.x <= block.range.x2 && ship.y <= block.range.y2)) {
+				ship.custom.onBlock = block;
+				on = true;
+			}
+		});
+		if (!on) {
+			ship.set(ship.custom.onBlock.pos);
+		}
+	});
+};
+
 // End functions for this.tick ----------
 
 // Start functions for this.event ----------
@@ -401,7 +422,7 @@ this.tick = function() {
   if (game.step % gameSkip == 0) {
 		if (genFinished) {
 		  if (started) {
-		    
+		    preventFall();
 		  }
 		  else {
 		    waitPlayers();
