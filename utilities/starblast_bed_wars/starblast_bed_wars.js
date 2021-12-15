@@ -1,6 +1,7 @@
 // Start preliminary settings ----------
 
 const gameSkip = 30;
+
 const customMap = "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999\n"+
 "99                                              99\n"+
@@ -51,20 +52,64 @@ const customMap = "99999999999999999999999999999999999999999999999999\n"+
 "99                                              99\n"+
 "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999";
+const customShips = {
+  waiter: '{"name":"Waiter","level":1.1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1.1,"model":1,"code":121,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
+};
+
+const playersReq = 4;
 
 // End preliminary settings ----------
 
 // Start preliminary functions ----------
 
-const rand = function(n) {
+const rand = function (n) {
   return ~~(Math.random() * n);
+};
+
+const hideUI = function (id, ship) {
+  ship.setUIComponent({
+    id: id,
+    position: [0, 0, 0, 0],
+    visible: false,
+    clickable: false
+  });
+};
+const getCrystals = function (ship) {
+  return ((Math.pow((Math.trunc(ship.type / 100) || 0), 2)) * 20) / 2;
 };
 
 // End preliminary functions ----------
 
+// Start preliminary constants ----------
+
+const uis = {
+  waitPlayers: {
+    id: "waitPlayers",
+    position: [40, 15, 20, 10],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 50],
+        value: "Waiting for more players...️",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 50, 100, 50],
+        color: "#cde"
+      }
+    ]
+  }
+};
+
+// End preliminary constants ----------
+
 // Start preliminary variables ----------
 
 let genFinished = false;
+let started = false;
+
+let currTeamNum = 0;
 
 // End preliminary variables ----------
 
@@ -95,13 +140,15 @@ const sizes = {
 	median: 4,
 	base: 8
 };
+
 const dists = {
 	base: 40,
 	median: 20,
 	
 	spawn: sizes.base / 2,
-	bed: sizes.base * 3 / 4
+	bed: sizes.base * 1 / 4
 };
+
 const seedPos = {
 	centre: { x: 0, y: 0 },
 	
@@ -116,16 +163,30 @@ const seedPos = {
 	base4: { x: 0, y: -dists.base }
 };
 
+const spawnPos = [
+  { x: -dists.base - dists.spawn, y: 0 },
+  { x: 0, y: dists.base + dists.spawn },
+  { x: dists.base + dists.spawn, y: 0 },
+  { x: 0, y: -dists.base - dists.spawn }
+];
+
+const bedPos = [
+  { x: -dists.base - dists.bed, y: 0 },
+  { x: 0, y: dists.base + dists.bed },
+  { x: dists.base + dists.bed, y: 0 },
+  { x: 0, y: -dists.base - dists.bed }
+];
+
 // End preliminary position constants ----------
 
-// Start object storage variables ----------
+// Start object storage constants ----------
 
 const blocks = [];
 const beds = [];
 
 const seeds = {};
 
-// End object storage variables ----------
+// End object storage constants ----------
 
 // Start object classes ----------
 
@@ -285,6 +346,38 @@ const genIsle = function (seed, size) {
 	}
 };
 
+const waitPlayers = function () {
+  if (game.ships.length < playersReq) {
+    uis.waitPlayers.components[1].value = `${playersReq - game.ships.length} player(s) remaining`;
+    game.setUIComponent(uis.waitPlayers);
+    game.ships.forEach((ship) => {
+      if (ship.custom.teamNum != null) {
+        ship.set({
+          x: spawnPos[ship.custom.teamNum].x * blockProps.size,
+          y: spawnPos[ship.custom.teamNum].y * blockProps.size,
+          vx: 0,
+          vy: 0,
+          type: 111,
+          crystals: getCrystals(ship),
+          stats: 99999999,
+          collider: false,
+          idle: true
+        });
+      }
+    });
+  }
+  else {
+    hideUI("waitPlayers", game);
+    game.ships.forEach((ship) => {
+      ship.set({
+        collider: true,
+        idle: false
+      });
+    });
+    started = true;
+  }
+};
+
 // End functions for this.tick ----------
 
 // Start functions for this.event ----------
@@ -299,16 +392,20 @@ this.options = {
   map_size: 50,
   custom_map: customMap,
   asteroids_strength: 1000000,
-
+  ships: Object.values(customShips),
   radar_zoom: 1,
-
   max_players: 20
 };
 
 this.tick = function() {
   if (game.step % gameSkip == 0) {
 		if (genFinished) {
-		
+		  if (started) {
+		    
+		  }
+		  else {
+		    waitPlayers();
+		  }
 		}
 		else {
 			genSeeds();
@@ -331,5 +428,14 @@ this.tick = function() {
 };
 
 this.event = function(event) {
-
+  switch (event.name) {
+    case "ship_spawned":
+      ship.custom = {
+        teamNum: currTeamNum
+      };
+      currTeamNum = currTeamNum < 4 ? currTeamNum + 1 : 0;
+      break;
+    case "ui_component_clicked":
+      break;
+  }
 };
