@@ -1,6 +1,56 @@
 // Start preliminary settings ----------
 
 const gameSkip = 30;
+const customMap = "99999999999999999999999999999999999999999999999999\n"+
+"99999999999999999999999999999999999999999999999999\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99                                              99\n"+
+"99999999999999999999999999999999999999999999999999\n"+
+"99999999999999999999999999999999999999999999999999";
 
 // End preliminary settings ----------
 
@@ -41,13 +91,13 @@ const bedProps = {
 // Start preliminary position constants ----------
 
 const sizes = {
-	centre: 8,
-	median: 2,
-	base: 4
+	centre: 16,
+	median: 4,
+	base: 8
 };
 const dists = {
-	base: 25,
-	median: 15,
+	base: 40,
+	median: 20,
 	
 	spawn: sizes.base / 2,
 	bed: sizes.base * 3 / 4
@@ -221,14 +271,14 @@ const genSeeds = function () {
 const genIsle = function (seed, size) {
 	let flip = 0;
 	let currBlock = new Block({
-		pos: { x: seed.pos.x + size, y: seed.pos.y + size },
+		pos: { x: seed.pos.x + size / 2, y: seed.pos.y + size / 2 },
 		auto: true
 	}).init();
-	for (let i = 0; i < 2 * size; i++) {
-		for (let j = 0; j < 2 * size - 1; j++) {
+	for (let i = 0; i < size; i++) {
+		for (let j = 0; j < size - 1; j++) {
 			currBlock = flip == 0 ? move(currBlock, "down") : move(currBlock, "up");
 		}
-		if (i < size * 2 - 1) {
+		if (i < size - 1) {
 			currBlock = move(currBlock, "left");
 		}
 		flip = flip == 0 ? 1 : 0;
@@ -247,7 +297,7 @@ this.options = {
   root_mode: "",
   friendly_colors: 4,
   map_size: 50,
-  custom_map: "",
+  custom_map: customMap,
   asteroids_strength: 1000000,
 
   radar_zoom: 1,
