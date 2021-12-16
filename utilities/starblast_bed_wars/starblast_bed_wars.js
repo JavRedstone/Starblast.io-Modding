@@ -53,10 +53,12 @@ const customMap = "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999\n"+
 "99999999999999999999999999999999999999999999999999";
 const customShips = {
-  waiter: '{"name":"Waiter","level":1.1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1.1,"model":1,"code":111,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
+  waiter: '{"name":"Waiter","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}',
+
+  killerCube: '{"name":"Killer-Cube","level":7,"model":1,"size":2,"zoom":1,"specs":{"shield":{"capacity":[400,400],"reload":[15,15]},"generator":{"capacity":[200,200],"reload":[50,50]},"ship":{"mass":100,"speed":[150,150],"rotation":[100,100],"acceleration":[150,150]}},"bodies":{"cube":{"section_segments":[40,45,135,140,220,225,315,320],"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0],"y":[0,0,140,0],"z":[0,0,0,0]},"width":[0,50,50,0],"height":[0,50,50,0],"propeller":true,"texture":[63,63,17]},"cannon":{"section_segments":5,"offset":{"x":0,"y":100,"z":50},"position":{"x":[0,0,0,0,0],"y":[-80,-50,-20,0,20],"z":[0,0,0,0,0]},"width":[0,5,5,10,0],"height":[0,5,5,10,0],"angle":0,"laser":{"damage":[20,20],"rate":10,"type":1,"speed":[250,250],"number":1,"error":5},"texture":[4,3,17,6]}},"typespec":{"name":"Killer-Cube","level":7,"model":1,"code":701,"specs":{"shield":{"capacity":[400,400],"reload":[15,15]},"generator":{"capacity":[200,200],"reload":[50,50]},"ship":{"mass":100,"speed":[150,150],"rotation":[100,100],"acceleration":[150,150]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,1.424,1.454,1.501,1.591,1.737,1.913,2.196,2.602,3.288,4.538,5.776,5.698,5.61,5.698,5.776,4.538,3.288,2.602,2.196,1.913,1.737,1.591,1.501,1.454,1.424,1.414,0,0,0,0,0,0,0,0,0,0,0],"lasers":[{"x":0,"y":0.8,"z":2,"angle":0,"damage":[20,20],"rate":10,"type":1,"speed":[250,250],"number":1,"spread":0,"error":5,"recoil":0}],"radius":5.776}}'
 };
 
-const playersReq = 4;
+const playersReq = 1;
 
 // End preliminary settings ----------
 
@@ -118,7 +120,7 @@ let currTeamNum = 0;
 const blockProps = {
   size: 5,
   depth: -50,
-  obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
+  obj: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/starblast_cube.obj",
   colors: ["#1a3", "#2a3", "#3a3", "#4a3", "#5a3", "#6a3", "#7a3", "#8a3", "#9a3"]
 };
 
@@ -363,7 +365,8 @@ const waitPlayers = function () {
           y: spawnPos[ship.custom.teamNum].y * blockProps.size,
           vx: 0,
           vy: 0,
-          type: 111,
+          type: 101,
+          shield: 1000,
           crystals: getCrystals(ship),
           stats: 99999999,
           collider: false,
@@ -376,6 +379,10 @@ const waitPlayers = function () {
     hideUI("waitPlayers", game);
     game.ships.forEach((ship) => {
       ship.set({
+        type: 701,
+        shield: 1000,
+        crystals: getCrystals(ship),
+        stats: 99999999,
         collider: true,
         idle: false
       });
@@ -449,12 +456,13 @@ this.tick = function() {
 };
 
 this.event = function(event) {
+  let ship = event.ship;
   switch (event.name) {
     case "ship_spawned":
       ship.custom = {
         teamNum: currTeamNum
       };
-      currTeamNum = currTeamNum < 4 ? currTeamNum + 1 : 0;
+      currTeamNum = currTeamNum < 3 ? currTeamNum + 1 : 0;
       break;
     case "ui_component_clicked":
       break;
