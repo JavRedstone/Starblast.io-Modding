@@ -2,6 +2,8 @@
 
 const gameSkip = 30;
 
+const playersReq = 1;
+
 const bedConfig = {
 	scale: 10,
 	obj: "",
