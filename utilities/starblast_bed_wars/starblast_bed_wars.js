@@ -5,7 +5,7 @@ const gameSkip = 30;
 const bedConfig = {
 	scale: 10,
 	obj: "",
-	emissives: [];
+	emissives: []
 };
 
 // End preliminary settings ----------
@@ -149,15 +149,15 @@ const waitPlayers = function () {
 	if (game.ships.length < playersReq) {
 		game.ships.forEach((ship) => {
 			ship.set({
-				x: customMap.shipSpawn.x,
-				y: customMap.shipSpawn.y,
+				x: customMap.shipSpawn[ship.custom.teamNum].x,
+				y: customMap.shipSpawn[ship.custom.teamNum].y,
 				vx: 0,
 				vy: 0,
 				
 				type: 101,
 				shield: 1000,
 				crystals: 0,
-				stats: 99999999
+				stats: 99999999,
 				
 				idle: true,
 				collider: false
@@ -181,7 +181,7 @@ this.options = {
 	root_mode: "",
 	
 	map_size: 60,
-	custom_map: customMap,
+	custom_map: customMap.map,
 	asteroids_strength: 1000000,
 	
 	reset_tree: true,
