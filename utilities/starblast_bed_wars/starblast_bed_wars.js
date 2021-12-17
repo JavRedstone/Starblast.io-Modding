@@ -169,9 +169,45 @@ const maps = [
 	}
 ];
 
-const customShips = {
-	waiter: '{"name":"Waiter","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
+const uis = {
+  waitPlayers: {
+    id: "waitPlayers",
+    position: [40, 15, 20, 10],
+    visible: true,
+    components: [{
+        type: "text",
+        position: [0, 0, 100, 50],
+        value: "Waiting for more players...️",
+        color: "#cde"
+      },
+      {
+        type: "text",
+        position: [0, 50, 100, 50],
+        color: "#cde"
+      }
+    ]
+  },
+  waitPlayersBoard: {
+    id: "scoreboard",
+    visible: true,
+    components: [
+      {
+        type: "text",
+        position: [5, 0, 90, 10],
+        value: "Waiting for more players...",
+        color: "#cde"
+      }
+    ]
+  }
 };
+
+const customShips = {
+	waiter: '{"name":"Waiter","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Waiter","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}',
+
+  double: '{"name":"Double","level":7,"model":1,"size":2,"zoom":1,"specs":{"shield":{"capacity":[200,200],"reload":[20,20]},"generator":{"capacity":[150,150],"reload":[50,50]},"ship":{"mass":200,"speed":[150,150],"rotation":[150,150],"acceleration":[100,100]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[0,-10,40,80,70,80],"z":[0,0,0,0,0,0]},"width":[0,15,25,20,0],"height":[0,15,25,20,0],"texture":[12,1,63,12],"propeller":true},"cockpit":{"section_segments":8,"offset":{"x":0,"y":-50,"z":25},"position":{"x":[0,0,0,0],"y":[20,40,80],"z":[-4,0,-6]},"width":[5,10,5],"height":[0,8,0],"texture":[9]},"wings":{"section_segments":8,"offset":{"x":15,"y":-20,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-85,-95,50,60,50,60],"z":[0,0,0,0,0,0]},"width":[0,5,25,10,0],"height":[0,5,25,10,0],"texture":[12,2,3,4],"propeller":true},"cannons":{"section_segments":12,"offset":{"x":35,"y":-10,"z":-10},"position":{"x":[0,0,0,0,0,0,0],"y":[-60,-70,-20,0,20,30,25],"z":[0,0,0,0,0,0,0]},"width":[0,5,6,10,10,5,0],"height":[0,5,6,10,10,5,0],"angle":5,"laser":{"damage":[100,100],"rate":2,"type":1,"speed":[250,250],"number":1,"error":0,"recoil":50},"texture":[3,1,63,3,12,2]}},"typespec":{"name":"Double","level":7,"model":1,"code":701,"specs":{"shield":{"capacity":[200,200],"reload":[20,20]},"generator":{"capacity":[150,150],"reload":[50,50]},"ship":{"mass":200,"speed":[150,150],"rotation":[150,150],"acceleration":[100,100]}},"shape":[3.098,4.669,4.391,3.481,3.239,2.698,2.358,2.11,1.961,1.891,1.856,1.85,1.836,1.872,1.903,1.885,1.873,1.959,2,1.935,1.895,1.946,2.154,2.102,2.036,2.004,2.036,2.102,2.154,1.946,1.895,1.935,2,1.959,1.873,1.885,1.903,1.872,1.836,1.85,1.856,1.891,1.961,2.11,2.358,2.698,3.239,3.481,4.391,4.669],"lasers":[{"x":1.156,"y":-3.189,"z":-0.4,"angle":5,"damage":[100,100],"rate":2,"type":1,"speed":[250,250],"number":1,"spread":0,"error":0,"recoil":50},{"x":-1.156,"y":-3.189,"z":-0.4,"angle":-5,"damage":[100,100],"rate":2,"type":1,"speed":[250,250],"number":1,"spread":0,"error":0,"recoil":50}],"radius":4.669}}'
+};
+
+const shipChoices = ["Double"];
 
 // End preliminary constants ----------
 
@@ -192,6 +228,11 @@ let started = false;
 let gameStatus = 0;
 
 let currTeamNum = 0;
+
+let shipChoice = {
+  ship: rand(shipChoices.length),
+  i: 0
+};
 
 // End preliminary variables ----------
 
@@ -242,16 +283,20 @@ const sendBack = function () {
 
 const waitPlayers = function () {
 	if (game.ships.length < playersReq) {
+	  uis.waitPlayers.components[1].value = `${playersReq - game.ships.length} player(s) remaining`;
+	  game.setUIComponent(uis.waitPlayers);
+	  game.setUIComponent(uis.waitPlayersBoard);
 		game.ships.forEach((ship) => {
 			ship.set({
 				type: 101,
-				
 				idle: true,
 				collider: false
 			});
 		});
 	}
 	else {
+	  hideUI("waitPlayers", game);
+	  hideUI("waitPlayersBoard", game);
 		game.ships.forEach((ship) => {
 			ship.set({
 				idle: false,
@@ -260,6 +305,15 @@ const waitPlayers = function () {
 		});
 		started = true;
 	}
+};
+
+const selectShip = function () {
+  if (shipChoice.i < shipChoice.ship) {
+    shipChoice.i++;
+  }
+  else {
+    gameStatus++;
+  }
 };
 
 // End this.tick functions ----------
