@@ -2,7 +2,7 @@
 
 const gameSkip = 30;
 
-const playersReq = 1;
+const playersReq = 5;
 
 const bedConfig = {
 	scale: 10,
@@ -228,6 +228,11 @@ class Bed {
 const sendBack = function () {
 	game.ships.forEach((ship) => {
 		ship.set({
+  		x: customMap.shipSpawn[ship.custom.teamNum].x,
+			y: customMap.shipSpawn[ship.custom.teamNum].y,
+			vx: 0,
+			vy: 0,
+		  
 			shield: 1000,
 			crystals: 0,
 			stats: 99999999
@@ -239,11 +244,6 @@ const waitPlayers = function () {
 	if (game.ships.length < playersReq) {
 		game.ships.forEach((ship) => {
 			ship.set({
-				x: customMap.shipSpawn[ship.custom.teamNum].x,
-				y: customMap.shipSpawn[ship.custom.teamNum].y,
-				vx: 0,
-				vy: 0,
-				
 				type: 101,
 				
 				idle: true,
@@ -285,20 +285,23 @@ this.options = {
 };
 
 this.tick = function () {
-	if (started) {
-		switch (gameStatus) {
-			case 0:
-				break;
-			case 1:
-				break;
-			case 2:
-				break;
-		}
-	}
-	else {
-		waitPlayers();
-		sendBack();
-	}
+  if (game.step % gameSkip == 0) {
+	  if (started) {
+		  switch (gameStatus) {
+		  	case 0:
+		  	  sendBack();
+		  		break;
+		  	case 1:
+		  	  break;
+		  	case 2:
+		  	  break;
+		  }
+	  }
+	  else {
+	    waitPlayers();
+	    sendBack();
+	  }
+  }
 };
 
 this.event = function (event) {
