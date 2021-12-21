@@ -167,11 +167,7 @@ const objects = {
       "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive3_final.png",
       "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive4_final.png"
     ],
-    physics: {
-      mass: 500,
-      shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,1.425,1.459,1.517,1.61,1.732,1.935,2.204,2.615,3.317,4.243,4.206,4.071,4.007,4.071,4.206,4.243,3.317,2.615,2.204,1.935,1.732,1.61,1.517,1.459,1.425,1.414,0,0,0,0,0,0,0,0,0,0,0],
-      fixed: true
-    },
+    rotations: [0, Math.PI * 3 / 2, Math.PI, Math.PI / 2],
     depth: 0,
     scale: 10
   }
@@ -257,26 +253,31 @@ class Match {
     this.currTeam = 0;
     this.started = false;
   }
-  
-  init () {
-   for (let i = 0; i < this.map.bedSpawn.length; i++) {
-      game.setObject({
-        id: `bed-${i}`,
-        position: { x: this.map.bedSpawn[i].x, y: this.map.bedSpawn[i].y, z: objects.bed.depth },
-        rotation: { x: 0, y: 0, z: 0 },
-        scale: { x: objects.bed.scale, y: objects.bed.scale, z: objects.bed.scale },
-        type: {
-          id: `bed-${i}`,
-          obj: objects.bed.obj,
-          emissive: objects.bed.emissives[i]
-        },
-        physics: objects.bed.physics
-      });
-    }
-    return this;
-  }
 }
-let currMatch = new Match().init();
+let currMatch = new Match();
+
+const prepMatch = function () {
+  for (let i = 0; i < currMatch.map.bedSpawn.length; i++) {
+    game.setObject({
+      id: `bed-${i}`,
+      position: { x: currMatch.map.bedSpawn[i].x, y: currMatch.map.bedSpawn[i].y, z: objects.bed.depth },
+      rotation: { x: 0, y: 0, z: objects.bed.rotations[i] },
+      scale: { x: objects.bed.scale, y: objects.bed.scale, z: objects.bed.scale },
+      type: {
+        id: `bed-${i}`,
+        obj: objects.bed.obj,
+        emissive: objects.bed.emissives[i]
+      },
+    });
+    
+    game.addAsteroid({
+      x: currMatch.map.bedSpawn[i].x,
+      y: currMatch.map.bedSpawn[i].y,
+      
+      size: 20
+    });
+  }
+};
 
 const sendBack = function () {
 	game.ships.forEach((ship) => {
@@ -318,6 +319,15 @@ const waitPlayers = function () {
 	}
 };
 
+const monitorMatch = function () {
+  for (let i = 0; i < currMatch.map.bedSpawn.length; i++) {
+    game.asteroids[i].set({
+      x: currMatch.map.bedSpawn[i].x,
+      y: currMatch.map.bedSpawn[i].y
+    });
+  }
+};
+
 const setUIs = function () {
   game.ships.forEach((ship) => {
     uis.chosenShip.components[2].value = JSON.parse(currMatch.customShip).name;
@@ -340,8 +350,12 @@ this.options = {
 };
 
 this.tick = function () {
+  if (game.step == 0) {
+    prepMatch();
+  }
   if (game.step % gameSkip == 0) {
 	  if (currMatch.started) {
+	    monitorMatch();
 	    setUIs();
 	  }
 	  else {
