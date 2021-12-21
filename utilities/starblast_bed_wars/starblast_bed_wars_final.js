@@ -1,5 +1,5 @@
 const gameSkip = 30;
-const playersReq = 2;
+const playersReq = 1;
 
 const shipTier = 6;
 const shipType = shipTier * 100 + 1;
@@ -162,8 +162,18 @@ const objects = {
   bed: {
     obj: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/starblast_bed_final.obj",
     emissives: [
-      "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive1.png"
-    ]
+      "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive1_final.png",
+      "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive2_final.png",
+      "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive3_final.png",
+      "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/starblast_bed_wars/bed_emissive4_final.png"
+    ],
+    physics: {
+      mass: 500,
+      shape: [0,0,0,0,0,0,0,0,0,0,0,0,0,1.425,1.459,1.517,1.61,1.732,1.935,2.204,2.615,3.317,4.243,4.206,4.071,4.007,4.071,4.206,4.243,3.317,2.615,2.204,1.935,1.732,1.61,1.517,1.459,1.425,1.414,0,0,0,0,0,0,0,0,0,0,0],
+      fixed: true
+    },
+    depth: 0,
+    scale: 10
   }
 };
 const funcShips = {
@@ -247,8 +257,26 @@ class Match {
     this.currTeam = 0;
     this.started = false;
   }
+  
+  init () {
+   for (let i = 0; i < this.map.bedSpawn.length; i++) {
+      game.setObject({
+        id: `bed-${i}`,
+        position: { x: this.map.bedSpawn[i].x, y: this.map.bedSpawn[i].y, z: objects.bed.depth },
+        rotation: { x: 0, y: 0, z: 0 },
+        scale: { x: objects.bed.scale, y: objects.bed.scale, z: objects.bed.scale },
+        type: {
+          id: `bed-${i}`,
+          obj: objects.bed.obj,
+          emissive: objects.bed.emissives[i]
+        },
+        physics: objects.bed.physics
+      });
+    }
+    return this;
+  }
 }
-let currMatch = new Match();
+let currMatch = new Match().init();
 
 const sendBack = function () {
 	game.ships.forEach((ship) => {
