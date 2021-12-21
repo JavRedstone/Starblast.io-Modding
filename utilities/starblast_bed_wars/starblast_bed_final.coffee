@@ -1,8 +1,9 @@
 return model =
   name: 'Bed'
+  size: 1
   bodies:
     headrest:
-      section_segments: [35, 45, 135, 225, 315, 325]
+      section_segments: [45, 135, 225, 315]
       offset:
         x: 0
         y: 0
@@ -15,7 +16,7 @@ return model =
       height: [0, 20, 20, 0]
       texture: [0]
     body:
-      section_segments: [35, 45, 135, 225, 315, 325]
+      section_segments: [45, 135, 225, 315]
       offset:
         x: 0
         y: 50
