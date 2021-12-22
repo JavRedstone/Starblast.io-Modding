@@ -269,13 +269,6 @@ const prepMatch = function () {
         emissive: objects.bed.emissives[i]
       },
     });
-    
-    game.addAsteroid({
-      x: currMatch.map.bedSpawn[i].x,
-      y: currMatch.map.bedSpawn[i].y,
-      
-      size: 20
-    });
   }
 };
 
@@ -320,12 +313,7 @@ const waitPlayers = function () {
 };
 
 const monitorMatch = function () {
-  for (let i = 0; i < currMatch.map.bedSpawn.length; i++) {
-    game.asteroids[i].set({
-      x: currMatch.map.bedSpawn[i].x,
-      y: currMatch.map.bedSpawn[i].y
-    });
-  }
+  
 };
 
 const setUIs = function () {
