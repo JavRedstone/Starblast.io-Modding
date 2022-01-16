@@ -577,27 +577,27 @@ Full example: https://github.com/pmgl/starblast-modding/blob/master/examples/war
 ```js
 var warp_button = {
   id: "warp",
-  position: [2,50,8,14],
+  position: [2, 50, 8, 14],
   clickable: true,
   shortcut: "W",
   visible: true,
   components: [
-    { type:"round",position:[0,0,100,100],fill:"#456",stroke:"#CDE",width:2},
-    { type: "text",position:[10,35,80,30],value:"WARP",color:"#CDE"},
-    { type: "text",position:[20,70,60,20],value:"[W]",color:"#CDE"}
-    ]
+    { type: "round", position: [0,0,100,100], fill: "#456", stroke: "#CDE", width: 2},
+    { type: "text", position: [10,35,80,30], value: "WARP", color: "#CDE"},
+    { type: "text", position: [20,70,60,20], value: "[W]", color: "#CDE"}
+  ]
 };
 
 var warpShip = function(ship) {
-  x = (Math.random()-.5) * ship.game.options.map_size*10 ;
-  y = (Math.random()-.5) * ship.game.options.map_size*10 ;
-  ship.set({x:x,y:y,vx:0,vy:0,invulnerable:180}) ;
-} ;
+  x = (Math.random() - 0.5) * ship.game.options.map_size * 10;
+  y = (Math.random() - 0.5) * ship.game.options.map_size * 10;
+  ship.set({ x: x, y: y, vx: 0, vy: 0, invulnerable: 180 });
+};
 
 this.tick = function(game) {
-  if (game.step%60==0) // ensure this is done only once per second
+  if (game.step % 60 == 0) // ensure this is done only once per second
   {
-    for (var i=0;i<game.ships.length;i++)
+    for (var i = 0; i < game.ships.length; i++)
     {
       var ship = game.ships[i] ;
       if (!ship.custom.warp_button_installed)
@@ -607,14 +607,15 @@ this.tick = function(game) {
       }
     }
   }
-} ;
+};
 
 this.event = function (event) {
   switch (event.name) {
     case "ui_component_clicked":
       var ship = event.ship;
       var component = event.id;
-      if (component == "warp") { // check that this is our component "warp"
+      if (component == "warp") // check that this is our component "warp"
+      {
         warpShip(ship);
       }
       break;
@@ -688,7 +689,7 @@ You have access to the same properties as the available ones when you add aliens
 #### Configuration
 Once an alien is live and has an assigned id, you can set options to it. For example:
 ```
-> game.aliens[0].set({x:0,y:0});
+> game.aliens[0].set({ x: 0, y: 0 });
 > █
 ```
 Will move the first alien in the list to the center of the map
@@ -715,7 +716,7 @@ You can also find a collectible with a specific id using `game.findCollectible(i
 #### Creation
 Here is an example:
 ```
-> game.addCollectible({code:10,x:0,y:0});
+> game.addCollectible({ code: 10, x: 0, y: 0 });
 > █
 ```
 This will add a new collectible pack of rockets to coordinates (0;0)
@@ -781,7 +782,7 @@ You have access to the same properties as the available ones when you add astero
 #### Configuration
 Once an asteroid is live and has an assigned id, you can set options to it. For example:
 ```
-> game.asteroids[0].set({x:0,y:0});
+> game.asteroids[0].set({ x: 0, y: 0 });
 > █
 ```
 Will move the first asteroid in the list to the center of the map
@@ -854,7 +855,7 @@ var cube = {
   id: "cube",
   obj: "https://raw.githubusercontent.com/pmgl/starblast-modding/master/objects/cube/cube.obj",
   diffuse: "https://raw.githubusercontent.com/pmgl/starblast-modding/master/objects/cube/diffuse.jpg"
-} ;
+};
 
 game.setObject({
   id: "cube",
