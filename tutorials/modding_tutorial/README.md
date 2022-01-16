@@ -30,7 +30,7 @@ this.options = {
   map_size: 30
 };
 
-this.tick = function(game) {
+this.tick = function () {
 };
 ```
 
@@ -115,7 +115,7 @@ You can import ships made within the Starblast Ship Editor. Use "Mod Export" fea
 ```js
 var myship_101 = "{ … … <this is your exported ship code> …";
 
-var ships = [myship_101]; // add your ship to an array of ship
+var ships = [myship_101]; // add your ship to an array of ships
 
 this.options = {
   root_mode: "survival",
@@ -127,26 +127,71 @@ this.options = {
 this.tick = function(game) {
 };
 ```
+Other ways to include ships that may be neater:
+
+Way 1:
+```js
+var myShips = {};
+myShips.myship_101 = "{ … … <this is your exported ship code> …";
+
+this.options = {
+  /*
+  ...
+  ...
+  */
+  ships: Object.values(myShips),         // Converting the Object `myShips` into a useable array
+  /*
+  ...
+  ...
+  */
+};
+```
+Way 2:
+```js
+var myShips = {
+  myship_101: "{ … … <this is your exported ship code> …"
+};
+
+this.options = {
+  /*
+  ...
+  ...
+  */
+  ships: Object.values(myShips),         // Converting the Object `myShips` into a useable array
+  /*
+  ...
+  ...
+  */
+};
+```
+
 Then run your mod. If your ship is set to level=1 model=1, your ship will replace the Fly. You can replace other ships in the tree in a similar way, using `reset_tree: false`. Or you can remove the original ship tree completely and provide a whole new one using `reset_tree: true`.
 ##### Customizing the emote-chat system
 The vocabulary used for the emote-chat system can be customized by setting the field `vocabulary` in the game option
 as follows:
 ```js
 var vocabulary = [
-      { text: "Hello", icon:"\u0045", key:"O" },
-      { text: "Bye", icon:"\u0046", key:"B" },
-      { text: "Yes", icon:"\u004c", key:"Y" },
-      { text: "No", icon:"\u004d", key:"N" },
+  { text: "Hello", icon: "\u0045", key: "O" },
+  { text: "Bye", icon: "\u0046", key: "B" },
+  { text: "Yes", icon: "\u004c", key: "Y" },
+  { text: "No", icon: "\u004d", key: "N" },
 
-      { text: "Flower", icon:"\u{1F33B}", key:"F" },
-      { text: "Snowman", icon:"\u26c4", key:"M" },
-      { text: "Shark", icon:"\u{1F988}", key:"S" },
-      { text: "Ghost", icon:"\u{1F47B}", key:"G" }
-    ] ;
+  { text: "Flower", icon: "\u{1F33B}", key: "F" },
+  { text: "Snowman", icon: "\u26c4", key: "M" },
+  { text: "Shark", icon: "\u{1F988}", key: "S" },
+  { text: "Ghost", icon: "\u{1F47B}", key: "G" }
+];
 
 this.options = {
+  /*
+  ...
+  ...
+  */
   vocabulary: vocabulary,
-  // ...
+  /*
+  ...
+  ...
+  */
 };
 ```
 This allows using Starblast built-in emote icons, which are listed here for reference: https://starblast.io/glyphs.html
@@ -288,16 +333,14 @@ Found in `this.tick` is a JavaScript function that is called 60 times per second
 Your mod can receive events through the function `this.event`:
 ```js
 this.event = function(event,game) {
-  switch (event.name)
-  {
+  switch (event.name) { // A good way is to use switch statements
     case "ship_spawned":
-      if (event.ship != null)
-      {
+      if (event.ship != null) {
         shipJustSpawned(event.ship) ;
       }
-      break ;
+      break;
   }
-} ;
+};
 ```
 
 ##### Available events
@@ -354,15 +397,19 @@ Which means that 60 ticks = 1 second, 120 ticks = 2 seconds and so on.
 #### Uses
 This code uses to set the first ship in the list to the center of the map in the first minute of the mod and reset its crystals every 5 seconds (assume that there is one ship staying from the start of the mod):
 ```js
-this.tick = function (game)
-{
-  if (game.step == 3600) { // 1 minute = 60 seconds * 60
-    game.ships[0].set({x:0,y:0}); // Center teleport
+this.tick = function () {
+  if (game.step == 3600) { // 60 seconds/minute * 60 ticks/second = 3600 ticks/minute
+    game.ships[0].set({
+      x: 0,
+      y: 0
+    }); // Center telepor
   }
-  if (game.step % 300 === 0) { // 5 seconds * 60
-    game.ships[0].set({crystals: 0}); // Reset crystals
+  if (game.step % 300 === 0) { // 5 seconds * 60 ticks/second = 300 ticks
+    game.ships[0].set({
+      crystals: 0
+    }); // Reset crystals
   }
-}
+};
 ```
 
 ### Ships
@@ -545,19 +592,17 @@ this.tick = function(game) {
   }
 } ;
 
-this.event = function(event,game) {
-  switch (event.name)
-  {
+this.event = function (event) {
+  switch (event.name) {
     case "ui_component_clicked":
-      var ship = event.ship ;
-      var component = event.id ;
-      if (component == "warp") // check that this is our component "warp"
-      {
+      var ship = event.ship;
+      var component = event.id;
+      if (component == "warp") { // check that this is our component "warp"
         warpShip(ship);
       }
-      break ;
+      break;
   }
-} ;
+};
 ```
 
 ##### Customizing the scoreboard or radar
@@ -796,11 +841,11 @@ var cube = {
 
 game.setObject({
   id: "cube",
-  type: cube,
-  position: {x:0,y:0,z:0},
-  rotation: {x:0,y:0,z:0},
-  scale: {x:1,y:1,z:1}
-}) ;
+  type: cube, // Referring to the variable above called `cube`
+  position: { x: 0, y: 0, z: 0 },
+  rotation: { x: 0, y: 0, z: 0 },
+  scale: { x: 1, y: 1, z: 1 }
+});
 ```
 
 #### Accessing
@@ -847,7 +892,7 @@ Simply just call out their `custom` property (which is always an object) and ass
 ```js
 game.custom.hasMod = true // game object
 game.ships[0].custom.userScore = 6712 // ship entity
-game.aliens[0].custom = {created: true, rating: "10stars"} // alien entity
+game.aliens[0].custom = { created: true, rating: "10stars" } // alien entity
 game.asteroids[0].custom = {init: true} // asteroid entity
 ```
 
