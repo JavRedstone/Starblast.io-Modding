@@ -124,7 +124,7 @@ this.options = {
   map_size: 30
 };
 
-this.tick = function(game) {
+this.tick = function () {
 };
 ```
 ###### Other ways to include ships that may be neater:
@@ -349,7 +349,7 @@ Found in `this.tick` is a JavaScript function that is called 60 times per second
 ##### General
 Your mod can receive events through the function `this.event`:
 ```js
-this.event = function(event,game) {
+this.event = function (event) {
   switch (event.name) { // A good way is to use switch statements
     case "ship_spawned":
       if (event.ship != null) {
@@ -594,7 +594,7 @@ var warpShip = function(ship) {
   ship.set({ x: x, y: y, vx: 0, vy: 0, invulnerable: 180 });
 };
 
-this.tick = function(game) {
+this.tick = function () {
   if (game.step % 60 == 0) // ensure this is done only once per second
   {
     for (var i = 0; i < game.ships.length; i++)
