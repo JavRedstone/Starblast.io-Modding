@@ -115,11 +115,11 @@ You can import ships made within the Starblast Ship Editor. Use "Mod Export" fea
 ```js
 var myship_101 = "{ … … <this is your exported ship code> …";
 
-var ships = [myship_101]; // add your ship to an array of ships
+var myShips = [myship_101]; // add your ship to an array of ships
 
 this.options = {
   root_mode: "survival",
-  ships: ships,         // specifying a list of ships to complement / replace existing ships
+  ships: myShips,         // specifying a list of ships to complement / replace existing ships
   reset_tree: true,     // set to true if you want to remove the original ship tree, false if you just want to replace some of the ships
   map_size: 30
 };
@@ -127,9 +127,27 @@ this.options = {
 this.tick = function(game) {
 };
 ```
-Other ways to include ships that may be neater:
+###### Other ways to include ships that may be neater:
 
 Way 1:
+```js
+var myShips = [];
+myShips.push("{ … … <this is your exported ship code> …"); // Pushing the ship to the end of the `myShips` array
+
+this.options = {
+  /*
+  ...
+  ...
+  */
+  ships: myShips,
+  /*
+  ...
+  ...
+  */
+};
+```
+
+Way 2:
 ```js
 var myShips = {};
 myShips.myship_101 = "{ … … <this is your exported ship code> …";
@@ -146,7 +164,7 @@ this.options = {
   */
 };
 ```
-Way 2:
+Way 3:
 ```js
 var myShips = {
   myship_101: "{ … … <this is your exported ship code> …"
@@ -235,8 +253,7 @@ var map =
 "99                          99\n"+
 "99                          99\n"+
 "99                          99\n"+
-"999999999999999999999999999999" ;
-
+"999999999999999999999999999999";
 
 this.options = {
   custom_map: map,
