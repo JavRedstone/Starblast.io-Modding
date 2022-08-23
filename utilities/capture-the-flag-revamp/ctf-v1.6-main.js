@@ -1,6 +1,6 @@
 /*
 
-CAPTURE THE FLAG - VERSION 1.5 REWORK
+CAPTURE THE FLAG - VERSION 1.6 REWORK
 
 CREDITS:
 - Idea: Nordic Commander & Dimed
