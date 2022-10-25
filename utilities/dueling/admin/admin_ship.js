@@ -19,11 +19,39 @@ let setButtons = function(ship) {
         id: `${i} ${j}`,
         position: [i * resolutionY, j * resolutionX, resolutionY, resolutionX],
         clickable: true,
-        shortcut: "X",
+        shortcut: "H",
         components: [
           { type: "box", position: [0, 0, 100, 100], stroke: "#CDE", width:2 },
         ]
       });
+    }
+  }
+}
+
+let setClicked = function(ship) {
+  ship.custom.clicked = [];
+  for(let i = 0; i < aspectY; i++) {
+      ship.custom.clicked.push(new Array(aspectX));
+  }
+}
+
+let setGrid = function(ship) {
+  for (let i = 0; i < aspectX; i++) {
+    for (let j = 0; j < aspectY; j++) {
+      echo(i, j, ship.custom.clicked[i][j])
+      if (ship.custom.clicked[i][j]) {
+        game.setObject ({
+          id: `${i} ${j}`,
+          type: {
+            id: `${i} ${j}`,
+            obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
+            emissive:  "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_tile.png"
+          },
+          position: { x: ship.x +  i - aspectX / 2 * multiplier, y: ship.y + i - aspectY / 2 * multiplier, z: -10 },
+          rotation: { x: 0, y: 0, z: Math.PI },
+          scale: { x: multiplier, y: multiplier, z: multiplier }
+        }); 
+      }
     }
   }
 }
@@ -55,7 +83,11 @@ this.tick = function() {
     for (let ship of game.ships) {
       if (!ship.custom.admin) {
         setButtons(ship);
+        setClicked(ship);
         ship.custom.admin = true;
+      }
+      else {
+        setGrid(ship);
       }
     }
   }
