@@ -80,13 +80,15 @@ let findEntity = function(ship, x, y) {
 this.tick = function() {
   if (game.step % 120 == 0) {
     for (let ship of game.ships) {
-      if (ship.type == 101 && !ship.custom.admin) {
-        setButtons(ship);
-        setClicked(ship);
-        ship.custom.admin = true;
-      }
-      else {
-        setGrid(ship);
+      if (ship.type == 101) {
+        if (!ship.custom.admin) {
+          setButtons(ship);
+          setClicked(ship);
+          ship.custom.admin = true;
+        }
+        else {
+          setGrid(ship);
+        }
       }
     }
   }
