@@ -1,12 +1,13 @@
 this.options = {
   root_mode: "",
-  map_size: 30
+  map_size: 30,
+  choose_ship: [101, 201]
 };
 
 const aspectX = 16;
 const aspectY = 9;
 
-const multiplier = 10;
+const multiplier = 5.5;
 const resMultiplier = 0.69420; // It works, and its funny
 
 const resolutionX = aspectX * resMultiplier;
@@ -30,58 +31,56 @@ let setButtons = function(ship) {
 
 let setClicked = function(ship) {
   ship.custom.clicked = [];
-  for(let i = 0; i < aspectY; i++) {
-      ship.custom.clicked.push(new Array(aspectX));
+  for(let i = 0; i < aspectX; i++) {
+    ship.custom.clicked.push(new Array(aspectY));
   }
 }
 
 let setGrid = function(ship) {
   for (let i = 0; i < aspectX; i++) {
     for (let j = 0; j < aspectY; j++) {
-      echo(i, j, ship.custom.clicked[i][j])
-      if (ship.custom.clicked[i][j]) {
-        game.setObject ({
-          id: `${i} ${j}`,
-          type: {
-            id: `${i} ${j}`,
-            obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-            emissive:  "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_tile.png"
-          },
-          position: { x: ship.x +  i - aspectX / 2 * multiplier, y: ship.y + i - aspectY / 2 * multiplier, z: -10 },
-          rotation: { x: 0, y: 0, z: Math.PI },
-          scale: { x: multiplier, y: multiplier, z: multiplier }
-        }); 
-      }
+      game.setObject ({
+        id: `${ship.id} ${i} ${j}`,
+        type: {
+          id: `${ship.id} ${i} ${j}`,
+          obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
+          emissive: !ship.custom.clicked[i][j] ? "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_tile.png" : "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_selected_tile.png"
+        },
+        position: { x: ship.x +  (i - aspectX / 2 + 0.5) * multiplier, y: ship.y + (j - aspectY / 2 + 0.5) * multiplier, z: 0 },
+        rotation: { x: 0, y: 0, z: Math.PI },
+        scale: { x: multiplier, y: multiplier, z: multiplier }
+      });
     }
   }
 }
 
 let searchEntity = function(ship, entity, x, y) {
-  return entity.x >= x * multiplier && entity.y >= y * multiplier && entity.x <= (x + 1) * multiplier && entity.y <= (y + 1) + multiplier;
+  echo(entity.x + " " + entity.y + " " + ship.x +  (x - aspectX / 2 + 0.5) * multiplier + " " + ship.y +  (y - aspectY / 2 + 0.5) * multiplier);
+  return entity.x >= ship.x +  (x - aspectX / 2 + 0.5) * multiplier && entity.y >= ship.y +  (y - aspectY / 2 + 0.5) * multiplier && entity.x <= ship.x +  (x - aspectX / 2 + 1.5) * multiplier && entity.y <= ship.y +  (y - aspectY / 2 + 1.5) * multiplier;
 }
 
 let findEntity = function(ship, x, y) {
   for (let _ship of game.ships) {
-    if (ship.id != _ship.id && searchEntity(_ship)) {
+    if (ship.id != _ship.id && searchEntity(ship, _ship, x, y)) {
       _ship.gameover({ "Skill": "Issue" });
     }
   }
   for (let alien of game.aliens) {
-    if (searchEntity(alien)) {
+    if (searchEntity(ship, alien, x, y)) {
       alien.set({ kill: true });
     }
   }
   for (let asteroid of game.asteroids) {
-    if (searchEntity(asteroid)) {
+    if (searchEntity(ship, asteroid, x, y)) {
       asteroid.set({ kill: true });
     }
   }
 }
 
 this.tick = function() {
-  if (game.step % 20 == 0) {
+  if (game.step % 120 == 0) {
     for (let ship of game.ships) {
-      if (!ship.custom.admin) {
+      if (ship.type == 101 && !ship.custom.admin) {
         setButtons(ship);
         setClicked(ship);
         ship.custom.admin = true;
@@ -100,9 +99,9 @@ this.event = function(event) {
       ship.custom.admin = false;
       break;
     case 'ui_component_clicked':
-      let component = event.id;
-      let x = parseInt(component.charAt(0));
-      let y = parseInt(component.charAt(2));
+      let id = event.id;
+      let x = parseInt(id.charAt(0));
+      let y = parseInt(id.charAt(2));
       findEntity(ship, x, y);
       break
   }
