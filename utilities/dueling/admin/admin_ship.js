@@ -23,7 +23,9 @@ const resolutionY = aspectY * resMultiplier;
 const hasGrid = false; // Please set off during gameplay unless you want an extreme delay before you kill someone who has just joned the game
 
 const gameStep = 20;
+
 const instructorDelay = 30; // Actual # of seconds is instructorDelay * gameStep / 60, this is 10s
+const redDelay = 1;
 
 let setButtons = function(ship) {
   for (let i = 0; i < aspectX; i++) {
@@ -33,7 +35,7 @@ let setButtons = function(ship) {
         position: [i * resolutionY, j * resolutionX, resolutionY, resolutionX],
         clickable: true,
         components: [
-          { type: "box", position: [0, 0, 100, 100], stroke: "#f00", width: 2 },
+          { type: "box", position: [0, 0, 100, 100], fill: (!ship.custom.clicked || !ship.custom.clicked[i][j] ? '#00000000' : '#ff000080'), stroke: "#f00", width: 2 },
         ]
       });
     }
@@ -48,7 +50,7 @@ let setButtons = function(ship) {
 
 let setClicked = function(ship) {
   ship.custom.clicked = [];
-  for(let i = 0; i < aspectX; i++) {
+  for (let i = 0; i < aspectX; i++) {
     ship.custom.clicked.push(new Array(aspectY));
   }
 }
@@ -61,7 +63,7 @@ let setGrid = function(ship) {
         type: {
           id: `${ship.id} ${i} ${j}`,
           obj: "https://starblast.data.neuronality.com/mods/objects/plane.obj",
-          emissive: !ship.custom.clicked[i][j] ? "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_tile.png" : "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_selected_tile.png"
+          emissive: !ship.custom.clicked || !ship.custom.clicked[i][j] ? "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_tile.png" : "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/dueling/admin/admin_selected_tile.png"
         },
         position: { x: ship.x +  (i - aspectX / 2 + 0.5) * multiplier, y: ship.y - (j - aspectY / 2 + 0.5) * multiplier, z: 0 },
         rotation: { x: 0, y: 0, z: Math.PI },
@@ -79,26 +81,32 @@ let deleteGrid = function(ship) {
   }
 }
 
-let searchEntity = function(ship, entity, x, y, all) {
+let searchEntity = function(ship, entity, x, y) {
   // echo(entity.x + " " + entity.y + " " + x + " " + y + " " + (ship.x + (x - aspectX / 2) * multiplier) + " " + (ship.y -  (y - aspectY / 2) * multiplier) + " " + (ship.x + (x + 1 - aspectX / 2) * multiplier) + " " + (ship.y - (y + 1 - aspectY / 2) * multiplier));
-  return entity.x >= ship.x + (x - aspectX / 2) * multiplier && entity.y <= ship.y - (y - aspectY / 2) * multiplier && entity.x <= ship.x + (x + (all ? 16 : 1) - aspectX / 2) * multiplier && entity.y >= ship.y - (y + (all ? 16 : 1) - aspectY / 2) * multiplier;
+  return entity.x >= ship.x + (x - aspectX / 2) * multiplier && entity.y <= ship.y - (y - aspectY / 2) * multiplier && entity.x <= ship.x + (x + 1 - aspectX / 2) * multiplier && entity.y >= ship.y - (y + 1 - aspectY / 2) * multiplier;
 }
 
-let findEntity = function(ship, x, y, all) {
+let findEntity = function(ship, x, y) {
   for (let _ship of game.ships) {
-    if (ship.id != _ship.id && searchEntity(ship, _ship, x, y, all)) {
+    if (ship.id != _ship.id && searchEntity(ship, _ship, x, y)) {
       _ship.set({ kill: true });
       _ship.gameover({ "Skill": "Issue" });
+      ship.custom.clicked[x][y] = true;
+      setButtons(ship);
     }
   }
   for (let alien of game.aliens) {
-    if (searchEntity(ship, alien, x, y, all)) {
+    if (searchEntity(ship, alien, x, y)) {
       alien.set({ kill: true });
+      ship.custom.clicked[x][y] = true;
+      setButtons(ship);
     }
   }
   for (let asteroid of game.asteroids) {
-    if (searchEntity(ship, asteroid, x, y, all)) {
+    if (searchEntity(ship, asteroid, x, y)) {
       asteroid.set({ kill: true });
+      ship.custom.clicked[x][y] = true;
+      setButtons(ship);
     }
   }
 }
@@ -147,14 +155,19 @@ this.event = function(event) {
       ship.custom.admin = false;
       break;
     case 'ui_component_clicked':
+      setClicked(ship);
       let id = event.id;
       if (id == 'ALL') {
-        findEntity(ship, 0, 0, true);
+        for (let i = 0; i < aspectX; i++) {
+          for (let j = 0; j < aspectY; j++) {
+            findEntity(ship, i, j);
+          }
+        }
       }
       else {
         let x = parseInt(id.split(' ')[0]);
         let y = parseInt(id.split(' ')[1]);
-        findEntity(ship, x, y, false);
+        findEntity(ship, x, y);
       }
       break;
   }
