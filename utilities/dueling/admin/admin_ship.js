@@ -113,8 +113,8 @@ let findEntity = function(ship, x, y) {
 
 this.tick = function() {
   if (game.step % 500 == 0 && game.asteroids.length <= 50 && game.aliens.length <= 50) {
-    for (let i = 0; i < 50; i++) {
-      game.addAsteroid({ x: Math.random() * 150, y: Math.random() * 150, size: 50 });
+    for (let i = 0; i < 100; i++) {
+      game.addAsteroid({ x: Math.random() * 150, y: Math.random() * 150, size: 10 });
       game.addAlien({ x: -Math.random() * 150, y: -Math.random() * 150 });
     }
   }
@@ -156,6 +156,7 @@ this.event = function(event) {
       break;
     case 'ui_component_clicked':
       setClicked(ship);
+      setButtons(ship);
       let id = event.id;
       if (id == 'ALL') {
         for (let i = 0; i < aspectX; i++) {
