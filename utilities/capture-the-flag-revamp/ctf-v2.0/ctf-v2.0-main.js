@@ -230,7 +230,7 @@ function getCrystals (type) {
 
 function formatTime(time) {
     let minutes = 0;
-    let seconds = Math.floor(time / 60);
+    let seconds = Math.floor(time * GAME_STEP / 60);
     if (seconds % 60 == 0) {
         minutes = Math.floor(seconds / 60);
     }
@@ -377,12 +377,12 @@ function setShipStats(ship) {
 
 function waitForRound() {
     for (let ship of game.ships) {
-        if (game.custom.roundTime >= ROUND_TIME) {
+        if (game.custom.roundTime >= ROUND_TIME / GAME_STEP) {
             ship.set({
                 invulnerable: 300,
                 idle: true,
             });
-            UIS.WAIT.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME);
+            UIS.WAIT.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME / GAME_STEP);
             ship.setUIComponent(UIS.LOGO);
             ship.setUIComponent(UIS.WAIT);
         }
