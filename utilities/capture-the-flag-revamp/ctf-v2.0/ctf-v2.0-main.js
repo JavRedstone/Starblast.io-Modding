@@ -60,7 +60,7 @@ const CRYSTAL_DROP = 0;
 const CRYSTAL_VALUE = 0;
 const MAX_PLAYERS = 40;
 
-const CENTRE = 80;
+const CENTRE_RADIUS = 80;
 const SCALING_FACTOR = 10;
 const ASTEROID_FREQUENCY = 15;
 const ASTEROID_MIN_SIZE = 30;
@@ -483,14 +483,15 @@ function getSpawningArea() {
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             let char = game.custom.mapObj.map.charAt(i * MAP_SIZE + j);
-            if (char == ' ') {
+            if (char == ' ' && Math.sqrt(Math.pow((i - MAP_SIZE / 2 + 0.5), 2) + Math.pow(j - MAP_SIZE / 2 + 0.5, 2)) <= CENTRE_RADIUS) {
                 spawnArea.push({
-                    x: 0, // do some i - 30 or something or i - 30 - 0.5 or something
-                    y: 0
+                    x: (i - MAP_SIZE / 2 + 0.5) * SCALING_FACTOR,
+                    y: (j - MAP_SIZE / 2 + 0.5) * SCALING_FACTOR
                 });
             }
         }
     }
+    return spawnArea;
 }
 
 function genAsteroids() {
@@ -502,9 +503,10 @@ function genAsteroids() {
         }
     }
     for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
+        let spawnPos = randElem(game.custom.spawnArea);
         game.addAsteroid({
-            x: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
-            y: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
+            x: spawnPos.x,
+            y: spawnPos.y,
             vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_MIN_VELOCITY + Math.random() * ASTEROID_MAX_VELOCITY),
             vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_MIN_VELOCITY + Math.random() * ASTEROID_MAX_VELOCITY),
             size: ASTEROID_MIN_SIZE + Math.floor(Math.random() * ASTEROID_MAX_SIZE)
@@ -542,8 +544,8 @@ function setRoundDefault() {
     genPortals();
     for (let ship of game.ships) {
         ship.set({
-            x: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
-            y: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
+            x: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE_RADIUS) * SCALING_FACTOR,
+            y: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE_RADIUS) * SCALING_FACTOR,
             vx: 0,
             vy: 0
         });
@@ -571,8 +573,8 @@ function setShipStats(ship) {
         };
     }
     ship.set({
-        x: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
-        y: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE) * SCALING_FACTOR,
+        x: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE_RADIUS) * SCALING_FACTOR,
+        y: (Math.round(Math.random()) == 0 ? -1 : 1) * Math.random() * (MAP_SIZE - CENTRE_RADIUS) * SCALING_FACTOR,
         vx: 0,
         vy: 0,
         shield: SHIELD,
