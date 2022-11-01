@@ -21,6 +21,8 @@ CREDITS AFTER V2.0
 
 */
 
+// Make it so if the flag hasnt been captured in 30 sec place it back in centre
+
 const ROOT_MODE = '';
 const MAP_SIZE = 60;
 const VOCABULARY = [
@@ -78,54 +80,54 @@ const MAPS = [
         '9999999999999             999  999             9999999999999\n'+
         '9999999999                 99  99                 9999999999\n'+
         '999999999                   9  9                   999999999\n'+
-        '9999999999                                        9999999999\n'+
-        '9999999999                                        9999999999\n'+
-        '99999  999                  9  9                  999  99999\n'+
+        '999999999                                          999999999\n'+
+        '999999999                                          999999999\n'+
+        '999999999                   9  9                   999999999\n'+
         '99999                       9  9                       99999\n'+
-        '9999       99               9  9               99       9999\n'+
-        '9999       99999            9  9            99999       9999\n'+
-        '9999        999999999  999999  999999  999999999        9999\n'+
-        '999         999999999  999999  999999  999999999         999\n'+
+        '9999        99              9  9              99        9999\n'+
+        '9999       9999             9  9             9999       9999\n'+
+        '9999      999999            9  9            999999      9999\n'+
+        '999       99999999999  999999  999999  99999999999       999\n'+
+        '999        999999999    99999  99999    999999999        999\n'+
         '999         999             9  9             999         999\n'+
-        '999          99             9  9             99          999\n'+
         '999          99                              99          999\n'+
         '999          99                              99          999\n'+
         '999          99                              99          999\n'+
         '999          9              9  9              9          999\n'+
         '999                         9  9                         999\n'+
         '999                         9  9                         999\n'+
-        '999          99             9  9             99          999\n'+
+        '999          9              9  9              9          999\n'+
         '999          99            99  99            99          999\n'+
         '999          99           99    99           99          999\n'+
         '999          99                              99          999\n'+
         '999          99         9          9         99          999\n'+
-        '999          9         99          99         9          999\n'+
+        '999          99        99          99        99          999\n'+
         '9999999  9999999   99999            99999   9999999  9999999\n'+
         '                                                            \n'+
         '                                                            \n'+
         '9999999  9999999   99999            99999   9999999  9999999\n'+
-        '999          9         99          99         9          999\n'+
+        '999          99        99          99        99          999\n'+
         '999          99         9          9         99          999\n'+
         '999          99                              99          999\n'+
         '999          99           99    99           99          999\n'+
         '999          99            99  99            99          999\n'+
-        '999          99             9  9             99          999\n'+
+        '999          9              9  9              9          999\n'+
         '999                         9  9                         999\n'+
         '999                         9  9                         999\n'+
         '999          9              9  9              9          999\n'+
         '999          99                              99          999\n'+
         '999          99                              99          999\n'+
         '999          99                              99          999\n'+
-        '999          99             9  9             99          999\n'+
         '999         999             9  9             999         999\n'+
-        '999         999999999  999999  999999  999999999         999\n'+
-        '9999        999999999  999999  999999  999999999        9999\n'+
-        '9999       99999            9  9            99999       9999\n'+
-        '9999       99               9  9               99       9999\n'+
+        '999        999999999    99999  99999    999999999        999\n'+
+        '999       99999999999  999999  999999  99999999999       999\n'+
+        '9999      999999            9  9            999999      9999\n'+
+        '9999       9999             9  9             9999       9999\n'+
+        '9999        99              9  9              99        9999\n'+
         '99999                       9  9                       99999\n'+
-        '99999  999                  9  9                  999  99999\n'+
-        '9999999999                                        9999999999\n'+
-        '9999999999                                        9999999999\n'+
+        '999999999                   9  9                   999999999\n'+
+        '999999999                                          999999999\n'+
+        '999999999                                          999999999\n'+
         '999999999                   9  9                   999999999\n'+
         '9999999999                 99  99                 9999999999\n'+
         '9999999999999             999  999             9999999999999\n'+
@@ -245,7 +247,7 @@ const OBJECTS = {
         rotation: {
             x: 0,
             y: 0,
-            z: 0
+            z: Math.PI / 4
         },
         scale: {
             x: 40,
@@ -258,6 +260,29 @@ const OBJECTS = {
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse-2.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
             transparent: false
+        }
+    },
+    GRID: {
+        id: 'grid',
+        position: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        rotation: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        scale: {
+            x: 10,
+            y: 10,
+            z: 0
+        },
+        type: {
+            id: 'grid',
+            obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+            emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
         }
     }
 };
@@ -391,6 +416,10 @@ function getDistance(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
 }
 
+function deepCopy(object) {
+    return JSON.parse(JSON.stringify(object));
+}
+
 function getShips() {
     let ships = {};
 	ships.Pulse_Fighter = '{"name":"Pulse-Fighter","level":3,"model":1,"size":1.3,"specs":{"shield":{"capacity":[150,200],"reload":[3,5]},"generator":{"capacity":[60,90],"reload":[20,33]},"ship":{"mass":120,"speed":[105,118],"rotation":[60,85],"acceleration":[80,100]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0],"y":[-90,-75,-50,0,50,105,90],"z":[0,0,0,0,0,0,0]},"width":[0,15,25,30,35,20,0],"height":[0,10,15,25,25,20,0],"propeller":true,"texture":[63,1,1,10,2,12]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":-20,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-30,-10,10,30,60],"z":[0,0,0,0,0]},"width":[0,10,15,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":9},"cannon":{"section_segments":6,"offset":{"x":0,"y":-40,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,50],"z":[0,0,0,0,0,0]},"width":[0,5,10,10,15,0],"height":[0,5,15,15,10,0],"angle":0,"laser":{"damage":[15,30],"rate":1,"type":2,"speed":[150,175],"number":1,"error":0},"propeller":false,"texture":3},"deco":{"section_segments":8,"offset":{"x":50,"y":50,"z":-10},"position":{"x":[0,0,5,5,0,0,0],"y":[-52,-50,-20,0,20,40,42],"z":[0,0,0,0,0,0,0]},"width":[0,5,10,10,5,5,0],"height":[0,5,10,15,10,5,0],"angle":0,"laser":{"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"error":0},"propeller":false,"texture":4}},"wings":{"main":{"length":[80,20],"width":[120,50,40],"angle":[-10,20],"position":[30,50,30],"doubleside":true,"bump":{"position":30,"size":10},"texture":[11,63],"offset":{"x":0,"y":0,"z":0}},"winglets":{"length":[40],"width":[40,20,30],"angle":[10,-10],"position":[-40,-60,-55],"bump":{"position":0,"size":30},"texture":63,"offset":{"x":0,"y":0,"z":0}},"stab":{"length":[40,10],"width":[50,20,20],"angle":[40,30],"position":[70,75,80],"doubleside":true,"texture":63,"bump":{"position":0,"size":20},"offset":{"x":0,"y":0,"z":0}}},"typespec":{"name":"Pulse-Fighter","level":3,"model":1,"code":301,"specs":{"shield":{"capacity":[150,200],"reload":[3,5]},"generator":{"capacity":[60,90],"reload":[20,33]},"ship":{"mass":120,"speed":[105,118],"rotation":[60,85],"acceleration":[80,100]}},"shape":[2.343,2.204,1.998,1.955,2.088,1.91,1.085,0.974,0.895,0.842,0.829,0.95,1.429,2.556,2.618,2.726,2.851,2.837,2.825,2.828,2.667,2.742,2.553,2.766,2.779,2.735,2.779,2.766,2.553,2.742,2.667,2.828,2.825,2.837,2.851,2.726,2.618,2.556,1.43,0.95,0.829,0.842,0.895,0.974,1.085,1.91,2.088,1.955,1.998,2.204],"lasers":[{"x":0,"y":-2.34,"z":-0.26,"angle":0,"damage":[15,30],"rate":1,"type":2,"speed":[150,175],"number":1,"spread":0,"error":0,"recoil":0},{"x":1.3,"y":-0.052,"z":-0.26,"angle":0,"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"spread":0,"error":0,"recoil":0},{"x":-1.3,"y":-0.052,"z":-0.26,"angle":0,"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"spread":0,"error":0,"recoil":0}],"radius":2.851}}';
@@ -517,29 +546,35 @@ function genAsteroids() {
             });
         }
     }
-    for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
+    // for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
         // let spawnPos = randElem(game.custom.spawnArea);
-        let spawnPos = game.custom.spawnArea[i + 250];
-        game.addAsteroid({
-            x: spawnPos.x,
-            y: spawnPos.y,
+        // let spawnPos = game.custom.spawnArea[i + 250];
+        // game.addAsteroid({
+            // x: spawnPos.x,
+            // y: spawnPos.y,
             // vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
             // vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
             // size: ASTEROID_BASE_SIZE + Math.floor(Math.random() * ASTEROID_SIZE_RANGE)
-            vx: 0,
-            vy: 0,
-            size: 10
-        });
-    }
+            // vx: 0,
+            // vy: 0,
+            // size: 10
+        // });
+    // }
+    // for (let i = 0; i < game.custom.spawnArea.length; i++) {
+    //     let grid = deepCopy(OBJECTS.GRID);
+    //     grid.id = `${OBJECTS.GRID.id.substring(0, 4)}-${i}`;
+    //     grid.position = game.custom.spawnArea[i];
+    //     game.setObject(grid);
+    // }
 }
 
 function genPortal(x, y, n) {
-    game.removeObject(`${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`);
-    OBJECTS.PORTAL.id = `${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`;
-    OBJECTS.PORTAL.type.id = `${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`
-    OBJECTS.PORTAL.position.x = x * SCALING_FACTOR;
-    OBJECTS.PORTAL.position.y = y * SCALING_FACTOR;
-    game.setObject(OBJECTS.PORTAL);
+    game.removeObject(`${OBJECTS.PORTAL.id}-${n}`);
+    let portal = deepCopy(OBJECTS.PORTAL);
+    portal.id = `${OBJECTS.PORTAL.id}-${n}`;
+    portal.position.x = x * SCALING_FACTOR;
+    portal.position.y = y * SCALING_FACTOR;
+    game.setObject(portal);
 }
 
 function genPortals() {
@@ -577,8 +612,6 @@ function setRoundDefault() {
 function placeFlag() {
     game.removeObject(OBJECTS.FLAG.id);
     game.removeObject(OBJECTS.FLAGSTAND.id);
-    OBJECTS.FLAGSTAND.type.id = `flagstand`;
-    OBJECTS.FLAGSTAND.type.emissiveColor = EMISSIVE.RED;
     game.setObject(OBJECTS.FLAG);
     game.setObject(OBJECTS.FLAGSTAND);
 }
@@ -613,10 +646,11 @@ function setPlayerStatus() {
     if (game.custom.hasRound) {
         for (let ship of game.ships) {
             if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
-                UIS.TIMER.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
-                UIS.TIMER.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
-                UIS.TIMER.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
-                ship.setUIComponent(UIS.TIMER);
+                let timer = deepCopy(UIS.TIMER);
+                timer.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
+                timer.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
+                timer.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
+                ship.setUIComponent(timer);
             }
             if (ship.custom.hasFlag) {
                 ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * (game.ships.length - 1);
@@ -645,9 +679,10 @@ function waitForRound() {
                 invulnerable: INVULNERABLE_TIME,
                 idle: true,
             });
-            UIS.WAIT.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME / GAME_STEP);
+            let wait = deepCopy(UIS.WAIT);
+            wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME / GAME_STEP);
             ship.setUIComponent(UIS.LOGO);
-            ship.setUIComponent(UIS.WAIT);
+            ship.setUIComponent(wait);
         }
         else {
             ship.set({
@@ -676,9 +711,10 @@ function setFlagStatus() {
 
                 game.removeObject(OBJECTS.FLAG.id);
                 game.removeObject(OBJECTS.FLAGSTAND.id);
-                OBJECTS.FLAGSTAND.type.id = `flagstand-captured`;
-                OBJECTS.FLAGSTAND.type.emissiveColor = EMISSIVE.BLUE;
-                game.setObject(OBJECTS.FLAGSTAND);
+                let flagstand = deepCopy(OBJECTS.FLAGSTAND);
+                flagstand.type.id = `flagstand-captured`;
+                flagstand.type.emissiveColor = EMISSIVE.BLUE;
+                game.setObject(flagstand);
             }
         }
     }
