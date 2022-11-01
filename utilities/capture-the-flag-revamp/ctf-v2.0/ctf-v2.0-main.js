@@ -61,12 +61,13 @@ const CRYSTAL_VALUE = 0;
 const MAX_PLAYERS = 40;
 
 const SCALING_FACTOR = 10;
+const SHIFT = -0.5;
 const CENTRE_RADIUS = 15;
-const ASTEROID_FREQUENCY = 100;
-const ASTEROID_MIN_SIZE = 30;
-const ASTEROID_MAX_SIZE = 50;
-const ASTEROID_MIN_VELOCITY = 0.05;
-const ASTEROID_MAX_VELOCITY = 0.1;
+const ASTEROID_FREQUENCY = 300; // 20
+const ASTEROID_BASE_SIZE = 30;
+const ASTEROID_SIZE_RANGE = 20;
+const ASTEROID_BASE_VELOCITY = 0.05;
+const ASTEROID_VELOCITY_RANGE = 0.075;
 const MAPS = [
     {
         name: 'Portals',
@@ -132,8 +133,8 @@ const MAPS = [
         '99999999999999999999999999999  99999999999999999999999999999\n'+
         '99999999999999999999999999999  99999999999999999999999999999',
         portals: {
-            x: 15,
-            y: 15
+            x: 14,
+            y: 14
         }
     }
 ];
@@ -172,12 +173,14 @@ const SHIPS = getAllShips(getShips());
 
 const GAME_STEP = 30;
 const ROUND_TIME = 36000;
-const WAIT_TIME = 3600;
+// const WAIT_TIME = 3600;
+const WAIT_TIME = 0;
 
-const COLORS = {
-    NORMAL: '#cde',
-    ACCENT: '#ffb',
-    WARN: '#fbb'
+const FLAG_DISTANCE = 10;
+const EMISSIVE = {
+    RED: '#f00',
+    BLUE: '#00f',
+    YELLOW: '#ff0'
 };
 const OBJECTS = {
     FLAG: {
@@ -202,7 +205,7 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flag.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-            emissiveColor: COLORS.NORMAL,
+            emissiveColor: EMISSIVE.RED,
             transparent: false
         }
     },
@@ -228,7 +231,7 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flagstand.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-            emissiveColor: COLORS.NORMAL,
+            emissiveColor: EMISSIVE.RED,
             transparent: false
         }
     },
@@ -254,13 +257,16 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/portal.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse-2.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-            emissiveColor: COLORS.ACCENT,
             transparent: false
         }
     }
 };
-const FLAG_DISTANCE = 10;
 
+const TEXT = {
+    RED: '#fdd',
+    BLUE: '#ddf',
+    YELLOW: '#ffd'
+};
 const UIS = {
     LOGO: {
         id: 'logo',
@@ -271,25 +277,25 @@ const UIS = {
                 type: 'text',
                 position: [0, 10, 100, 15],
                 value: '🏴CTF v2.0🏳️',
-                color: COLORS.NORMAL
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
                 position: [0, 25, 100, 15],
                 value: 'Capture The Flag',
-                color: COLORS.NORMAL
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [20, 40, 60, 15],
+                position: [0, 40, 100, 10],
                 value: 'A collaboration between 45rfew and Bhpsngum',
-                color: COLORS.NORMAL
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [25, 50, 50, 15],
+                position: [0, 55, 100, 10],
                 value: 'Reworked by JavRedstone and Robonuko',
-                color: COLORS.NORMAL
+                color: TEXT.BLUE
             }
         ]
     },
@@ -302,13 +308,13 @@ const UIS = {
                 type: 'text',
                 position: [0, 0, 100, 15],
                 value: 'Starting Round in',
-                color: COLORS.NORMAL
+                color: TEXT.YELLOW
             },
             {
                 type: 'text',
                 position: [0, 15, 100, 15],
                 value: '0:00',
-                color: COLORS.NORMAL
+                color: TEXT.YELLOW
             }
         ]
     },
@@ -320,7 +326,7 @@ const UIS = {
             {
                 type: "box",
                 position: [0, 0, 100, 100],
-                stroke: COLORS.NORMAL,
+                stroke: TEXT.BLUE,
                 width: 2
             },
             {
@@ -487,18 +493,19 @@ function getShipGroups(ships) {
 }
 
 function getSpawningArea() {
+    let map = game.custom.mapObj.map.split('\n');
     let spawnArea = [];
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
-            let char = game.custom.mapObj.map.charAt(i * MAP_SIZE + j);
-            if (char == ' ' && getDistance(i, j, MAP_SIZE / 2 + 0.5, MAP_SIZE / 2 + 0.5) >= CENTRE_RADIUS) {
+            let char = map[i].charAt(j);
+            if (char == ' ' && getDistance(i, j, MAP_SIZE / 2 + SHIFT, MAP_SIZE / 2 + SHIFT) > CENTRE_RADIUS) {
                 spawnArea.push({
-                    x: (i - MAP_SIZE / 2 + 0.5) * SCALING_FACTOR,
-                    y: (j - MAP_SIZE / 2 + 0.5) * SCALING_FACTOR
+                    x: (i - MAP_SIZE / 2 + SHIFT) * SCALING_FACTOR,
+                    y: (MAP_SIZE / 2 + SHIFT - j) * SCALING_FACTOR
                 });
             }
         }
-    }
+    }   
     return spawnArea;
 }
 
@@ -511,13 +518,17 @@ function genAsteroids() {
         }
     }
     for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
-        let spawnPos = randElem(game.custom.spawnArea);
+        // let spawnPos = randElem(game.custom.spawnArea);
+        let spawnPos = game.custom.spawnArea[game.custom.spawnArea.length - 250 - i];
         game.addAsteroid({
             x: spawnPos.x,
             y: spawnPos.y,
-            vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_MIN_VELOCITY + Math.random() * ASTEROID_MAX_VELOCITY),
-            vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_MIN_VELOCITY + Math.random() * ASTEROID_MAX_VELOCITY),
-            size: ASTEROID_MIN_SIZE + Math.floor(Math.random() * ASTEROID_MAX_SIZE)
+            // vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+            // vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+            // size: ASTEROID_BASE_SIZE + Math.floor(Math.random() * ASTEROID_SIZE_RANGE)
+            vx: 0,
+            vy: 0,
+            size: 10
         });
     }
 }
@@ -525,6 +536,7 @@ function genAsteroids() {
 function genPortal(x, y, n) {
     game.removeObject(`${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`);
     OBJECTS.PORTAL.id = `${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`;
+    OBJECTS.PORTAL.type.id = `${OBJECTS.PORTAL.id.substring(0, 6)}-${n}`
     OBJECTS.PORTAL.position.x = x * SCALING_FACTOR;
     OBJECTS.PORTAL.position.y = y * SCALING_FACTOR;
     game.setObject(OBJECTS.PORTAL);
@@ -566,7 +578,7 @@ function placeFlag() {
     game.removeObject(OBJECTS.FLAG.id);
     game.removeObject(OBJECTS.FLAGSTAND.id);
     OBJECTS.FLAGSTAND.type.id = `flagstand`;
-    OBJECTS.FLAGSTAND.type.emissiveColor = COLORS.NORMAL;
+    OBJECTS.FLAGSTAND.type.emissiveColor = EMISSIVE.RED;
     game.setObject(OBJECTS.FLAG);
     game.setObject(OBJECTS.FLAGSTAND);
 }
@@ -577,6 +589,7 @@ function setShipStats(ship) {
             old: true,
             type: 0,
             hasFlag: false,
+            captureTime: 0,
             score: 0,
             highScore: 0
         };
@@ -598,13 +611,15 @@ function setShipStats(ship) {
 
 function setPlayerStatus() {
     if (game.custom.hasRound) {
-        UIS.TIMER.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? COLORS.WARN : COLORS.NORMAL;
-        UIS.TIMER.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? COLORS.WARN : COLORS.NORMAL;
-        UIS.TIMER.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
         for (let ship of game.ships) {
-            ship.setUIComponent(UIS.TIMER);
+            if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
+                UIS.TIMER.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
+                UIS.TIMER.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
+                UIS.TIMER.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
+                ship.setUIComponent(UIS.TIMER);
+            }
             if (ship.custom.hasFlag) {
-                ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * game.ships.length;
+                ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * (game.ships.length - 1);
             }
             if (!game.custom.shipGroup.includes(ship.custom.type)) {
                 ship.custom.type = randElem(game.custom.shipGroup);
@@ -645,11 +660,13 @@ function waitForRound() {
 }
 
 function setFlagStatus() {
-    if (game.custom.hasFlag) {
+    if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME / GAME_STEP) {
         for (let ship of game.ships) {
             if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE) {
                 game.custom.hasFlag = false;
                 ship.custom.hasFlag = true;
+                ship.custom.captureTime = game.custom.roundTime;
+
                 ship.set({
                     type: ship.custom.type + game.custom.shipGroup.length,
                     stats: STATS,
@@ -660,7 +677,7 @@ function setFlagStatus() {
                 game.removeObject(OBJECTS.FLAG.id);
                 game.removeObject(OBJECTS.FLAGSTAND.id);
                 OBJECTS.FLAGSTAND.type.id = `flagstand-captured`;
-                OBJECTS.FLAGSTAND.type.emissiveColor = COLORS.WARN;
+                OBJECTS.FLAGSTAND.type.emissiveColor = EMISSIVE.BLUE;
                 game.setObject(OBJECTS.FLAGSTAND);
             }
         }
