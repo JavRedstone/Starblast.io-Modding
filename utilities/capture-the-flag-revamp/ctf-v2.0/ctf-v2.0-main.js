@@ -501,11 +501,11 @@ function getSpawningArea() {
             if (char == ' ' && getDistance(i, j, MAP_SIZE / 2 + SHIFT, MAP_SIZE / 2 + SHIFT) > CENTRE_RADIUS) {
                 spawnArea.push({
                     x: (i - MAP_SIZE / 2 + SHIFT) * SCALING_FACTOR,
-                    y: (MAP_SIZE / 2 + SHIFT - j) * SCALING_FACTOR
+                    y: (MAP_SIZE / 2 - SHIFT - j) * SCALING_FACTOR
                 });
             }
         }
-    }   
+    }
     return spawnArea;
 }
 
@@ -519,7 +519,7 @@ function genAsteroids() {
     }
     for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
         // let spawnPos = randElem(game.custom.spawnArea);
-        let spawnPos = game.custom.spawnArea[game.custom.spawnArea.length - 250 - i];
+        let spawnPos = game.custom.spawnArea[i + 250];
         game.addAsteroid({
             x: spawnPos.x,
             y: spawnPos.y,
