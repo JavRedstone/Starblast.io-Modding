@@ -63,13 +63,16 @@ const CRYSTAL_VALUE = 0;
 const MAX_PLAYERS = 40;
 
 const SCALING_FACTOR = 10;
-const SHIFT = -0.5;
-const CENTRE_RADIUS = 15;
-const ASTEROID_FREQUENCY = 300; // 20
+const SHIFT = 0.5;
+const SPAWN_MIN_RADIUS = 12;
+const SPAWN_MAX_RADIUS = 25;
+const ASTEROID_FREQUENCY = 20;
 const ASTEROID_BASE_SIZE = 30;
 const ASTEROID_SIZE_RANGE = 20;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
+const PORTAL_MIN_RADIUS = 1;
+const PORTAL_MAX_RADIUS = 3;
 const MAPS = [
     {
         name: 'Portals',
@@ -94,7 +97,7 @@ const MAPS = [
         '999          99                              99          999\n'+
         '999          99                              99          999\n'+
         '999   999   99             99  99             99   999   999\n'+
-        '999                         9  9                         999\n'+
+        '999   9                     9  9                         999\n'+
         '999                         9  9                         999\n'+
         '999   999   99              9  9              99   999   999\n'+
         '999          99          9999  9999          99          999\n'+
@@ -134,7 +137,7 @@ const MAPS = [
         '9   9999999999999999999999999  9999999999999999999999999   9\n'+
         '   99999999999999999999999999  99999999999999999999999999   \n'+
         '  999999999999999999999999999  999999999999999999999999999  ',
-        portals: {
+        portalSource: {
             x: 14,
             y: 14
         }
@@ -178,7 +181,8 @@ const ROUND_TIME = 36000;
 // const WAIT_TIME = 3600;
 const WAIT_TIME = 0;
 
-const FLAG_DISTANCE = 10;
+const FLAG_DISTANCE = 1;
+const PORTAL_DISTANCE = 1;
 const EMISSIVE = {
     RED: '#f00',
     BLUE: '#00f',
@@ -527,10 +531,11 @@ function getSpawningArea() {
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             let char = map[i].charAt(j);
-            if (char == ' ' && getDistance(i, j, MAP_SIZE / 2 + SHIFT, MAP_SIZE / 2 + SHIFT) > CENTRE_RADIUS) {
+            let centreDistance = getDistance(j, i, MAP_SIZE / 2 + SHIFT, MAP_SIZE / 2 + SHIFT);
+            if (char == ' ' && centreDistance > SPAWN_MIN_RADIUS && centreDistance <= SPAWN_MAX_RADIUS) {
                 spawnArea.push({
-                    x: (i - MAP_SIZE / 2 + SHIFT) * SCALING_FACTOR,
-                    y: (MAP_SIZE / 2 - SHIFT - j) * SCALING_FACTOR
+                    x: (j - MAP_SIZE / 2 + SHIFT) * SCALING_FACTOR,
+                    y: (MAP_SIZE / 2 - SHIFT - i) * SCALING_FACTOR
                 });
             }
         }
@@ -546,43 +551,65 @@ function genAsteroids() {
             });
         }
     }
-    // for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
-        // let spawnPos = randElem(game.custom.spawnArea);
-        // let spawnPos = game.custom.spawnArea[i + 250];
-        // game.addAsteroid({
-            // x: spawnPos.x,
-            // y: spawnPos.y,
-            // vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
-            // vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
-            // size: ASTEROID_BASE_SIZE + Math.floor(Math.random() * ASTEROID_SIZE_RANGE)
-            // vx: 0,
-            // vy: 0,
-            // size: 10
-        // });
-    // }
-    // for (let i = 0; i < game.custom.spawnArea.length; i++) {
-    //     let grid = deepCopy(OBJECTS.GRID);
-    //     grid.id = `${OBJECTS.GRID.id.substring(0, 4)}-${i}`;
-    //     grid.position = game.custom.spawnArea[i];
-    //     game.setObject(grid);
-    // }
-}
+    for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
+        let spawnPos = randElem(game.custom.spawnArea);
+        game.addAsteroid({
+            x: spawnPos.x,
+            y: spawnPos.y,
+            vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+            vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+            size: ASTEROID_BASE_SIZE + Math.floor(Math.random() * ASTEROID_SIZE_RANGE)
+        });
+    }
 
-function genPortal(x, y, n) {
-    game.removeObject(`${OBJECTS.PORTAL.id}-${n}`);
-    let portal = deepCopy(OBJECTS.PORTAL);
-    portal.id = `${OBJECTS.PORTAL.id}-${n}`;
-    portal.position.x = x * SCALING_FACTOR;
-    portal.position.y = y * SCALING_FACTOR;
-    game.setObject(portal);
+    /*
+    for (let i = 0; i < game.custom.spawnArea.length; i++) {
+        let grid = deepCopy(OBJECTS.GRID);
+        grid.id = `${OBJECTS.GRID.id}-${i}`;
+        grid.position.x = game.custom.spawnArea[i].x;
+        grid.position.y = game.custom.spawnArea[i].y;
+        game.setObject(grid);
+    }
+    */
 }
 
 function genPortals() {
-    let portals = game.custom.mapObj.portals;
-    genPortal(portals.x, portals.y, 1);
-    genPortal(portals.y, -portals.x, 2);
-    genPortal(-portals.x, -portals.y, 3);
-    genPortal(-portals.y, portals.x, 4);
+    let portalSource = game.custom.mapObj.portalSource;
+    let portalSourceX = portalSource.x * SCALING_FACTOR;
+    let portalSourceY = portalSource.y * SCALING_FACTOR;
+    game.custom.portals = [
+        {
+            x: portalSourceX,
+            y: portalSourceY
+        },
+        {
+            x: portalSourceY,
+            y: -portalSourceX
+        },
+        {
+            x: -portalSourceX,
+            y: -portalSourceY
+        },
+        {
+            x: -portalSourceY,
+            y: portalSourceX
+        }
+    ];
+    for (let i = 0; i < game.custom.portals.length; i++) {
+        for (let spawnArea of game.custom.spawnArea) {
+            let portalDistance = getDistance(spawnArea.x, spawnArea.y, game.custom.portals[i].x, game.custom.portals[i].y);
+            if (portalDistance > PORTAL_MIN_RADIUS * SCALING_FACTOR && portalDistance <= PORTAL_MAX_RADIUS * SCALING_FACTOR) {
+                game.custom.portals[i].spawnArea = spawnArea;
+            }
+        }
+
+        game.removeObject(`${OBJECTS.PORTAL.id}-${i}`);
+        let p = deepCopy(OBJECTS.PORTAL);
+        p.id = `${OBJECTS.PORTAL.id}-${i}`;
+        p.position.x = game.custom.portals[i].x;
+        p.position.y = game.custom.portals[i].y;
+        game.setObject(p);
+    }
 }
 
 function setRoundDefault() {
@@ -590,6 +617,7 @@ function setRoundDefault() {
         hasRound: true,
         hasFlag: true,
         mapObj: randElem(MAPS),
+        portals: [],
         roundTime: ROUND_TIME / GAME_STEP + WAIT_TIME / GAME_STEP,
         shipGroup: randElem(SHIP_GROUPS)
     };
@@ -697,7 +725,7 @@ function waitForRound() {
 function setFlagStatus() {
     if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME / GAME_STEP) {
         for (let ship of game.ships) {
-            if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE) {
+            if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
                 game.custom.hasFlag = false;
                 ship.custom.hasFlag = true;
                 ship.custom.captureTime = game.custom.roundTime;
@@ -739,6 +767,24 @@ function dropFlag(ship) {
     game.custom.hasFlag = true;
 }
 
+function setPortalStatus() {
+    if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
+        for (let ship of game.ships) {
+            for (let portal of game.custom.portals) {
+                echo(getDistance(ship.x, ship.y, portal.x, portal.y))
+                if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, portal.x, portal.y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
+                    let spawnPos = randElem(randElem(game.custom.portals).spawnArea);
+                    ship.set({
+                        x: spawnPos.x,
+                        y: spawnPos.y,
+                        invulnerable: INVULNERABLE_TIME
+                    });
+                }
+            }
+        }
+    }
+}
+
 this.options = {
 	root_mode: ROOT_MODE,
 	map_size: MAP_SIZE,
@@ -770,6 +816,7 @@ this.tick = function() {
         waitForRound();
         setPlayerStatus();
         setFlagStatus();
+        setPortalStatus();
     }
 }
 
