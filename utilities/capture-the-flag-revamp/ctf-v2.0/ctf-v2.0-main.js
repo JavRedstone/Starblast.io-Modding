@@ -138,8 +138,8 @@ const MAPS = [
         '   99999999999999999999999999  99999999999999999999999999   \n'+
         '  999999999999999999999999999  999999999999999999999999999  ',
         portalSource: {
-            x: 14,
-            y: 14
+            x: 10,
+            y: 10
         }
     }
 ];
@@ -178,8 +178,8 @@ const SHIPS = getAllShips(getShips());
 
 const GAME_STEP = 30;
 const ROUND_TIME = 36000;
-// const WAIT_TIME = 3600;
-const WAIT_TIME = 0;
+const WAIT_TIME = 3600;
+// const WAIT_TIME = 0;
 
 const FLAG_DISTANCE = 1;
 const PORTAL_DISTANCE = 1;
@@ -292,37 +292,37 @@ const OBJECTS = {
 };
 
 const TEXT = {
-    RED: '#fdd',
-    BLUE: '#ddf',
-    YELLOW: '#ffd'
+    RED: '#fcc',
+    BLUE: '#ccf',
+    YELLOW: '#ffc'
 };
 const UIS = {
     LOGO: {
         id: 'logo',
-        position: [20, 15, 60, 30],
+        position: [0, 10, 100, 15],
         visible: true,
         components: [
             {
                 type: 'text',
-                position: [0, 10, 100, 15],
+                position: [0, 0, 100, 25],
                 value: '🏴CTF v2.0🏳️',
                 color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [0, 25, 100, 15],
+                position: [0, 25, 100, 25],
                 value: 'Capture The Flag',
                 color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [0, 40, 100, 10],
+                position: [0, 50, 100, 25],
                 value: 'A collaboration between 45rfew and Bhpsngum',
                 color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [0, 55, 100, 10],
+                position: [0, 75, 100, 25],
                 value: 'Reworked by JavRedstone and Robonuko',
                 color: TEXT.BLUE
             }
@@ -330,39 +330,66 @@ const UIS = {
     },
     WAIT: {
         id: 'wait',
-        position: [20, 65, 60, 30],
+        position: [0, 75, 100, 10],
         visible: true,
         components: [
             {
                 type: 'text',
-                position: [0, 0, 100, 15],
+                position: [0, 0, 100, 50],
                 value: 'Starting Round in',
                 color: TEXT.YELLOW
             },
             {
                 type: 'text',
-                position: [0, 15, 100, 15],
+                position: [0, 50, 100, 50],
                 value: '0:00',
                 color: TEXT.YELLOW
             }
         ]
     },
     TIMER: {
-        id: "timer",
+        id: 'timer',
         position: [3, 30, 15, 5],
         visible: true,
         components: [
             {
-                type: "box",
+                type: 'box',
                 position: [0, 0, 100, 100],
                 stroke: TEXT.BLUE,
                 width: 2
             },
             {
-                type: "text",
+                type: 'text',
                 position: [5, 0, 90, 100],
                 value: '0:00',
                 color: "#cde"
+            }
+        ]
+    },
+    SCORE: {
+        id: 'score',
+        position: [0, 10, 100, 10],
+        visible: true,
+        components: [
+            {
+                type: 'text',
+                position: [0, 0, 100, 30],
+                value: 'Your running score is'
+            },
+            {
+                type: 'text',
+                position: [0, 30, 100, 20],
+                value: '0'
+            },
+            {
+                type: 'text',
+                position: [0, 50, 100, 30],
+                value: 'Your high score is'
+            },
+            {
+                type: 'text',
+                position: [0, 80, 100, 20],
+                value: '0'
             }
         ]
     }
@@ -596,13 +623,13 @@ function genPortals() {
         }
     ];
     for (let i = 0; i < game.custom.portals.length; i++) {
+        game.custom.portals[i].spawnArea = [];
         for (let spawnArea of game.custom.spawnArea) {
             let portalDistance = getDistance(spawnArea.x, spawnArea.y, game.custom.portals[i].x, game.custom.portals[i].y);
             if (portalDistance > PORTAL_MIN_RADIUS * SCALING_FACTOR && portalDistance <= PORTAL_MAX_RADIUS * SCALING_FACTOR) {
-                game.custom.portals[i].spawnArea = spawnArea;
+                game.custom.portals[i].spawnArea.push(spawnArea);
             }
         }
-
         game.removeObject(`${OBJECTS.PORTAL.id}-${i}`);
         let p = deepCopy(OBJECTS.PORTAL);
         p.id = `${OBJECTS.PORTAL.id}-${i}`;
@@ -679,6 +706,11 @@ function setPlayerStatus() {
                 timer.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
                 timer.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
                 ship.setUIComponent(timer);
+
+                let score = deepCopy(UIS.SCORE);
+                score.components[1].value = ship.custom.score;
+                score.components[3].value = ship.custom.highScore;
+                ship.setUIComponent(score);
             }
             if (ship.custom.hasFlag) {
                 ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * (game.ships.length - 1);
@@ -770,10 +802,11 @@ function dropFlag(ship) {
 function setPortalStatus() {
     if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
         for (let ship of game.ships) {
-            for (let portal of game.custom.portals) {
-                echo(getDistance(ship.x, ship.y, portal.x, portal.y))
-                if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, portal.x, portal.y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
-                    let spawnPos = randElem(randElem(game.custom.portals).spawnArea);
+            for (let i = 0; i < game.custom.portals.length; i++) {
+                if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
+                    let portals = deepCopy(game.custom.portals);
+                    portals.splice(i, 1);
+                    let spawnPos = randElem(randElem(portals).spawnArea);
                     ship.set({
                         x: spawnPos.x,
                         y: spawnPos.y,
