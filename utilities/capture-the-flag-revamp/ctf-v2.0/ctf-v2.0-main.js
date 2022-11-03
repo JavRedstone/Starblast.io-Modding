@@ -1015,9 +1015,20 @@ function startPortalEffect(spawnPos, i) {
 
 function playPortalEffects() {
     for (let i = 0; i < game.custom.portalEffects.length; i++) {
-        let portalEffect = deepCopy(OBJECTS.PORTAL_EFFECT);
-        portalEffect.id = `${OBJECTS.PORTAL_EFFECT.id}-${i}`;
-        portalEffect.position.x = 
+        if (game.custom.portalEffect != null) {
+            let portalEffect = deepCopy(OBJECTS.PORTAL_EFFECT);
+            portalEffect.id = `${OBJECTS.PORTAL_EFFECT.id}-${i}`;
+            portalEffect.position.x = game.custom.portalEffects[i].x;
+            portalEffect.position.y = game.custom.portalEffects[i].y;
+            portalEffect.position.z += PORTAL_EFFECT_HEIGHT / PORTAL_EFFECT_DURATION * SCALING_FACTOR;
+            if (portalEffect.position.z <= PORTAL_EFFECT_HEIGHT) {
+                game.setObject(portalEffect);
+            }
+            else {
+                game.custom.portalEffects[i] = null;
+                game.removeObject(portalEffect.id);
+            }
+        }
     }
 }
 
