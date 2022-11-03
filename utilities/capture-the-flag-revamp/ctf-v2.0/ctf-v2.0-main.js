@@ -178,8 +178,9 @@ const SHIPS = getAllShips(getShips());
 
 const GAME_STEP = 30;
 const ROUND_TIME = 36000;
-const WAIT_TIME = 3600;
-// const WAIT_TIME = 0;
+// const WAIT_TIME = 3600;
+const WAIT_TIME = 0;
+const FLAG_EXPIRY_TIME = 5400;
 
 const FLAG_DISTANCE = 1;
 const PORTAL_DISTANCE = 1;
@@ -292,10 +293,16 @@ const OBJECTS = {
 };
 
 const TEXT = {
-    RED: '#fcc',
-    BLUE: '#ccf',
-    YELLOW: '#ffc'
+    RED: '#fbb',
+    BLUE: '#ddf',
+    YELLOW: '#ff0'
 };
+const RADAR_SCALE_POS = 10 / MAP_SIZE;
+const RADAR_SCALE_SIZE = 25 / MAP_SIZE;
+const RADAR_TRANSLATE = 50;
+const RADAR_STAND_SIZE = 8;
+const RADAR_FLAG_SIZE = 4;
+const RADAR_PORTAL_SIZE = 4;
 const UIS = {
     LOGO: {
         id: 'logo',
@@ -366,30 +373,94 @@ const UIS = {
             }
         ]
     },
-    SCORE: {
-        id: 'score',
-        position: [0, 10, 100, 10],
+    FLAG_TIMER: {
+        id: 'flag-timer',
+        position: [0, 75, 100, 10],
         visible: true,
         components: [
             {
                 type: 'text',
-                position: [0, 0, 100, 30],
-                value: 'Your running score is'
+                position: [0, 0, 100, 50],
+                value: 'Flag expires in',
+                color: TEXT.YELLOW
             },
             {
                 type: 'text',
-                position: [0, 30, 100, 20],
-                value: '0'
+                position: [0, 50, 100, 50],
+                value: '0:00',
+                color: TEXT.YELLOW
+            }
+        ]
+    },
+    SCORE: {
+        id: 'score',
+        position: [0, 10, 100, 15],
+        visible: true,
+        components: [
+            {
+                type: 'text',
+                position: [0, 0, 100, 20],
+                value: 'Your running score is',
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [0, 50, 100, 30],
-                value: 'Your high score is'
+                position: [0, 20, 100, 30],
+                value: '0',
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
-                position: [0, 80, 100, 20],
-                value: '0'
+                position: [0, 50, 100, 20],
+                value: '🏆 Your high score is 🏆',
+                color: TEXT.YELLOW
+            },
+            {
+                type: 'text',
+                position: [0, 70, 100, 30],
+                value: '0',
+                color: TEXT.YELLOW
+            }
+        ]
+    },
+    RADAR: {
+        id: 'radar_background',
+        visible: true,
+        components: [
+            {
+                type: 'round',
+                position: getRadarPosition(0, 0, RADAR_STAND_SIZE),
+                stroke: EMISSIVE.RED,
+                width: 2
+            },
+            {
+                type: 'text',
+                position: getRadarPosition(0, 0, RADAR_FLAG_SIZE),
+                value: '🏳️'
+            },
+            {
+                type: 'box',
+                position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
+                stroke: EMISSIVE.YELLOW,
+                width: 3
+            },
+            {
+                type: 'box',
+                position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
+                stroke: EMISSIVE.YELLOW,
+                width: 3
+            },
+            {
+                type: 'box',
+                position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
+                stroke: EMISSIVE.YELLOW,
+                width: 3
+            },
+            {
+                type: 'box',
+                position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
+                stroke: EMISSIVE.YELLOW,
+                width: 3
             }
         ]
     }
@@ -437,7 +508,7 @@ function getCrystals (type) {
 
 function formatTime(time) {
     let minutes = 0;
-    let seconds = Math.floor(time * GAME_STEP / 60);
+    let seconds = Math.floor(time / 60);
     minutes = Math.floor(seconds / 60);
     seconds %= 60;
     return `${minutes}:${seconds < 10 ? 0 : ''}${seconds}`;
@@ -449,6 +520,15 @@ function getDistance(x1, y1, x2, y2) {
 
 function deepCopy(object) {
     return JSON.parse(JSON.stringify(object));
+}
+
+function getRadarPosition(x, y, size) {
+    return [
+        RADAR_TRANSLATE + x * RADAR_SCALE_POS - size * RADAR_SCALE_SIZE,
+        RADAR_TRANSLATE - y * RADAR_SCALE_POS - size * RADAR_SCALE_SIZE,
+        size,
+        size
+    ]
 }
 
 function getShips() {
@@ -630,7 +710,6 @@ function genPortals() {
                 game.custom.portals[i].spawnArea.push(spawnArea);
             }
         }
-        game.removeObject(`${OBJECTS.PORTAL.id}-${i}`);
         let p = deepCopy(OBJECTS.PORTAL);
         p.id = `${OBJECTS.PORTAL.id}-${i}`;
         p.position.x = game.custom.portals[i].x;
@@ -643,10 +722,11 @@ function setRoundDefault() {
     game.custom = {
         hasRound: true,
         hasFlag: true,
+        roundTime: ROUND_TIME + WAIT_TIME,
+        flagExpiry: FLAG_EXPIRY_TIME,
+        shipGroup: randElem(SHIP_GROUPS),
         mapObj: randElem(MAPS),
-        portals: [],
-        roundTime: ROUND_TIME / GAME_STEP + WAIT_TIME / GAME_STEP,
-        shipGroup: randElem(SHIP_GROUPS)
+        portals: []
     };
     game.custom.spawnArea = getSpawningArea();
     game.setCustomMap(game.custom.mapObj.map);
@@ -664,14 +744,13 @@ function setRoundDefault() {
     }
 }
 
-function placeFlag() {
-    game.removeObject(OBJECTS.FLAG.id);
-    game.removeObject(OBJECTS.FLAGSTAND.id);
+function resetFlag() {
     game.setObject(OBJECTS.FLAG);
     game.setObject(OBJECTS.FLAGSTAND);
+    game.custom.flagExpiry = FLAG_EXPIRY_TIME;
 }
 
-function setShipStats(ship) {
+function spawnShip(ship) {
     if (!ship.custom.old) {
         ship.custom = {
             old: true,
@@ -697,10 +776,28 @@ function setShipStats(ship) {
     });
 }
 
-function setPlayerStatus() {
+function updatePlayers() {
     if (game.custom.hasRound) {
         for (let ship of game.ships) {
-            if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
+            if (game.custom.roundTime >= ROUND_TIME) {
+                ship.set({
+                    vx: 0,
+                    vy: 0,
+                    invulnerable: INVULNERABLE_TIME,
+                    idle: true,
+                });
+                let wait = deepCopy(UIS.WAIT);
+                wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME);
+                ship.setUIComponent(UIS.LOGO);
+                ship.setUIComponent(wait);
+            }
+            else {
+                ship.set({
+                    idle: false
+                });
+                hideUI(ship, UIS.LOGO.id);
+                hideUI(ship, UIS.WAIT.id);
+
                 let timer = deepCopy(UIS.TIMER);
                 timer.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
                 timer.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.BLUE;
@@ -711,10 +808,22 @@ function setPlayerStatus() {
                 score.components[1].value = ship.custom.score;
                 score.components[3].value = ship.custom.highScore;
                 ship.setUIComponent(score);
+
+                if (ship.custom.hasFlag) {
+                    ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * (game.ships.length - 1);
+
+                    let flagTimer = deepCopy(UIS.FLAG_TIMER);
+                    flagTimer.components[1].value = formatTime(game.custom.flagExpiry);
+                    ship.setUIComponent(flagTimer);
+                }
             }
-            if (ship.custom.hasFlag) {
-                ship.custom.score = (ship.custom.captureTime - game.custom.roundTime) * (game.ships.length - 1);
+            let radar = deepCopy(UIS.RADAR);
+            radar.components[0].stroke = game.custom.hasFlag ? EMISSIVE.RED : EMISSIVE.BLUE;
+            radar.components[1].position = game.custom.hasFlag ? UIS.RADAR.components[1].position : [0, 0, 0, 0];
+            for (let i = 0; i < game.custom.portals.length; i++) {
+                radar.components[i + 2].position = getRadarPosition(game.custom.portals[i].x, game.custom.portals[i].y, RADAR_PORTAL_SIZE);
             }
+            ship.setUIComponent(radar);
             if (!game.custom.shipGroup.includes(ship.custom.type)) {
                 ship.custom.type = randElem(game.custom.shipGroup);
                 ship.set({
@@ -730,35 +839,12 @@ function setPlayerStatus() {
     }
 }
 
-function waitForRound() {
-    for (let ship of game.ships) {
-        if (game.custom.roundTime >= ROUND_TIME / GAME_STEP) {
-            ship.set({
-                vx: 0,
-                vy: 0,
-                invulnerable: INVULNERABLE_TIME,
-                idle: true,
-            });
-            let wait = deepCopy(UIS.WAIT);
-            wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME / GAME_STEP);
-            ship.setUIComponent(UIS.LOGO);
-            ship.setUIComponent(wait);
-        }
-        else {
-            ship.set({
-                idle: false
-            });
-            hideUI(ship, UIS.LOGO.id);
-            hideUI(ship, UIS.WAIT.id);
-        }
-    }
-}
-
 function setFlagStatus() {
-    if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME / GAME_STEP) {
+    if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME) {
         for (let ship of game.ships) {
             if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
                 game.custom.hasFlag = false;
+                game.custom.flagExpiry = FLAG_EXPIRY_TIME;
                 ship.custom.hasFlag = true;
                 ship.custom.captureTime = game.custom.roundTime;
 
@@ -772,10 +858,16 @@ function setFlagStatus() {
                 game.removeObject(OBJECTS.FLAG.id);
                 game.removeObject(OBJECTS.FLAGSTAND.id);
                 let flagstand = deepCopy(OBJECTS.FLAGSTAND);
-                flagstand.type.id = `flagstand-captured`;
+                flagstand.type.id = `${OBJECTS.FLAGSTAND.id}-captured`;
                 flagstand.type.emissiveColor = EMISSIVE.BLUE;
                 game.setObject(flagstand);
             }
+            else if (ship.custom.hasFlag && game.custom.flagExpiry <= 0) {
+                dropFlag(ship);
+            }
+        }
+        if (game.custom.flagExpiry <= 0 && game.custom.hasFlag) {
+            resetFlag();
         }
     }
 }
@@ -797,6 +889,7 @@ function dropFlag(ship) {
     OBJECTS.FLAG.position.y = ship.y;
     game.setObject(OBJECTS.FLAG);
     game.custom.hasFlag = true;
+    game.custom.flagExpiry = FLAG_EXPIRY_TIME;
 }
 
 function setPortalStatus() {
@@ -842,12 +935,12 @@ this.options = {
 this.tick = function() {
     if (game.step % ROUND_TIME == 0) {
         setRoundDefault();
-        placeFlag();
+        resetFlag();
     }
     if (game.step % GAME_STEP == 0 && game.ships.length > 0) {
         game.custom.roundTime--;
-        waitForRound();
-        setPlayerStatus();
+        game.custom.flagExpiry--;
+        updatePlayers();
         setFlagStatus();
         setPortalStatus();
     }
@@ -857,7 +950,7 @@ this.event = function(event) {
     let ship = event.ship;
     switch(event.name) {
         case 'ship_spawned':
-            setShipStats(ship);
+            spawnShip(ship);
             break;
         case 'ship_destroyed':
             if (ship.custom.hasFlag) {
