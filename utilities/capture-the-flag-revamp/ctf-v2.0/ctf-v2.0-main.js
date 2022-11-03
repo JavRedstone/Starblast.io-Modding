@@ -71,6 +71,8 @@ const ASTEROID_BASE_SIZE = 30;
 const ASTEROID_SIZE_RANGE = 20;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
+const ALIEN_FREQUENCY = 10;
+const ALIEN_CODES = [10, 11, 16];
 const PORTAL_MIN_RADIUS = 1;
 const PORTAL_MAX_RADIUS = 3;
 const MAPS = [
@@ -178,8 +180,7 @@ const SHIPS = getAllShips(getShips());
 
 const GAME_STEP = 30;
 const ROUND_TIME = 36000;
-// const WAIT_TIME = 3600;
-const WAIT_TIME = 0;
+const WAIT_TIME = 3600;
 const FLAG_EXPIRY_TIME = 5400;
 
 const FLAG_DISTANCE = 1;
@@ -189,6 +190,8 @@ const EMISSIVE = {
     BLUE: '#00f',
     YELLOW: '#ff0'
 };
+const PORTAL_EFFECT_DURATION = 360;
+const PORTAL_EFFECT_HEIGHT = 3;
 const OBJECTS = {
     FLAG: {
         id: `flag`,
@@ -257,7 +260,7 @@ const OBJECTS = {
         scale: {
             x: 40,
             y: 40,
-            z: 0
+            z: 20
         },
         type: {
             id: 'portal',
@@ -266,6 +269,31 @@ const OBJECTS = {
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
             transparent: false
         }
+    },
+    PORTAL_EFFECT: {
+        id: 'portal-effect',
+        position: {
+            x: 0,
+            y: 0,
+            z: -5
+        },
+        rotation: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        scale: {
+            x: 40,
+            y: 40,
+            z: 10
+        },
+        type: {
+            id: 'portal-effect',
+            obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/portal.obj',
+            diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse-2.png',
+            transparent: false
+        }
+
     },
     GRID: {
         id: 'grid',
@@ -647,6 +675,17 @@ function getSpawningArea() {
             }
         }
     }
+
+    /*
+    for (let i = 0; i < game.custom.spawnArea.length; i++) {
+        let grid = deepCopy(OBJECTS.GRID);
+        grid.id = `${OBJECTS.GRID.id}-${i}`;
+        grid.position.x = game.custom.spawnArea[i].x;
+        grid.position.y = game.custom.spawnArea[i].y;
+        game.setObject(grid);
+    }
+    */
+
     return spawnArea;
 }
 
@@ -668,16 +707,37 @@ function genAsteroids() {
             size: ASTEROID_BASE_SIZE + Math.floor(Math.random() * ASTEROID_SIZE_RANGE)
         });
     }
+}
 
-    /*
-    for (let i = 0; i < game.custom.spawnArea.length; i++) {
-        let grid = deepCopy(OBJECTS.GRID);
-        grid.id = `${OBJECTS.GRID.id}-${i}`;
-        grid.position.x = game.custom.spawnArea[i].x;
-        grid.position.y = game.custom.spawnArea[i].y;
-        game.setObject(grid);
+function genAliens() {
+    while (game.aliens.length > 0) {
+        for (let alien of game.aliens) {
+            alien.set({
+                kill: true
+            });
+        }
     }
-    */
+    for (let i = 0; i < ALIEN_FREQUENCY; i++) {
+        let spawnPos = randElem(game.custom.spawnArea);
+        game.addAlien({
+            x: spawnPos.x,
+            y: spawnPos.y,
+            code: randElem(ALIEN_CODES)
+        });
+    }
+}
+
+function maintainAliens() {
+    if (game.aliens.length < ALIEN_FREQUENCY) {
+        for (let i = 0; i < ALIEN_FREQUENCY - game.aliens.length; i++) {
+            let spawnPos = randElem(game.custom.spawnArea);
+            game.addAlien({
+                x: spawnPos.x,
+                y: spawnPos.y,
+                code: randElem(ALIEN_CODES)
+            });
+        }
+    }
 }
 
 function genPortals() {
@@ -721,16 +781,17 @@ function genPortals() {
 function setRoundDefault() {
     game.custom = {
         hasRound: true,
-        hasFlag: true,
         roundTime: ROUND_TIME + WAIT_TIME,
         flagExpiry: FLAG_EXPIRY_TIME,
         shipGroup: randElem(SHIP_GROUPS),
         mapObj: randElem(MAPS),
-        portals: []
+        portals: [],
+        portalEffects: []
     };
     game.custom.spawnArea = getSpawningArea();
     game.setCustomMap(game.custom.mapObj.map);
     genAsteroids();
+    genAliens();
     genPortals();
     for (let ship of game.ships) {
         let spawnPos = randElem(game.custom.spawnArea);
@@ -745,6 +806,8 @@ function setRoundDefault() {
 }
 
 function resetFlag() {
+    game.custom.hasFlag = true;
+    game.removeObject(OBJECTS.FLAGSTAND.id);
     game.setObject(OBJECTS.FLAG);
     game.setObject(OBJECTS.FLAGSTAND);
     game.custom.flagExpiry = FLAG_EXPIRY_TIME;
@@ -839,41 +902,42 @@ function updatePlayers() {
     }
 }
 
-function setFlagStatus() {
-    if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME) {
-        for (let ship of game.ships) {
-            if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
-                game.custom.hasFlag = false;
-                game.custom.flagExpiry = FLAG_EXPIRY_TIME;
-                ship.custom.hasFlag = true;
-                ship.custom.captureTime = game.custom.roundTime;
+function setFlagStatus() {    
+    for (let ship of game.ships) {
+        if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME && ship.alive && !ship.idle && getDistance(ship.x, ship.y, OBJECTS.FLAG.position.x, OBJECTS.FLAG.position.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
+            game.custom.hasFlag = false;
+            game.custom.flagExpiry = FLAG_EXPIRY_TIME;
+            ship.custom.hasFlag = true;
+            ship.custom.captureTime = game.custom.roundTime;
 
-                ship.set({
-                    type: ship.custom.type + game.custom.shipGroup.length,
-                    stats: STATS,
-                    hue: HUES.FLAG,
-                    team: TEAMS.FLAG
-                });
+            ship.set({
+                type: ship.custom.type + game.custom.shipGroup.length,
+                stats: STATS,
+                hue: HUES.FLAG,
+                team: TEAMS.FLAG
+            });
 
-                game.removeObject(OBJECTS.FLAG.id);
-                game.removeObject(OBJECTS.FLAGSTAND.id);
-                let flagstand = deepCopy(OBJECTS.FLAGSTAND);
-                flagstand.type.id = `${OBJECTS.FLAGSTAND.id}-captured`;
-                flagstand.type.emissiveColor = EMISSIVE.BLUE;
-                game.setObject(flagstand);
-            }
-            else if (ship.custom.hasFlag && game.custom.flagExpiry <= 0) {
-                dropFlag(ship);
-            }
+            game.removeObject(OBJECTS.FLAG.id);
+            game.removeObject(OBJECTS.FLAGSTAND.id);
+            let flagstand = deepCopy(OBJECTS.FLAGSTAND);
+            flagstand.type.id = `${OBJECTS.FLAGSTAND.id}-captured`;
+            flagstand.type.emissiveColor = EMISSIVE.BLUE;
+            game.setObject(flagstand);
         }
-        if (game.custom.flagExpiry <= 0 && game.custom.hasFlag) {
+        if (ship.custom.hasFlag && game.custom.flagExpiry <= 0) {
+            dropFlag(ship);
             resetFlag();
         }
+    }
+    if (game.custom.flagExpiry <= 0 && game.custom.hasFlag) {
+        resetFlag();
     }
 }
 
 function dropFlag(ship) {
     ship.custom.hasFlag = false;
+    hideUI(ship, UIS.FLAG_TIMER.id);
+
     if (ship.custom.score > ship.custom.highScore) {
         ship.custom.highScore = ship.custom.score;
         ship.custom.score = 0;
@@ -885,15 +949,16 @@ function dropFlag(ship) {
         team: TEAMS.NORMAL
     });
 
-    OBJECTS.FLAG.position.x = ship.x;
-    OBJECTS.FLAG.position.y = ship.y;
-    game.setObject(OBJECTS.FLAG);
+    let flag = deepCopy(OBJECTS.FLAG);
+    flag.position.x = ship.x;
+    flag.position.y = ship.y;
+    game.setObject(flag);
     game.custom.hasFlag = true;
     game.custom.flagExpiry = FLAG_EXPIRY_TIME;
 }
 
 function setPortalStatus() {
-    if (game.custom.roundTime < ROUND_TIME / GAME_STEP) {
+    if (game.custom.roundTime < ROUND_TIME) {
         for (let ship of game.ships) {
             for (let i = 0; i < game.custom.portals.length; i++) {
                 if (ship.alive && !ship.idle && getDistance(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
@@ -905,9 +970,54 @@ function setPortalStatus() {
                         y: spawnPos.y,
                         invulnerable: INVULNERABLE_TIME
                     });
+                    startPortalEffect(spawnPos, i);
                 }
             }
         }
+        for (let asteroid of game.asteroids) {
+            for (let i = 0; i < game.custom.portals.length; i++) {
+                if (getDistance(asteroid.x, asteroid.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
+                    let portals = deepCopy(game.custom.portals);
+                    portals.splice(i, 1);
+                    let spawnPos = randElem(randElem(portals).spawnArea);
+                    asteroid.set({
+                        x: spawnPos.x,
+                        y: spawnPos.y
+                    });
+                    startPortalEffect(spawnPos, i);
+                }
+            }
+        }
+        for (let alien of game.aliens) {
+            for (let i = 0; i < game.custom.portals.length; i++) {
+                if (getDistance(alien.x, alien.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
+                    let portals = deepCopy(game.custom.portals);
+                    portals.splice(i, 1);
+                    let spawnPos = randElem(randElem(portals).spawnArea);
+                    alien.set({
+                        x: spawnPos.x,
+                        y: spawnPos.y
+                    });
+                    startPortalEffect(spawnPos, i);
+                }
+            }
+        }
+    }
+}
+
+function startPortalEffect(spawnPos, i) {
+    game.custom.portalEffects[i] = {
+        x: game.custom.portals[i].x,
+        y: game.custom.portals[i].y,
+        z: OBJECTS.PORTAL_EFFECT.position.z
+    }; 
+}
+
+function playPortalEffects() {
+    for (let i = 0; i < game.custom.portalEffects.length; i++) {
+        let portalEffect = deepCopy(OBJECTS.PORTAL_EFFECT);
+        portalEffect.id = `${OBJECTS.PORTAL_EFFECT.id}-${i}`;
+        portalEffect.position.x = 
     }
 }
 
@@ -938,11 +1048,12 @@ this.tick = function() {
         resetFlag();
     }
     if (game.step % GAME_STEP == 0 && game.ships.length > 0) {
-        game.custom.roundTime--;
-        game.custom.flagExpiry--;
+        game.custom.roundTime -= GAME_STEP;
+        game.custom.flagExpiry -= GAME_STEP;
         updatePlayers();
         setFlagStatus();
         setPortalStatus();
+        maintainAliens();
     }
 }
 
