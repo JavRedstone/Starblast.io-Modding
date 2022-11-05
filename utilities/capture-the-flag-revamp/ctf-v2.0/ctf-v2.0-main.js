@@ -890,7 +890,7 @@ function spawnShip(ship) {
             captureTime: 0,
             score: 0,
             highScore: 0,
-            portalCooldown: PORTAL_COOLDOWN
+            portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN
         };
     }
     let spawnPos = game.custom.hasRound ? randElem(game.custom.spawnArea) : { x: 0, y: 0 };
