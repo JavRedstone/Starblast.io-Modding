@@ -178,14 +178,18 @@ const BODIES = {
 const SHIP_GROUPS = getShipGroups(getShips());
 const SHIPS = getAllShips(getShips());
 
-const GAME_STEP = 60;
+const GAME_STEP = 30;
+const FASTER_GAME_STEP = 10;
 const ROUND_TIME = 36000;
 const WAIT_TIME = 3600;
 // const WAIT_TIME = 0;
 const FLAG_EXPIRY_TIME = 5400;
 
 const FLAG_DISTANCE = 1;
-const PORTAL_DISTANCE = 2;
+const PORTAL_DISTANCE = 1;
+const PORTAL_SUCKING_DISTANCE = 3;
+const PORTAL_TELEPORTING_DISTANCE = 0.5;
+const PORTAL_INTENSITY = 1;
 const EMISSIVE = {
     RED: '#f00',
     BLUE: '#00f',
@@ -594,6 +598,10 @@ function formatTime(time) {
 
 function getDistance(x1, y1, x2, y2) {
     return Math.sqrt(Math.pow(x1 - x2, 2) + Math.pow(y1 - y2, 2));
+}
+
+function getAngle(x1, y1, x2, y2) {
+    return Math.atan2(y2 - y1, x2 - x1);
 }
 
 function deepCopy(object) {
@@ -1039,18 +1047,26 @@ function setPortalStatus() {
     if (game.custom.roundTime < ROUND_TIME) {
         for (let ship of game.ships) {
             for (let i = 0; i < game.custom.portals.length; i++) {
-                if (ship.custom.portalCooldown <= 0 && ship.alive && !ship.idle && getDistance(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
-                    let portals = deepCopy(game.custom.portals);
-                    portals.splice(i, 1);
-                    let spawnPos = randElem(randElem(portals).spawnArea);
+                let portalDistance = getDistance(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y);
+                if (ship.custom.portalCooldown <= 0 && ship.alive && !ship.idle && portalDistance <= PORTAL_SUCKING_DISTANCE * SCALING_FACTOR) {
+                    let portalAngle = getAngle(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y);
                     ship.set({
-                        x: spawnPos.x,
-                        y: spawnPos.y,
-                        vx: 0,
-                        vy: 0,
-                        invulnerable: INVULNERABLE_TIME
+                        vx: ship.vx + Math.cos(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance,
+                        vy: ship.vy + Math.sin(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance
                     });
-                    ship.custom.portalCooldown = PORTAL_COOLDOWN;
+                    if (portalDistance <= PORTAL_TELEPORTING_DISTANCE * SCALING_FACTOR) {
+                        let portals = deepCopy(game.custom.portals);
+                        portals.splice(i, 1);
+                        let spawnPos = randElem(randElem(portals).spawnArea);
+                        ship.set({
+                            x: spawnPos.x,
+                            y: spawnPos.y,
+                            vx: 0,
+                            vy: 0,
+                            invulnerable: INVULNERABLE_TIME
+                        });
+                        ship.custom.portalCooldown = PORTAL_COOLDOWN;
+                    }
                 }
             }
         }
@@ -1174,9 +1190,11 @@ this.tick = function() {
         game.custom.flag.expiry -= GAME_STEP;
         updatePlayers();
         updateScoreboard();
+        maintainAliens();
+    }
+    if (game.step % FASTER_GAME_STEP == 0 && game.ships.length > 0) {
         setFlagStatus();
         setPortalStatus();
-        maintainAliens();
     }
 }
 
