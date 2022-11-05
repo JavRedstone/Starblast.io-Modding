@@ -799,40 +799,42 @@ function maintainAliens() {
 }
 
 function genPortals() {
-    let portalSource = game.custom.mapObj.portalSource;
-    let portalSourceX = portalSource.x * SCALING_FACTOR;
-    let portalSourceY = portalSource.y * SCALING_FACTOR;
-    game.custom.portals = [
-        {
-            x: portalSourceX,
-            y: portalSourceY
-        },
-        {
-            x: portalSourceY,
-            y: -portalSourceX
-        },
-        {
-            x: -portalSourceX,
-            y: -portalSourceY
-        },
-        {
-            x: -portalSourceY,
-            y: portalSourceX
-        }
-    ];
-    for (let i = 0; i < game.custom.portals.length; i++) {
-        game.custom.portals[i].spawnArea = [];
-        for (let spawnArea of game.custom.spawnArea) {
-            let portalDistance = getDistance(spawnArea.x, spawnArea.y, game.custom.portals[i].x, game.custom.portals[i].y);
-            if (portalDistance > PORTAL_MIN_RADIUS * SCALING_FACTOR && portalDistance <= PORTAL_MAX_RADIUS * SCALING_FACTOR) {
-                game.custom.portals[i].spawnArea.push(spawnArea);
+    if (game.custom.mapObj.portalSource != null) {
+        let portalSource = game.custom.mapObj.portalSource;
+        let portalSourceX = portalSource.x * SCALING_FACTOR;
+        let portalSourceY = portalSource.y * SCALING_FACTOR;
+        game.custom.portals = [
+            {
+                x: portalSourceX,
+                y: portalSourceY
+            },
+            {
+                x: portalSourceY,
+                y: -portalSourceX
+            },
+            {
+                x: -portalSourceX,
+                y: -portalSourceY
+            },
+            {
+                x: -portalSourceY,
+                y: portalSourceX
             }
+        ];
+        for (let i = 0; i < game.custom.portals.length; i++) {
+            game.custom.portals[i].spawnArea = [];
+            for (let spawnArea of game.custom.spawnArea) {
+                let portalDistance = getDistance(spawnArea.x, spawnArea.y, game.custom.portals[i].x, game.custom.portals[i].y);
+                if (portalDistance > PORTAL_MIN_RADIUS * SCALING_FACTOR && portalDistance <= PORTAL_MAX_RADIUS * SCALING_FACTOR) {
+                    game.custom.portals[i].spawnArea.push(spawnArea);
+                }
+            }
+            let p = deepCopy(OBJECTS.PORTAL);
+            p.id = `${OBJECTS.PORTAL.id}-${i}`;
+            p.position.x = game.custom.portals[i].x;
+            p.position.y = game.custom.portals[i].y;
+            game.setObject(p);
         }
-        let p = deepCopy(OBJECTS.PORTAL);
-        p.id = `${OBJECTS.PORTAL.id}-${i}`;
-        p.position.x = game.custom.portals[i].x;
-        p.position.y = game.custom.portals[i].y;
-        game.setObject(p);
     }
 }
 
