@@ -1,7 +1,3 @@
-# Blender v3.2.2 OBJ File: 'gravity.blend'
-# www.blender.org
-mtllib gravity.mtl
-o Cube
 v -3.031564 0.947948 3.031564
 v -2.974422 1.045955 2.974422
 v -3.209575 -1.269760 3.209575
