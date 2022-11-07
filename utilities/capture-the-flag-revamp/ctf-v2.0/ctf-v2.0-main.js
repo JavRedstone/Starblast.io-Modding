@@ -51,12 +51,11 @@ const CUSTOM_MAP = ''
 const RADAR_ZOOM = 1;
 const MAX_LEVEL = 1;
 const STARTING_SHIP = 801;
-const FRIENDLY_COLORS = 2;
 const WEAPONS_STORE = false;
 const MINES_SELF_DESTROY = true;
 const MINES_DESTROY_DELAY = 0;
 const PROJECTILE_SPEED = Number.MAX_VALUE;
-const SPEED_MOD = 1.2;
+const SPEED_MOD = 1.5;
 const ASTEROIDS_STRENGTH = 1000000;
 const CRYSTAL_DROP = 0;
 const CRYSTAL_VALUE = 0;
@@ -66,15 +65,13 @@ const SCALING_FACTOR = 10;
 const SHIFT = 0.5;
 const SPAWN_MIN_RADIUS = 12;
 const SPAWN_MAX_RADIUS = 25;
-const ASTEROID_FREQUENCY = 20;
-const ASTEROID_BASE_SIZE = 30;
-const ASTEROID_SIZE_RANGE = 20;
+const ASTEROID_FREQUENCY = 15;
+const ASTEROID_BASE_SIZE = 15;
+const ASTEROID_SIZE_RANGE = 5;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
-const ALIEN_FREQUENCY = 20;
-const ALIEN_CODES = [10, 11, 16];
-const PORTAL_MIN_RADIUS = 1;
-const PORTAL_MAX_RADIUS = 3;
+const ALIEN_FREQUENCY = 200;
+const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
 const MAPS = [
     {
         name: 'Portals',
@@ -147,7 +144,7 @@ const MAPS = [
 ];
 
 const CUSTOM_SHIPS = true;
-const FLAG_BOOST = 1.5;
+const FLAG_SHIELD_BOOST = 100;
 const BODIES = {
     FLAG: {
         section_segments: [44,45,46,135,225,310,315,320],
@@ -175,25 +172,29 @@ const BODIES = {
         vertical: true
     }
 };
-const SHIP_GROUPS = getShipGroups(getShips());
-const SHIPS = getAllShips(getShips());
+const SHIP_GROUPS = getShipGroups();
+const SHIPS = getAllShips();
 
 const GAME_STEP = 30;
 const FASTER_GAME_STEP = 10;
 const ROUND_TIME = 36000;
-const WAIT_TIME = 3600;
-// const WAIT_TIME = 0;
-const FLAG_EXPIRY_TIME = 5400;
+// const ROUND_TIME = 720;
+// const WAIT_TIME = 3600;
+const WAIT_TIME = 0;
 
 const FLAG_DISTANCE = 1;
-const PORTAL_DISTANCE = 1;
-const PORTAL_SUCKING_DISTANCE = 3;
+const FLAG_EXPIRY_TIME = 5400;
+const PORTAL_DISTANCE = 2;
+const PORTAL_SUCKING_DISTANCE = 4;
+const PORTAL_MIN_RADIUS = PORTAL_SUCKING_DISTANCE + 1;
+const PORTAL_MAX_RADIUS = PORTAL_SUCKING_DISTANCE + 3;
 const PORTAL_TELEPORTING_DISTANCE = 0.5;
-const PORTAL_INTENSITY = 1;
+const PORTAL_INTENSITY = 0.5;
+const GRAVITY_SCALING_FACTOR = 1.25;
 const EMISSIVE = {
-    RED: '#f00',
-    BLUE: '#00f',
-    YELLOW: '#ff0'
+    BLUE: '#87c1ff',
+    YELLOW: '#ff0',
+    TURQUOISE: '#40e0d0'
 };
 const OBJECTS = {
     FLAG: {
@@ -218,7 +219,7 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flag.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-            emissiveColor: EMISSIVE.RED,
+            emissiveColor: EMISSIVE.YELLOW,
             transparent: false
         }
     },
@@ -244,7 +245,7 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flagstand.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-            emissiveColor: EMISSIVE.RED,
+            emissiveColor: EMISSIVE.YELLOW,
             transparent: false
         }
     },
@@ -270,6 +271,30 @@ const OBJECTS = {
             obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/portal.obj',
             diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse-2.png',
             emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+            transparent: false
+        }
+    },
+    GRAVITY: {
+        id: 'gravity',
+        position: {
+            x: 0,
+            y: 0,
+            z: -10
+        },
+        rotation: {
+            x: 0,
+            y: 0,
+            z: 0
+        },
+        scale: {
+            x: PORTAL_SUCKING_DISTANCE * GRAVITY_SCALING_FACTOR,
+            y: PORTAL_SUCKING_DISTANCE * GRAVITY_SCALING_FACTOR,
+            z: PORTAL_SUCKING_DISTANCE * GRAVITY_SCALING_FACTOR
+        },
+        type: {
+            id: 'gravity',
+            obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/gravity.obj',
+            emissiveColor: EMISSIVE.TURQUOISE,
             transparent: false
         }
     },
@@ -326,7 +351,7 @@ const OBJECTS = {
 const TEXT = {
     WHITE: '#cde',
     RED: '#fbb',
-    BLUE: '#bbf',
+    BLUE: '#87c1ff',
     YELLOW: '#ffb',
     BLACK: '#000'
 };
@@ -334,9 +359,12 @@ const RADAR_SCALE_POS = 10 / MAP_SIZE;
 const RADAR_SCALE_SIZE = 25 / MAP_SIZE;
 const RADAR_TRANSLATE = 50;
 const RADAR_STAND_SIZE = 8;
-const RADAR_FLAG_SIZE = 4;
+const RADAR_FLAG_SIZE = 6;
 const RADAR_PORTAL_SIZE = 4;
 const SCOREBOARD_SPACING = 100 / 12;
+const FLAG_MESSAGE_DURATION = 360;
+const PORTAL_COOLDOWN = 1800;
+const FLAG_COOLDOWN = 900;
 const UIS = {
     LOGO: {
         id: 'logo',
@@ -403,7 +431,7 @@ const UIS = {
                 type: 'text',
                 position: [5, 0, 90, 100],
                 value: '0:00',
-                color: "#cde"
+                color: TEXT.WHITE
             }
         ]
     },
@@ -416,32 +444,70 @@ const UIS = {
                 type: 'text',
                 position: [0, 0, 100, 50],
                 value: 'Flag expires in',
-                color: TEXT.YELLOW
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
                 position: [0, 50, 100, 50],
                 value: '0:00',
-                color: TEXT.YELLOW
+                color: TEXT.BLUE
+            }
+        ]
+    },
+    FLAG_COOLDOWN: {
+        id: 'flag-cooldown',
+        position: [35, 90, 15, 5],
+        visible: true,
+        components: [
+            {
+                type: 'text',
+                position: [0, 0, 100, 50],
+                value: 'Flag cooldown',
+                color: EMISSIVE.BLUE
+            },
+            {
+                type: 'text',
+                position: [0, 50, 100, 50],
+                value: '0:00',
+                color: EMISSIVE.BLUE
             }
         ]
     },
     PORTAL_COOLDOWN: {
         id: 'portal-cooldown',
-        position: [0, 90, 100, 5],
+        position: [50, 90, 15, 5],
         visible: true,
         components: [
             {
                 type: 'text',
                 position: [0, 0, 100, 50],
                 value: 'Portal cooldown',
-                color: TEXT.YELLOW
+                color: EMISSIVE.TURQUOISE
             },
             {
                 type: 'text',
                 position: [0, 50, 100, 50],
                 value: '0:00',
-                color: TEXT.YELLOW
+                color: EMISSIVE.TURQUOISE
+            }
+        ]
+    },
+    FLAG_MESSAGE: {
+        id: 'flag-message',
+        position: [0, 40, 100, 20],
+        visible: true,
+        components: [
+            {
+                type: 'text',
+                position: [0, 0, 100, 50],
+                value: '',
+                color: TEXT.BLUE
+            },
+            {
+                type: 'text',
+                position: [0, 50, 100, 50],
+                value: '',
+                color: TEXT.BLUE
             }
         ]
     },
@@ -494,7 +560,7 @@ const UIS = {
             {
                 type: 'box',
                 position: [0, SCOREBOARD_SPACING * 2, 100, SCOREBOARD_SPACING],
-                fill: EMISSIVE.RED
+                fill: EMISSIVE.YELLOW
             },
             {
                 type: 'text',
@@ -511,8 +577,8 @@ const UIS = {
             {
                 type: 'round',
                 position: getRadarPosition(0, 0, RADAR_STAND_SIZE),
-                stroke: EMISSIVE.RED,
-                width: 2
+                stroke: EMISSIVE.YELLOW,
+                width: 3
             },
             {
                 type: 'text',
@@ -522,25 +588,25 @@ const UIS = {
             {
                 type: 'box',
                 position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
-                stroke: EMISSIVE.YELLOW,
+                stroke: EMISSIVE.TURQUOISE,
                 width: 3
             },
             {
                 type: 'box',
                 position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
-                stroke: EMISSIVE.YELLOW,
+                stroke: EMISSIVE.TURQUOISE,
                 width: 3
             },
             {
                 type: 'box',
                 position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
-                stroke: EMISSIVE.YELLOW,
+                stroke: EMISSIVE.TURQUOISE,
                 width: 3
             },
             {
                 type: 'box',
                 position: getRadarPosition(0, 0, RADAR_PORTAL_SIZE),
-                stroke: EMISSIVE.YELLOW,
+                stroke: EMISSIVE.TURQUOISE,
                 width: 3
             }
         ]
@@ -550,14 +616,9 @@ const UIS = {
 const SHIELD = 10000;
 const STATS = 99999999;
 const INVULNERABLE_TIME = 180;
-const PORTAL_COOLDOWN = 1800;
 const HUES = {
-    NORMAL: 0,
-    FLAG: 240
-};
-const TEAMS = {
-    NORMAL: 0,
-    FLAG: 1
+    YELLOW: 60,
+    BLUE: 200
 };
 
 function randElem(arr) {
@@ -676,30 +737,8 @@ function getShips() {
     return ships;
 }
 
-function getAllShips(ships) {
-    let normShips = [];
-	for (let ship in ships) {
-		normShips.push(ships[ship]);
-	}
-	let flagShips = [];
-	for (let ship of normShips) {
-		let parsedShip = JSON.parse(ship);
-		parsedShip.bodies.flag = BODIES.FLAG;
-		parsedShip.bodies.flagpole = BODIES.FLAGPOLE;
-		parsedShip.model += SHIP_GROUPS[parsedShip.level - 1].length;
-		
-        parsedShip.typespec.specs.generator.capacity = [0, 0.1];
-        parsedShip.specs.generator.capacity = [0, 0.1];
-        parsedShip.typespec.specs.shield.capacity[1] *= FLAG_BOOST;
-		parsedShip.specs.shield.capacity[1] *= FLAG_BOOST;
-		// parsedShip.typespec.specs.ship.speed[1] *= FLAG_BOOST;
-		// parsedShip.specs.ship.speed[1] *= FLAG_BOOST;
-		flagShips.push(JSON.stringify(parsedShip));
-	}
-	return [...normShips, ...flagShips];
-}
-
-function getShipGroups(ships) {
+function getShipGroups() {
+    let ships = getShips();
     let normShips = [];
 	for (let ship in ships) {
 		normShips.push(ships[ship]);
@@ -716,6 +755,44 @@ function getShipGroups(ships) {
         shipGroups.push(shipGroup);
     }
     return shipGroups;
+}
+
+function getAllShips() {
+    let ships = getShips();
+    let normShips = [];
+	for (let ship in ships) {
+		normShips.push(ships[ship]);
+	}
+    for (let i = 0; i < SHIP_GROUPS.length; i++) {
+        let shipGroup = SHIP_GROUPS[i];
+        let totalSpeed = 0;
+        for (let ship of normShips) {
+	    	let parsedShip = JSON.parse(ship);
+            if (parsedShip.level - 1 == i) {
+                totalSpeed += parsedShip.specs.ship.speed[1];
+            }
+	    }
+        for (let j = 0; j < normShips.length; j++) {
+            let parsedShip = JSON.parse(normShips[j]);
+            if (parsedShip.level - 1 == i) {
+                parsedShip.specs.ship.speed = [totalSpeed / shipGroup.length, totalSpeed / shipGroup.length];
+                parsedShip.typespec.specs.ship.speed = [totalSpeed / shipGroup.length, totalSpeed / shipGroup.length];
+                normShips[j] = JSON.stringify(parsedShip);
+            }
+        }
+    }
+	let flagShips = [];
+	for (let ship of normShips) {
+		let parsedShip = JSON.parse(ship);
+		parsedShip.bodies.flag = BODIES.FLAG;
+		parsedShip.bodies.flagpole = BODIES.FLAGPOLE;
+		parsedShip.model += SHIP_GROUPS[parsedShip.level - 1].length;
+		
+        parsedShip.typespec.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+		parsedShip.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+		flagShips.push(JSON.stringify(parsedShip));
+	}
+	return [...normShips, ...flagShips];
 }
 
 function getSpawningArea() {
@@ -748,12 +825,10 @@ function getSpawningArea() {
 }
 
 function genAsteroids() {
-    while (game.asteroids.length > 0) {
-        for (let asteroid of game.asteroids) {
-            asteroid.set({
-                kill: true
-            });
-        }
+    for (let asteroid of game.asteroids) {
+        asteroid.set({
+            kill: true
+        });
     }
     for (let i = 0; i < ASTEROID_FREQUENCY; i++) {
         let spawnPos = randElem(game.custom.spawnArea);
@@ -768,12 +843,10 @@ function genAsteroids() {
 }
 
 function genAliens() {
-    while (game.aliens.length > 0) {
-        for (let alien of game.aliens) {
-            alien.set({
-                kill: true
-            });
-        }
+    for (let alien of game.aliens) {
+        alien.set({
+            kill: true
+        });
     }
     for (let i = 0; i < ALIEN_FREQUENCY; i++) {
         let spawnPos = randElem(game.custom.spawnArea);
@@ -834,6 +907,12 @@ function genPortals() {
             p.position.x = game.custom.portals[i].x;
             p.position.y = game.custom.portals[i].y;
             game.setObject(p);
+
+            let gravity = deepCopy(OBJECTS.GRAVITY);
+            gravity.id = `${OBJECTS.GRAVITY.id}-${i}`;
+            gravity.position.x = game.custom.portals[i].x;
+            gravity.position.y = game.custom.portals[i].y - OBJECTS.GRAVITY.scale.y / GRAVITY_SCALING_FACTOR / 2 * SCALING_FACTOR;
+            game.setObject(gravity); 
         }
     }
 }
@@ -847,8 +926,9 @@ function setRoundDefault() {
         flag: {
             x: 0,
             y: 0,
-            expiry: FLAG_EXPIRY_TIME
+            expiry: 0
         },
+        flagMessageCountdown: 0,
         portals: []
     };
     game.custom.spawnArea = getSpawningArea();
@@ -858,6 +938,10 @@ function setRoundDefault() {
     genPortals();
     game.setObject(OBJECTS.RING);
     for (let ship of game.ships) {
+        if (ship.custom.hasFlag) {
+            dropFlag(ship, false);
+        }
+        
         let spawnPos = randElem(game.custom.spawnArea);
         ship.set({
             x: spawnPos.x,
@@ -865,20 +949,24 @@ function setRoundDefault() {
             vx: 0,
             vy: 0
         });
-        ship.custom.hasFlag = false;
-    }
-}
 
-function resetFlag() {
-    game.custom.hasFlag = true;
-    game.removeObject(OBJECTS.FLAGSTAND.id);
-    game.setObject(OBJECTS.FLAG);
-    game.setObject(OBJECTS.FLAGSTAND);
-    game.custom.flag = {
-        x: 0,
-        y: 0,
-        expiry: FLAG_EXPIRY_TIME
-    };
+        ship.custom = {
+            type: 0,
+            hasFlag: false,
+            captureTime: 0,
+            score: 0,
+            highScore: ship.custom.highScore != null ? ship.custom.highScore : 0,
+            flagCooldown: 0,
+            portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN
+        };
+
+        for (let ui of UIS) {
+            if (ui.id != 'scoreboard' && ui.id != 'radar') {
+                hideUI(ui);
+            }
+        }
+    }
+    resetFlag();
 }
 
 function spawnShip(ship) {
@@ -890,6 +978,7 @@ function spawnShip(ship) {
             captureTime: 0,
             score: 0,
             highScore: 0,
+            flagCooldown: 0,
             portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN
         };
     }
@@ -902,8 +991,7 @@ function spawnShip(ship) {
         shield: SHIELD,
         crystals: game.custom.hasRound ? getCrystals(game.custom.shipGroup[0]) : 0,
         stats: STATS,
-        hue: HUES.NORMAL,
-        team: TEAMS.NORMAL,
+        hue: HUES.YELLOW,
         invulnerable: INVULNERABLE_TIME
     });
 }
@@ -911,12 +999,13 @@ function spawnShip(ship) {
 function updatePlayers() {
     if (game.custom.hasRound) {
         for (let ship of game.ships) {
-            if (game.custom.roundTime >= ROUND_TIME) {
+            if (game.custom.roundTime > ROUND_TIME) {
                 ship.set({
                     vx: 0,
                     vy: 0,
                     invulnerable: INVULNERABLE_TIME,
                     idle: true,
+                    collider: false
                 });
                 let wait = deepCopy(UIS.WAIT);
                 wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME);
@@ -925,17 +1014,11 @@ function updatePlayers() {
             }
             else {
                 ship.set({
-                    idle: false
+                    idle: false,
+                    collider: true
                 });
                 hideUI(ship, UIS.LOGO.id);
                 hideUI(ship, UIS.WAIT.id);
-
-                let timer = deepCopy(UIS.TIMER);
-                timer.components[0].stroke = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.WHITE;
-                timer.components[1].color = game.custom.roundTime * GAME_STEP / 60 <= 30 ? TEXT.RED : TEXT.WHITE;
-                timer.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
-                ship.setUIComponent(timer);
-
 
                 if (ship.custom.hasFlag) {
                     let score = deepCopy(UIS.SCORE);
@@ -944,43 +1027,39 @@ function updatePlayers() {
                     ship.setUIComponent(score);
 
                     ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
-
-                    let flagTimer = deepCopy(UIS.FLAG_TIMER);
-                    flagTimer.components[1].value = formatTime(game.custom.flag.expiry);
-                    ship.setUIComponent(flagTimer);
                 }
                 else {
                     hideUI(ship, UIS.SCORE.id);
                     hideUI(ship, UIS.FLAG_TIMER.id);
                 }
 
+                let flagCooldown = deepCopy(UIS.FLAG_COOLDOWN);
+                flagCooldown.components[1].value = formatTime(ship.custom.flagCooldown);
+                ship.setUIComponent(flagCooldown);
+                if (ship.custom.flagCooldown > 0) {
+                    ship.custom.flagCooldown -= GAME_STEP;
+                }
+                else {
+                    ship.custom.flagCooldown = 0;
+                }
+                let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
+                portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
+                ship.setUIComponent(portalCooldown);
                 if (ship.custom.portalCooldown > 0) {
-                    let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
-                    portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
-                    ship.setUIComponent(portalCooldown);
-
                     ship.custom.portalCooldown -= GAME_STEP;
                 }
                 else {
-                    hideUI(ship, UIS.PORTAL_COOLDOWN.id);
+                    ship.custom.portalCooldown = 0;
                 }
             }
-            let radar = deepCopy(UIS.RADAR);
-            radar.components[0].stroke = game.custom.hasFlag ? EMISSIVE.RED : EMISSIVE.BLUE;
-            radar.components[1].position = game.custom.hasFlag ? UIS.RADAR.components[1].position : [0, 0, 0, 0];
-            for (let i = 0; i < game.custom.portals.length; i++) {
-                radar.components[i + 2].position = getRadarPosition(game.custom.portals[i].x, game.custom.portals[i].y, RADAR_PORTAL_SIZE);
-            }
-            ship.setUIComponent(radar);
-            if (!game.custom.shipGroup.includes(ship.custom.type)) {
+            if (!ship.custom.hasFlag && !game.custom.shipGroup.includes(ship.custom.type)) {
                 ship.custom.type = randElem(game.custom.shipGroup);
                 ship.set({
                     type: ship.custom.type,
                     shield: SHIELD,
                     crystals: getCrystals(ship.custom.type),
                     stats: STATS,
-                    hue: HUES.NORMAL,
-                    team: TEAMS.NORMAL
+                    hue: HUES.YELLOW
                 });
             }
         }
@@ -989,17 +1068,15 @@ function updatePlayers() {
 
 function setFlagStatus() {    
     for (let ship of game.ships) {
-        if (game.custom.hasFlag && game.custom.roundTime < ROUND_TIME && ship.alive && !ship.idle && getDistance(ship.x, ship.y, game.custom.flag.x, game.custom.flag.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
+        if (game.custom.hasFlag && game.custom.roundTime <= ROUND_TIME && ship.custom.flagCooldown <= 0 && ship.alive && !ship.idle && getDistance(ship.x, ship.y, game.custom.flag.x, game.custom.flag.y) <= FLAG_DISTANCE * SCALING_FACTOR) {
             game.custom.hasFlag = false;
-            game.custom.flag.expiry = FLAG_EXPIRY_TIME;
             ship.custom.hasFlag = true;
             ship.custom.captureTime = game.custom.roundTime;
 
             ship.set({
                 type: ship.custom.type + game.custom.shipGroup.length,
                 stats: STATS,
-                hue: HUES.FLAG,
-                team: TEAMS.FLAG
+                hue: HUES.BLUE
             });
 
             game.removeObject(OBJECTS.FLAG.id);
@@ -1008,19 +1085,33 @@ function setFlagStatus() {
             flagstand.type.id = `${OBJECTS.FLAGSTAND.id}-captured`;
             flagstand.type.emissiveColor = EMISSIVE.BLUE;
             game.setObject(flagstand);
-        }
-        if (ship.custom.hasFlag && game.custom.flag.expiry <= 0) {
-            dropFlag(ship);
-            resetFlag();
+
+            let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
+            flagMessage.components[0].value = ship.name;
+            flagMessage.components[1].value = 'Captured the flag!';
+            game.setUIComponent(flagMessage);
+            game.custom.flagMessageCountdown = FLAG_MESSAGE_DURATION;
         }
     }
-    if (game.custom.flag.expiry <= 0 && game.custom.hasFlag) {
+    if (game.custom.hasFlag && (game.custom.flag.x != 0 || game.custom.flag.y != 0) && game.custom.flag.expiry <= 0) {
         resetFlag();
+        let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
+        flagMessage.components[0].value = 'The game';
+        flagMessage.components[1].value = 'Returned the flag.';
+        game.setUIComponent(flagMessage);
+        game.custom.flagMessageCountdown = FLAG_MESSAGE_DURATION;
+    }
+    if (game.custom.flagMessageCountdown > 0) {
+        game.custom.flagMessageCountdown -= FASTER_GAME_STEP;
+    }
+    else {
+        hideUI(game, UIS.FLAG_MESSAGE.id);
     }
 }
 
-function dropFlag(ship) {
+function dropFlag(ship, message) {
     ship.custom.hasFlag = false;
+    ship.custom.flagCooldown = FLAG_COOLDOWN;
     hideUI(ship, UIS.FLAG_TIMER.id);
 
     if (ship.custom.score > ship.custom.highScore) {
@@ -1029,8 +1120,7 @@ function dropFlag(ship) {
     ship.set({
         type: ship.custom.type,
         stats: STATS,
-        hue: HUES.NORMAL,
-        team: TEAMS.NORMAL
+        hue: HUES.YELLOW
     });
 
     let flag = deepCopy(OBJECTS.FLAG);
@@ -1043,65 +1133,89 @@ function dropFlag(ship) {
         y: ship.y,
         expiry: FLAG_EXPIRY_TIME
     };
+    if (message) {
+    let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
+        flagMessage.components[0].value = ship.name;
+        flagMessage.components[1].value = 'Dropped the flag!';
+        game.setUIComponent(flagMessage);
+        game.custom.flagMessageCountdown = FLAG_MESSAGE_DURATION;
+    }
 }
 
-function setPortalStatus() {
-    if (game.custom.roundTime < ROUND_TIME) {
-        for (let ship of game.ships) {
-            for (let i = 0; i < game.custom.portals.length; i++) {
-                let portalDistance = getDistance(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y);
-                if (ship.custom.portalCooldown <= 0 && ship.alive && !ship.idle && portalDistance <= PORTAL_SUCKING_DISTANCE * SCALING_FACTOR) {
-                    let portalAngle = getAngle(ship.x, ship.y, game.custom.portals[i].x, game.custom.portals[i].y);
-                    ship.set({
-                        vx: ship.vx + Math.cos(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance,
-                        vy: ship.vy + Math.sin(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance
+
+function resetFlag() {
+    game.custom.hasFlag = true;
+    game.removeObject(OBJECTS.FLAGSTAND.id);
+    game.setObject(OBJECTS.FLAG);
+    game.setObject(OBJECTS.FLAGSTAND);
+    game.custom.flag = {
+        x: 0,
+        y: 0,
+        expiry: 0
+    };
+}
+
+function suckPortalEntity(type, entity) {
+    if ((type == 'ship' && entity.alive && !entity.idle && entity.custom.portalCooldown <= 0) || type != 'ship') {
+        for (let i = 0; i < game.custom.portals.length; i++) {
+            let portalDistance = getDistance(entity.x, entity.y, game.custom.portals[i].x, game.custom.portals[i].y);
+            if (portalDistance <= PORTAL_SUCKING_DISTANCE * SCALING_FACTOR) {
+                let portalAngle = getAngle(entity.x, entity.y, game.custom.portals[i].x, game.custom.portals[i].y);
+                entity.set({
+                    vx: entity.vx + Math.cos(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance,
+                    vy: entity.vy + Math.sin(portalAngle) * PORTAL_INTENSITY * PORTAL_SUCKING_DISTANCE / portalDistance
+                });
+                if (portalDistance <= PORTAL_TELEPORTING_DISTANCE * SCALING_FACTOR) {
+                    let portals = deepCopy(game.custom.portals);
+                    portals.splice(i, 1);
+                    let spawnPos = randElem(randElem(portals).spawnArea);
+                    entity.set({
+                        x: spawnPos.x,
+                        y: spawnPos.y,
+                        invulnerable: INVULNERABLE_TIME
                     });
-                    if (portalDistance <= PORTAL_TELEPORTING_DISTANCE * SCALING_FACTOR) {
-                        let portals = deepCopy(game.custom.portals);
-                        portals.splice(i, 1);
-                        let spawnPos = randElem(randElem(portals).spawnArea);
-                        ship.set({
-                            x: spawnPos.x,
-                            y: spawnPos.y,
+                    if (type == 'ship') {
+                        entity.set({
                             vx: 0,
-                            vy: 0,
-                            invulnerable: INVULNERABLE_TIME
+                            vy: 0
                         });
-                        ship.custom.portalCooldown = PORTAL_COOLDOWN;
+                        entity.custom.portalCooldown = PORTAL_COOLDOWN;
                     }
-                }
-            }
-        }
-        for (let asteroid of game.asteroids) {
-            for (let i = 0; i < game.custom.portals.length; i++) {
-                if (getDistance(asteroid.x, asteroid.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
-                    let portals = deepCopy(game.custom.portals);
-                    portals.splice(i, 1);
-                    let spawnPos = randElem(randElem(portals).spawnArea);
-                    asteroid.set({
-                        x: spawnPos.x,
-                        y: spawnPos.y
-                    });
-                }
-            }
-        }
-        for (let alien of game.aliens) {
-            for (let i = 0; i < game.custom.portals.length; i++) {
-                if (getDistance(alien.x, alien.y, game.custom.portals[i].x, game.custom.portals[i].y) <= PORTAL_DISTANCE * SCALING_FACTOR) {
-                    let portals = deepCopy(game.custom.portals);
-                    portals.splice(i, 1);
-                    let spawnPos = randElem(randElem(portals).spawnArea);
-                    alien.set({
-                        x: spawnPos.x,
-                        y: spawnPos.y
-                    });
+                    else if (type == 'asteroid') {
+                        entity.set({
+                            vx: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+                            vy: (Math.round(Math.random()) == 0 ? -1 : 1) * (ASTEROID_BASE_VELOCITY + Math.random() * ASTEROID_VELOCITY_RANGE),
+                        })
+                    }
                 }
             }
         }
     }
 }
 
-function updateScoreboard() {
+function setPortalStatus() {
+    if (game.custom.roundTime <= ROUND_TIME) {
+        for (let ship of game.ships) {
+            suckPortalEntity('ship', ship);
+        }
+        for (let asteroid of game.asteroids) {
+            suckPortalEntity('asteroid', asteroid);
+        }
+        for (let alien of game.aliens) {
+            suckPortalEntity('alien', alien);
+        }
+    }
+}
+
+function updateGlobals() {
+    if (game.custom.roundTime <= ROUND_TIME) {
+        let timer = deepCopy(UIS.TIMER);
+        timer.components[0].stroke =  Math.floor(game.custom.roundTime / 60) <= 30 ? TEXT.RED : TEXT.WHITE;
+        timer.components[1].color = Math.floor(game.custom.roundTime / 60) <= 30 ? TEXT.RED : TEXT.WHITE;
+        timer.components[1].value = `Time left: ${formatTime(game.custom.roundTime)}`;
+        game.setUIComponent(timer);
+    }   
+
     let scoreboard = deepCopy(UIS.SCOREBOARD);
     if (game.custom.hasFlag) {
         scoreboard.components.push(
@@ -1109,7 +1223,7 @@ function updateScoreboard() {
                 type: 'text',
                 position: [0, SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
                 value: 'Nobody has the flag.',
-                color: TEXT.WHITE
+                color: TEXT.BLUE
             }
         );
     }
@@ -1119,7 +1233,7 @@ function updateScoreboard() {
             scoreboard.components.push(
                 {
                     type: 'player',
-                    position: [0, SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
+                    position: [0, SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
                     id: game.ships[i].id,
                     color: TEXT.BLUE,
                     align: 'left'
@@ -1137,16 +1251,16 @@ function updateScoreboard() {
             scoreboard.components.push(
                 {
                     type: 'player',
-                    position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
+                    position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
                     id: game.ships[i].id,
-                    color: TEXT.RED,
+                    color: TEXT.YELLOW,
                     align: 'left'
                 },
                 {
                     type: 'text',
                     position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
                     value: `${game.ships[i].custom.score}|${game.ships[i].custom.highScore}`,
-                    color: TEXT.RED,
+                    color: TEXT.YELLOW,
                     align: 'right'
                 }
             );
@@ -1156,9 +1270,30 @@ function updateScoreboard() {
             break;
         }
     }
-    for (let ship of game.ships) {
-        ship.setUIComponent(scoreboard);
+    game.setUIComponent(scoreboard);
+
+    let radar = deepCopy(UIS.RADAR);
+    radar.components[0].stroke = game.custom.hasFlag ? EMISSIVE.YELLOW : EMISSIVE.BLUE;
+    if (game.custom.hasFlag) {
+        radar.components[1].position = getRadarPosition(game.custom.flag.x, game.custom.flag.y, RADAR_FLAG_SIZE);
     }
+    else {
+        for (let ship of game.ships) {
+            if (ship.custom.hasFlag) {
+                radar.components[1].position = getRadarPosition(ship.x, ship.y, RADAR_FLAG_SIZE);
+                break;
+            }
+        }
+    }
+    for (let i = 0; i < game.custom.portals.length; i++) {
+        radar.components[i + 2].position = getRadarPosition(game.custom.portals[i].x, game.custom.portals[i].y, RADAR_PORTAL_SIZE);
+    }
+    game.setUIComponent(radar);
+}
+
+function tickTime() {
+    game.custom.roundTime -= GAME_STEP;
+    game.custom.flag.expiry -= GAME_STEP;
 }
 
 this.options = {
@@ -1170,7 +1305,6 @@ this.options = {
 	ships: SHIPS,
 	max_level: MAX_LEVEL,
 	starting_ship: STARTING_SHIP,
-	friendly_colors: FRIENDLY_COLORS,
 	weapons_store: WEAPONS_STORE,
 	mines_self_destroy: MINES_SELF_DESTROY,
 	mines_destroy_delay: MINES_DESTROY_DELAY,
@@ -1183,16 +1317,14 @@ this.options = {
 };
 
 this.tick = function() {
-    if (game.step % ROUND_TIME == 0) {
+    if (game.step == 0 || game.custom.roundTime <= 0) {
         setRoundDefault();
-        resetFlag();
     }
     if (game.step % GAME_STEP == 0 && game.ships.length > 0) {
-        game.custom.roundTime -= GAME_STEP;
-        game.custom.flag.expiry -= GAME_STEP;
         updatePlayers();
-        updateScoreboard();
+        updateGlobals();
         maintainAliens();
+        tickTime();
     }
     if (game.step % FASTER_GAME_STEP == 0 && game.ships.length > 0) {
         setFlagStatus();
@@ -1208,7 +1340,7 @@ this.event = function(event) {
             break;
         case 'ship_destroyed':
             if (ship.custom.hasFlag) {
-                dropFlag(ship);
+                dropFlag(ship, true);
             }
             break;
     }
