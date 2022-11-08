@@ -68,14 +68,13 @@ const SHIFT = 0.5;
 const SPAWN_MIN_RADIUS = 12;
 const SPAWN_MAX_RADIUS = 25;
 const ASTEROID_FREQUENCY = 15;
-const ASTEROID_BASE_SIZE = 15;
-const ASTEROID_SIZE_RANGE = 5;
+const ASTEROID_BASE_SIZE = 20;
+const ASTEROID_SIZE_RANGE = 20;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
 const ALIEN_FREQUENCY = 20;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
-const ALIEN_CRYSTAL_DROP = 20;
-const ALIEN_WEAPONS_DROP = [10, 11, 12, 20, 21, 91];
+const ALIEN_WEAPON_DROPS = [10, 11, 12, 20, 21, 91];
 const COLLECTIBLE_FREQUENCY = 50;
 const MISSILE_TIME_MARK = 3600;
 const TORPEDO_TIME_MARK = 7200;
@@ -800,7 +799,8 @@ function getAllShips() {
 
 function getChooseShip() {
     let shipGroup = randElem(SHIP_GROUPS);
-    return [randElem(shipGroup), randElem(shipGroup), randElem(shipGroup)];
+    // return [randElem(shipGroup), randElem(shipGroup), randElem(shipGroup)];
+    return shipGroup;
 }
 
 function getSpawningArea() {
@@ -856,14 +856,7 @@ function genAliens() {
             kill: true
         });
     }
-    for (let i = 0; i < ALIEN_FREQUENCY; i++) {
-        let spawnPos = randElem(game.custom.spawnArea);
-        game.addAlien({
-            x: spawnPos.x,
-            y: spawnPos.y,
-            code: randElem(ALIEN_CODES)
-        });
-    }
+    maintainAliens();
 }
 
 function maintainAliens() {
@@ -874,8 +867,7 @@ function maintainAliens() {
                 x: spawnPos.x,
                 y: spawnPos.y,
                 code: randElem(ALIEN_CODES),
-                crystal_drop: ALIEN_CRYSTAL_DROP,
-                weapon_drop: randElem(ALIEN_WEAPONS_DROP)
+                weapon_drop: randElem(ALIEN_WEAPON_DROPS)
             });
         }
     }
@@ -988,90 +980,92 @@ function spawnShip(ship) {
 function updatePlayers() {
     if (game.custom.hasRound) {
         for (let ship of game.ships) {
-            if (game.custom.roundTime > ROUND_TIME) {
-                ship.set({
-                    vx: 0,
-                    vy: 0,
-                    invulnerable: INVULNERABLE_TIME,
-                    idle: true,
-                    collider: false
-                });
-                let wait = deepCopy(UIS.WAIT);
-                wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME);
-                ship.setUIComponent(UIS.LOGO);
-                ship.setUIComponent(wait);
-            }
-            else {
-                ship.set({
-                    idle: false,
-                    collider: true
-                });
-                hideUI(ship, UIS.LOGO.id);
-                hideUI(ship, UIS.WAIT.id);
-
-                if (ship.custom.hasFlag) {
-                    let score = deepCopy(UIS.SCORE);
-                    score.components[1].value = ship.custom.score;
-                    score.components[3].value = ship.custom.highScore;
-                    ship.setUIComponent(score);
-
-                    ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
-
-                    if (ship.custom.captureTime - game.custom.roundTime == MISSILE_TIME_MARK) {
-                        for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
-                            let spawnPos = randElem(game.custom.spawnArea);
-                            game.addCollectible({
-                                x: spawnPos.x,
-                                y: spawnPos.y,
-                                code: 11
-                            });
+            if (ship.custom.old) {
+                if (game.custom.roundTime > ROUND_TIME) {
+                    ship.set({
+                        vx: 0,
+                        vy: 0,
+                        invulnerable: INVULNERABLE_TIME,
+                        idle: true,
+                        collider: false
+                    });
+                    let wait = deepCopy(UIS.WAIT);
+                    wait.components[1].value = formatTime(game.custom.roundTime - ROUND_TIME);
+                    ship.setUIComponent(UIS.LOGO);
+                    ship.setUIComponent(wait);
+                }
+                else {
+                    ship.set({
+                        idle: false,
+                        collider: true
+                    });
+                    hideUI(ship, UIS.LOGO.id);
+                    hideUI(ship, UIS.WAIT.id);
+    
+                    if (ship.custom.hasFlag) {
+                        let score = deepCopy(UIS.SCORE);
+                        score.components[1].value = ship.custom.score;
+                        score.components[3].value = ship.custom.highScore;
+                        ship.setUIComponent(score);
+    
+                        ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
+    
+                        if (ship.custom.captureTime - game.custom.roundTime == MISSILE_TIME_MARK) {
+                            for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
+                                let spawnPos = randElem(game.custom.spawnArea);
+                                game.addCollectible({
+                                    x: spawnPos.x,
+                                    y: spawnPos.y,
+                                    code: 11
+                                });
+                            }
+                        }
+                        else if (ship.custom.captureTime - game.custom.roundTime == TORPEDO_TIME_MARK) {
+                            for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
+                                let spawnPos = randElem(game.custom.spawnArea);
+                                game.addCollectible({
+                                    x: spawnPos.x,
+                                    y: spawnPos.y,
+                                    code: 12
+                                });
+                            }
                         }
                     }
-                    else if (ship.custom.captureTime - game.custom.roundTime == TORPEDO_TIME_MARK) {
-                        for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
-                            let spawnPos = randElem(game.custom.spawnArea);
-                            game.addCollectible({
-                                x: spawnPos.x,
-                                y: spawnPos.y,
-                                code: 12
-                            });
-                        }
+                    else {
+                        hideUI(ship, UIS.SCORE.id);
+                        hideUI(ship, UIS.FLAG_TIMER.id);
+                    }
+    
+                    let flagCooldown = deepCopy(UIS.FLAG_COOLDOWN);
+                    flagCooldown.components[1].value = formatTime(ship.custom.flagCooldown);
+                    ship.setUIComponent(flagCooldown);
+                    if (ship.custom.flagCooldown > 0) {
+                        ship.custom.flagCooldown -= GAME_STEP;
+                    }
+                    else {
+                        ship.custom.flagCooldown = 0;
+                    }
+                    let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
+                    portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
+                    ship.setUIComponent(portalCooldown);
+                    if (ship.custom.portalCooldown > 0) {
+                        ship.custom.portalCooldown -= GAME_STEP;
+                    }
+                    else {
+                        ship.custom.portalCooldown = 0;
                     }
                 }
-                else {
-                    hideUI(ship, UIS.SCORE.id);
-                    hideUI(ship, UIS.FLAG_TIMER.id);
-                }
-
-                let flagCooldown = deepCopy(UIS.FLAG_COOLDOWN);
-                flagCooldown.components[1].value = formatTime(ship.custom.flagCooldown);
-                ship.setUIComponent(flagCooldown);
-                if (ship.custom.flagCooldown > 0) {
-                    ship.custom.flagCooldown -= GAME_STEP;
-                }
-                else {
-                    ship.custom.flagCooldown = 0;
-                }
-                let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
-                portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
-                ship.setUIComponent(portalCooldown);
-                if (ship.custom.portalCooldown > 0) {
-                    ship.custom.portalCooldown -= GAME_STEP;
-                }
-                else {
-                    ship.custom.portalCooldown = 0;
+                if (!ship.custom.hasFlag && !CHOOSE_SHIP.includes(ship.custom.type)) {
+                    ship.custom.type = randElem(CHOOSE_SHIP);
+                    ship.set({
+                        type: ship.custom.type,
+                        shield: SHIELD,
+                        crystals: getCrystals(ship.custom.type),
+                        stats: STATS,
+                        hue: HUES.YELLOW
+                    });
                 }
             }
-            // if (!ship.custom.hasFlag && !CHOOSE_SHIP.includes(ship.custom.type)) {
-            //     ship.custom.type = randElem(CHOOSE_SHIP);
-            //     ship.set({
-            //         type: ship.custom.type,
-            //         shield: SHIELD,
-            //         crystals: getCrystals(ship.custom.type),
-            //         stats: STATS,
-            //         hue: HUES.YELLOW
-            //     });
-            // }
         }
     }
 }
@@ -1237,45 +1231,47 @@ function updateGlobals() {
     }
     let nonFlagCount = 0;
     for (let i = 0; i < game.ships.length; i++) {
-        if (game.ships[i].custom.hasFlag) {
-            scoreboard.components.push(
-                {
-                    type: 'player',
-                    position: [0, SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
-                    id: game.ships[i].id,
-                    color: TEXT.BLUE,
-                    align: 'left'
-                },
-                {
-                    type: 'text',
-                    position: [0, SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
-                    value:  `${game.ships[i].custom.score}|${game.ships[i].custom.highScore}`,
-                    color: TEXT.BLUE,
-                    align: 'right'
-                }
-            );
-        }
-        else if (nonFlagCount < 8) {
-            scoreboard.components.push(
-                {
-                    type: 'player',
-                    position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
-                    id: game.ships[i].id,
-                    color: TEXT.YELLOW,
-                    align: 'left'
-                },
-                {
-                    type: 'text',
-                    position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
-                    value: `${game.ships[i].custom.score}|${game.ships[i].custom.highScore}`,
-                    color: TEXT.YELLOW,
-                    align: 'right'
-                }
-            );
-            nonFlagCount++;
-        }
-        else {
-            break;
+        if (game.ships[i].custom.old) {
+            if (game.ships[i].custom.hasFlag) {
+                scoreboard.components.push(
+                    {
+                        type: 'player',
+                        position: [0, SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
+                        id: game.ships[i].id,
+                        color: TEXT.BLUE,
+                        align: 'left'
+                    },
+                    {
+                        type: 'text',
+                        position: [0, SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
+                        value: `${game.ships[i].custom.score}|${game.ships[i].custom.highScore}`,
+                        color: TEXT.BLUE,
+                        align: 'right'
+                    }
+                );
+            }
+            else if (nonFlagCount < 8) {
+                scoreboard.components.push(
+                    {
+                        type: 'player',
+                        position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 80, SCOREBOARD_SPACING],
+                        id: game.ships[i].id,
+                        color: TEXT.YELLOW,
+                        align: 'left'
+                    },
+                    {
+                        type: 'text',
+                        position: [0, (nonFlagCount + 3) * SCOREBOARD_SPACING, 100, SCOREBOARD_SPACING],
+                        value: `${game.ships[i].custom.score}|${game.ships[i].custom.highScore}`,
+                        color: TEXT.YELLOW,
+                        align: 'right'
+                    }
+                );
+                nonFlagCount++;
+            }
+            else {
+                break;
+            }
         }
     }
     game.setUIComponent(scoreboard);
