@@ -21,8 +21,6 @@ CREDITS AFTER V2.0
 
 */
 
-// Make it so if the flag hasnt been captured in 30 sec place it back in centre
-
 const ROOT_MODE = '';
 const MAP_SIZE = 60;
 const VOCABULARY = [
@@ -52,14 +50,17 @@ const RADAR_ZOOM = 1;
 const MAX_LEVEL = 1;
 const STARTING_SHIP = 801;
 const WEAPONS_STORE = false;
-const MINES_SELF_DESTROY = true;
-const MINES_DESTROY_DELAY = 0;
-const PROJECTILE_SPEED = Number.MAX_VALUE;
 const SPEED_MOD = 1.5;
 const ASTEROIDS_STRENGTH = 1000000;
 const CRYSTAL_DROP = 0;
 const CRYSTAL_VALUE = 0;
 const MAX_PLAYERS = 40;
+
+const GAME_STEP = 30;
+const FASTER_GAME_STEP = 10;
+// const ROUND_TIME = 36000;
+const ROUND_TIME = 3800;
+const WAIT_TIME = 3600;
 
 const SCALING_FACTOR = 10;
 const SHIFT = 0.5;
@@ -70,8 +71,13 @@ const ASTEROID_BASE_SIZE = 15;
 const ASTEROID_SIZE_RANGE = 5;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
-const ALIEN_FREQUENCY = 200;
+const ALIEN_FREQUENCY = 20;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
+const ALIEN_CRYSTAL_DROP = 20;
+const ALIEN_WEAPONS_DROP = [10, 11, 12, 20, 21, 91];
+const COLLECTIBLE_FREQUENCY = 50;
+const MISSILE_TIME_MARK = 3600;
+const TORPEDO_TIME_MARK = 7200;
 const MAPS = [
     {
         name: 'Portals',
@@ -145,6 +151,7 @@ const MAPS = [
 
 const CUSTOM_SHIPS = true;
 const FLAG_SHIELD_BOOST = 100;
+const FLAG_REGENERATION_IMPEDANCE = 15;
 const BODIES = {
     FLAG: {
         section_segments: [44,45,46,135,225,310,315,320],
@@ -175,20 +182,12 @@ const BODIES = {
 const SHIP_GROUPS = getShipGroups();
 const SHIPS = getAllShips();
 
-const GAME_STEP = 30;
-const FASTER_GAME_STEP = 10;
-const ROUND_TIME = 36000;
-// const ROUND_TIME = 720;
-// const WAIT_TIME = 3600;
-const WAIT_TIME = 0;
-
 const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 5400;
-const PORTAL_DISTANCE = 2;
 const PORTAL_SUCKING_DISTANCE = 4;
+const PORTAL_TELEPORTING_DISTANCE = 1;
 const PORTAL_MIN_RADIUS = PORTAL_SUCKING_DISTANCE + 1;
 const PORTAL_MAX_RADIUS = PORTAL_SUCKING_DISTANCE + 3;
-const PORTAL_TELEPORTING_DISTANCE = 0.5;
 const PORTAL_INTENSITY = 0.5;
 const GRAVITY_SCALING_FACTOR = 1.25;
 const EMISSIVE = {
@@ -279,7 +278,7 @@ const OBJECTS = {
         position: {
             x: 0,
             y: 0,
-            z: -10
+            z: -5
         },
         rotation: {
             x: 0,
@@ -788,8 +787,10 @@ function getAllShips() {
 		parsedShip.bodies.flagpole = BODIES.FLAGPOLE;
 		parsedShip.model += SHIP_GROUPS[parsedShip.level - 1].length;
 		
-        parsedShip.typespec.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
-		parsedShip.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+        parsedShip.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+		parsedShip.typespec.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+        parsedShip.specs.generator.reload[1] -= FLAG_REGENERATION_IMPEDANCE;
+        parsedShip.typespec.specs.generator.reload[i] -= FLAG_REGENERATION_IMPEDANCE;
 		flagShips.push(JSON.stringify(parsedShip));
 	}
 	return [...normShips, ...flagShips];
@@ -865,7 +866,9 @@ function maintainAliens() {
             game.addAlien({
                 x: spawnPos.x,
                 y: spawnPos.y,
-                code: randElem(ALIEN_CODES)
+                code: randElem(ALIEN_CODES),
+                crystal_drop: ALIEN_CRYSTAL_DROP,
+                weapon_drop: randElem(ALIEN_WEAPONS_DROP)
             });
         }
     }
@@ -935,13 +938,10 @@ function setRoundDefault() {
     game.setCustomMap(game.custom.mapObj.map);
     genAsteroids();
     genAliens();
+    resetFlag();
     genPortals();
     game.setObject(OBJECTS.RING);
-    for (let ship of game.ships) {
-        if (ship.custom.hasFlag) {
-            dropFlag(ship, false);
-        }
-        
+    for (let ship of game.ships) {        
         let spawnPos = randElem(game.custom.spawnArea);
         ship.set({
             x: spawnPos.x,
@@ -949,24 +949,7 @@ function setRoundDefault() {
             vx: 0,
             vy: 0
         });
-
-        ship.custom = {
-            type: 0,
-            hasFlag: false,
-            captureTime: 0,
-            score: 0,
-            highScore: ship.custom.highScore != null ? ship.custom.highScore : 0,
-            flagCooldown: 0,
-            portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN
-        };
-
-        for (let ui of UIS) {
-            if (ui.id != 'scoreboard' && ui.id != 'radar') {
-                hideUI(ui);
-            }
-        }
     }
-    resetFlag();
 }
 
 function spawnShip(ship) {
@@ -1027,6 +1010,27 @@ function updatePlayers() {
                     ship.setUIComponent(score);
 
                     ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
+
+                    if (ship.custom.captureTime - game.custom.roundTime == MISSILE_TIME_MARK) {
+                        for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
+                            let spawnPos = randElem(game.custom.spawnArea);
+                            game.addCollectible({
+                                x: spawnPos.x,
+                                y: spawnPos.y,
+                                code: 11
+                            });
+                        }
+                    }
+                    else if (ship.custom.captureTime - game.custom.roundTime == TORPEDO_TIME_MARK) {
+                        for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
+                            let spawnPos = randElem(game.custom.spawnArea);
+                            game.addCollectible({
+                                x: spawnPos.x,
+                                y: spawnPos.y,
+                                code: 12
+                            });
+                        }
+                    }
                 }
                 else {
                     hideUI(ship, UIS.SCORE.id);
@@ -1109,7 +1113,7 @@ function setFlagStatus() {
     }
 }
 
-function dropFlag(ship, message) {
+function dropFlag(ship) {
     ship.custom.hasFlag = false;
     ship.custom.flagCooldown = FLAG_COOLDOWN;
     hideUI(ship, UIS.FLAG_TIMER.id);
@@ -1133,13 +1137,11 @@ function dropFlag(ship, message) {
         y: ship.y,
         expiry: FLAG_EXPIRY_TIME
     };
-    if (message) {
     let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
-        flagMessage.components[0].value = ship.name;
-        flagMessage.components[1].value = 'Dropped the flag!';
-        game.setUIComponent(flagMessage);
-        game.custom.flagMessageCountdown = FLAG_MESSAGE_DURATION;
-    }
+    flagMessage.components[0].value = ship.name;
+    flagMessage.components[1].value = 'Dropped the flag!';
+    game.setUIComponent(flagMessage);
+    game.custom.flagMessageCountdown = FLAG_MESSAGE_DURATION;
 }
 
 
@@ -1296,6 +1298,14 @@ function tickTime() {
     game.custom.flag.expiry -= GAME_STEP;
 }
 
+function endGame() {
+    for (let ship of game.ships) {
+        ship.gameover({
+            'High score': `${ship.custom.highScore}`
+        });
+    }
+}
+
 this.options = {
 	root_mode: ROOT_MODE,
 	map_size: MAP_SIZE,
@@ -1306,9 +1316,6 @@ this.options = {
 	max_level: MAX_LEVEL,
 	starting_ship: STARTING_SHIP,
 	weapons_store: WEAPONS_STORE,
-	mines_self_destroy: MINES_SELF_DESTROY,
-	mines_destroy_delay: MINES_DESTROY_DELAY,
-	projectile_speed: PROJECTILE_SPEED,
 	speed_mod: SPEED_MOD,
 	asteroids_strength: ASTEROIDS_STRENGTH,
 	crystal_drop: CRYSTAL_DROP,
@@ -1317,8 +1324,11 @@ this.options = {
 };
 
 this.tick = function() {
-    if (game.step == 0 || game.custom.roundTime <= 0) {
+    if (game.step == 0) {
         setRoundDefault();
+    }
+    if (game.custom.roundTime <= 0) {
+        endGame();
     }
     if (game.step % GAME_STEP == 0 && game.ships.length > 0) {
         updatePlayers();
@@ -1340,7 +1350,7 @@ this.event = function(event) {
             break;
         case 'ship_destroyed':
             if (ship.custom.hasFlag) {
-                dropFlag(ship, true);
+                dropFlag(ship);
             }
             break;
     }
