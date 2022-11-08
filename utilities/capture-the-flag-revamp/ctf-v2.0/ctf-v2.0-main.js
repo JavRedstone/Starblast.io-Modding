@@ -21,6 +21,8 @@ CREDITS AFTER V2.0
 
 */
 
+// Do ship choices
+
 const ROOT_MODE = '';
 const MAP_SIZE = 60;
 const VOCABULARY = [
@@ -58,8 +60,7 @@ const MAX_PLAYERS = 40;
 
 const GAME_STEP = 30;
 const FASTER_GAME_STEP = 10;
-// const ROUND_TIME = 36000;
-const ROUND_TIME = 3800;
+const ROUND_TIME = 36000;
 const WAIT_TIME = 3600;
 
 const SCALING_FACTOR = 10;
@@ -149,7 +150,6 @@ const MAPS = [
     }
 ];
 
-const CUSTOM_SHIPS = true;
 const FLAG_SHIELD_BOOST = 100;
 const FLAG_REGENERATION_IMPEDANCE = 15;
 const BODIES = {
@@ -179,8 +179,10 @@ const BODIES = {
         vertical: true
     }
 };
+const CUSTOM_SHIPS = true;
 const SHIP_GROUPS = getShipGroups();
 const SHIPS = getAllShips();
+const CHOOSE_SHIP = getChooseShip();
 
 const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 5400;
@@ -796,6 +798,11 @@ function getAllShips() {
 	return [...normShips, ...flagShips];
 }
 
+function getChooseShip() {
+    let shipGroup = randElem(SHIP_GROUPS);
+    return [randElem(shipGroup), randElem(shipGroup), randElem(shipGroup)];
+}
+
 function getSpawningArea() {
     let map = game.custom.mapObj.map.split('\n');
     let spawnArea = [];
@@ -924,7 +931,6 @@ function setRoundDefault() {
     game.custom = {
         hasRound: true,
         roundTime: ROUND_TIME + WAIT_TIME,
-        shipGroup: randElem(SHIP_GROUPS),
         mapObj: randElem(MAPS),
         flag: {
             x: 0,
@@ -972,7 +978,7 @@ function spawnShip(ship) {
         vx: 0,
         vy: 0,
         shield: SHIELD,
-        crystals: game.custom.hasRound ? getCrystals(game.custom.shipGroup[0]) : 0,
+        crystals: getCrystals(CHOOSE_SHIP[0]),
         stats: STATS,
         hue: HUES.YELLOW,
         invulnerable: INVULNERABLE_TIME
@@ -1056,16 +1062,16 @@ function updatePlayers() {
                     ship.custom.portalCooldown = 0;
                 }
             }
-            if (!ship.custom.hasFlag && !game.custom.shipGroup.includes(ship.custom.type)) {
-                ship.custom.type = randElem(game.custom.shipGroup);
-                ship.set({
-                    type: ship.custom.type,
-                    shield: SHIELD,
-                    crystals: getCrystals(ship.custom.type),
-                    stats: STATS,
-                    hue: HUES.YELLOW
-                });
-            }
+            // if (!ship.custom.hasFlag && !CHOOSE_SHIP.includes(ship.custom.type)) {
+            //     ship.custom.type = randElem(CHOOSE_SHIP);
+            //     ship.set({
+            //         type: ship.custom.type,
+            //         shield: SHIELD,
+            //         crystals: getCrystals(ship.custom.type),
+            //         stats: STATS,
+            //         hue: HUES.YELLOW
+            //     });
+            // }
         }
     }
 }
@@ -1078,7 +1084,7 @@ function setFlagStatus() {
             ship.custom.captureTime = game.custom.roundTime;
 
             ship.set({
-                type: ship.custom.type + game.custom.shipGroup.length,
+                type: ship.custom.type + CHOOSE_SHIP.length,
                 stats: STATS,
                 hue: HUES.BLUE
             });
@@ -1315,6 +1321,7 @@ this.options = {
 	ships: SHIPS,
 	max_level: MAX_LEVEL,
 	starting_ship: STARTING_SHIP,
+    choose_ship: CHOOSE_SHIP,
 	weapons_store: WEAPONS_STORE,
 	speed_mod: SPEED_MOD,
 	asteroids_strength: ASTEROIDS_STRENGTH,
