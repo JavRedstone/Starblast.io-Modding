@@ -72,12 +72,10 @@ const ASTEROID_BASE_SIZE = 20;
 const ASTEROID_SIZE_RANGE = 20;
 const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
-const ALIEN_FREQUENCY = 20;
+const ALIEN_FREQUENCY = 40;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
 const ALIEN_WEAPON_DROPS = [10, 11, 12, 20, 21, 91];
 const COLLECTIBLE_FREQUENCY = 50;
-const MISSILE_TIME_MARK = 3600;
-const TORPEDO_TIME_MARK = 7200;
 const MAPS = [
     {
         name: 'Portals',
@@ -365,6 +363,7 @@ const SCOREBOARD_SPACING = 100 / 12;
 const FLAG_MESSAGE_DURATION = 360;
 const PORTAL_COOLDOWN = 1800;
 const FLAG_COOLDOWN = 900;
+const SHOCKWAVE_COOLDOWN = 3600;
 const UIS = {
     LOGO: {
         id: 'logo',
@@ -507,6 +506,25 @@ const UIS = {
                 type: 'text',
                 position: [0, 50, 100, 50],
                 value: '',
+                color: TEXT.BLUE
+            }
+        ]
+    },
+    LAUNCH_SHOCKWAVE: {
+        id: 'launch-shockwave',
+        position: [0, 75, 100, 10],
+        visible: true,
+        components: [
+            {
+                type: 'box',
+                position: [0, 0, 100, 100],
+                stroke: TEXT.BLUE,
+                width: 2
+            },
+            {
+                type: 'text',
+                position: [5, 0, 90, 100],
+                value: 'Launch shockwave',
                 color: TEXT.BLUE
             }
         ]
@@ -867,6 +885,7 @@ function maintainAliens() {
                 x: spawnPos.x,
                 y: spawnPos.y,
                 code: randElem(ALIEN_CODES),
+                level: 2,
                 weapon_drop: randElem(ALIEN_WEAPON_DROPS)
             });
         }
@@ -1009,27 +1028,6 @@ function updatePlayers() {
                         ship.setUIComponent(score);
     
                         ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
-    
-                        if (ship.custom.captureTime - game.custom.roundTime == MISSILE_TIME_MARK) {
-                            for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
-                                let spawnPos = randElem(game.custom.spawnArea);
-                                game.addCollectible({
-                                    x: spawnPos.x,
-                                    y: spawnPos.y,
-                                    code: 11
-                                });
-                            }
-                        }
-                        else if (ship.custom.captureTime - game.custom.roundTime == TORPEDO_TIME_MARK) {
-                            for (let i = 0; i < COLLECTIBLE_FREQUENCY; i++) {
-                                let spawnPos = randElem(game.custom.spawnArea);
-                                game.addCollectible({
-                                    x: spawnPos.x,
-                                    y: spawnPos.y,
-                                    code: 12
-                                });
-                            }
-                        }
                     }
                     else {
                         hideUI(ship, UIS.SCORE.id);
@@ -1295,6 +1293,10 @@ function updateGlobals() {
     game.setUIComponent(radar);
 }
 
+function launchShockwave() {
+
+}
+
 function tickTime() {
     game.custom.roundTime -= GAME_STEP;
     game.custom.flag.expiry -= GAME_STEP;
@@ -1354,6 +1356,11 @@ this.event = function(event) {
         case 'ship_destroyed':
             if (ship.custom.hasFlag) {
                 dropFlag(ship);
+            }
+            break;
+        case 'ui_component_clicked':
+            if (event.id == UIS.LAUNCH_SHOCKWAVE.id) {
+                launchShockwave();
             }
             break;
     }
