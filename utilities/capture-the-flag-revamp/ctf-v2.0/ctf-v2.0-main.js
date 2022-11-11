@@ -74,6 +74,7 @@ const ASTEROID_BASE_VELOCITY = 0.05;
 const ASTEROID_VELOCITY_RANGE = 0.075;
 const ALIEN_FREQUENCY = 40;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
+const ALIEN_LEVEL = 1;
 const ALIEN_WEAPON_DROPS = [10, 11, 12, 20, 21, 91];
 const COLLECTIBLE_FREQUENCY = 50;
 const MAPS = [
@@ -363,6 +364,8 @@ const SCOREBOARD_SPACING = 100 / 12;
 const FLAG_MESSAGE_DURATION = 360;
 const PORTAL_COOLDOWN = 1800;
 const FLAG_COOLDOWN = 900;
+const SHOCKWAVE_DISTANCE = 5;
+const SHOCKWAVE_INTENSITY = 5;
 const SHOCKWAVE_COOLDOWN = 3600;
 const UIS = {
     LOGO: {
@@ -817,7 +820,6 @@ function getAllShips() {
 
 function getChooseShip() {
     let shipGroup = randElem(SHIP_GROUPS);
-    // return [randElem(shipGroup), randElem(shipGroup), randElem(shipGroup)];
     return shipGroup;
 }
 
@@ -885,7 +887,7 @@ function maintainAliens() {
                 x: spawnPos.x,
                 y: spawnPos.y,
                 code: randElem(ALIEN_CODES),
-                level: 2,
+                level: ALIEN_LEVEL,
                 weapon_drop: randElem(ALIEN_WEAPON_DROPS)
             });
         }
@@ -979,7 +981,8 @@ function spawnShip(ship) {
             score: 0,
             highScore: 0,
             flagCooldown: 0,
-            portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN
+            shockwaveCooldown: 0,
+            portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN,
         };
     }
     let spawnPos = game.custom.hasRound ? randElem(game.custom.spawnArea) : { x: 0, y: 0 };
@@ -1043,6 +1046,12 @@ function updatePlayers() {
                     else {
                         ship.custom.flagCooldown = 0;
                     }
+                    if (ship.custom.shockwaveCooldown > 0) {
+                        ship.custom.shockwaveCooldown -= GAME_STEP;
+                    }
+                    else {
+                        ship.custom.shockwaveCooldown = 0;
+                    }
                     let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
                     portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
                     ship.setUIComponent(portalCooldown);
@@ -1074,6 +1083,7 @@ function setFlagStatus() {
             game.custom.hasFlag = false;
             ship.custom.hasFlag = true;
             ship.custom.captureTime = game.custom.roundTime;
+            ship.custom.shockwaveCooldown = SHOCKWAVE_COOLDOWN;
 
             ship.set({
                 type: ship.custom.type + CHOOSE_SHIP.length,
@@ -1293,8 +1303,18 @@ function updateGlobals() {
     game.setUIComponent(radar);
 }
 
-function launchShockwave() {
-
+function launchShockwave(self) {
+    if (ship.custom.shockwaveCooldown) {
+        for (let ship of game.ships) {
+            if (getDistance(ship.x, ship.y, self.x, self.y) <= SHOCKWAVE_DISTANCE) {
+                let angle = getAngle(ship.x, ship,y, self.x, self.y);
+                ship.set({
+                    vx: Math.cos(angle) * SHOCKWAVE_INTENSITY,
+                    vy: Math.cos(angle) * SHOCKWAVE_INTENSITY
+                });
+            }
+        }
+    }
 }
 
 function tickTime() {
@@ -1360,7 +1380,7 @@ this.event = function(event) {
             break;
         case 'ui_component_clicked':
             if (event.id == UIS.LAUNCH_SHOCKWAVE.id) {
-                launchShockwave();
+                launchShockwave(ship);
             }
             break;
     }
