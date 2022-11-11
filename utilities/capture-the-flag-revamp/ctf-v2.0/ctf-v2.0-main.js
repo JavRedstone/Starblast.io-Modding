@@ -351,6 +351,7 @@ const TEXT = {
     WHITE: '#cde',
     RED: '#fbb',
     BLUE: '#87c1ff',
+    TURQUOISE: '#40e0d0',
     YELLOW: '#ffb',
     BLACK: '#000'
 };
@@ -458,39 +459,58 @@ const UIS = {
     },
     FLAG_COOLDOWN: {
         id: 'flag-cooldown',
-        position: [35, 90, 15, 5],
+        position: [20, 90, 20, 5],
         visible: true,
         components: [
             {
                 type: 'text',
                 position: [0, 0, 100, 50],
                 value: 'Flag cooldown',
-                color: EMISSIVE.BLUE
+                color: TEXT.BLUE
             },
             {
                 type: 'text',
                 position: [0, 50, 100, 50],
                 value: '0:00',
-                color: EMISSIVE.BLUE
+                color: TEXT.BLUE
+            }
+        ]
+    },
+    SHOCKWAVE_COOLDOWN: {
+        id: 'shockwave-cooldown',
+        position: [40, 90, 20, 5],
+        visible: true,
+        components: [
+            {
+                type: 'text',
+                position: [0, 0, 100, 50],
+                value: 'Shockwave cooldown',
+                color: TEXT.RED
+            },
+            {
+                type: 'text',
+                position: [0, 50, 100, 50],
+                value: '0:00',
+                color: TEXT.RED
             }
         ]
     },
     PORTAL_COOLDOWN: {
         id: 'portal-cooldown',
-        position: [50, 90, 15, 5],
+        position: [60, 90, 20, 5],
         visible: true,
         components: [
             {
                 type: 'text',
                 position: [0, 0, 100, 50],
                 value: 'Portal cooldown',
-                color: EMISSIVE.TURQUOISE
+                color: TEXT.TURQUOISE
             },
             {
                 type: 'text',
                 position: [0, 50, 100, 50],
                 value: '0:00',
-                color: EMISSIVE.TURQUOISE
+                color: TEXT.TURQUOISE
             }
         ]
     },
@@ -515,20 +535,21 @@ const UIS = {
     },
     LAUNCH_SHOCKWAVE: {
         id: 'launch-shockwave',
-        position: [0, 75, 100, 10],
+        position: [30, 75, 40, 10],
+        clickable: true,
         visible: true,
         components: [
             {
                 type: 'box',
                 position: [0, 0, 100, 100],
-                stroke: TEXT.BLUE,
+                stroke: TEXT.RED,
                 width: 2
             },
             {
                 type: 'text',
                 position: [5, 0, 90, 100],
                 value: 'Launch shockwave',
-                color: TEXT.BLUE
+                color: TEXT.RED
             }
         ]
     },
@@ -999,6 +1020,41 @@ function spawnShip(ship) {
     });
 }
 
+function updateCountdowns(ship) {
+    let flagCooldown = deepCopy(UIS.FLAG_COOLDOWN);
+    flagCooldown.components[1].value = formatTime(ship.custom.flagCooldown);
+    ship.setUIComponent(flagCooldown);
+    if (ship.custom.hasFlag) {
+        if (ship.custom.flagCooldown > 0) {
+            ship.custom.flagCooldown -= GAME_STEP;
+        }
+        else {
+            ship.custom.flagCooldown = 0;
+        }
+    }
+    let shockwaveCooldown = deepCopy(UIS.SHOCKWAVE_COOLDOWN);
+    shockwaveCooldown.components[1].value = formatTime(ship.custom.shockwaveCooldown);
+    ship.setUIComponent(shockwaveCooldown);
+    if (ship.custom.hasFlag) {
+        if (ship.custom.shockwaveCooldown > 0) {
+            ship.custom.shockwaveCooldown -= GAME_STEP;
+        }
+        else {
+            ship.custom.shockwaveCooldown = 0;
+            ship.setUIComponent(UIS.LAUNCH_SHOCKWAVE);
+        }
+    }
+    let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
+    portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
+    ship.setUIComponent(portalCooldown);
+    if (ship.custom.portalCooldown > 0) {
+        ship.custom.portalCooldown -= GAME_STEP;
+    }
+    else {
+        ship.custom.portalCooldown = 0;
+    }
+}
+
 function updatePlayers() {
     if (game.custom.hasRound) {
         for (let ship of game.ships) {
@@ -1036,41 +1092,8 @@ function updatePlayers() {
                         hideUI(ship, UIS.SCORE.id);
                         hideUI(ship, UIS.FLAG_TIMER.id);
                     }
-    
-                    let flagCooldown = deepCopy(UIS.FLAG_COOLDOWN);
-                    flagCooldown.components[1].value = formatTime(ship.custom.flagCooldown);
-                    ship.setUIComponent(flagCooldown);
-                    if (ship.custom.flagCooldown > 0) {
-                        ship.custom.flagCooldown -= GAME_STEP;
-                    }
-                    else {
-                        ship.custom.flagCooldown = 0;
-                    }
-                    if (ship.custom.shockwaveCooldown > 0) {
-                        ship.custom.shockwaveCooldown -= GAME_STEP;
-                    }
-                    else {
-                        ship.custom.shockwaveCooldown = 0;
-                    }
-                    let portalCooldown = deepCopy(UIS.PORTAL_COOLDOWN);
-                    portalCooldown.components[1].value = formatTime(ship.custom.portalCooldown);
-                    ship.setUIComponent(portalCooldown);
-                    if (ship.custom.portalCooldown > 0) {
-                        ship.custom.portalCooldown -= GAME_STEP;
-                    }
-                    else {
-                        ship.custom.portalCooldown = 0;
-                    }
-                }
-                if (!ship.custom.hasFlag && !CHOOSE_SHIP.includes(ship.custom.type)) {
-                    ship.custom.type = randElem(CHOOSE_SHIP);
-                    ship.set({
-                        type: ship.custom.type,
-                        shield: SHIELD,
-                        crystals: getCrystals(ship.custom.type),
-                        stats: STATS,
-                        hue: HUES.YELLOW
-                    });
+
+                    updateCountdowns(ship);
                 }
             }
         }
@@ -1163,6 +1186,34 @@ function resetFlag() {
         y: 0,
         expiry: 0
     };
+}
+
+function launchShockwaveEntity(ship, entity) {
+    if (getDistance(entity.x, entity.y, ship.x, ship.y) <= SHOCKWAVE_DISTANCE) {
+        let angle = getAngle(entity.x, entity,y, ship.x, ship.y);
+        entity.set({
+            vx: Math.cos(angle) * SHOCKWAVE_INTENSITY,
+            vy: Math.cos(angle) * SHOCKWAVE_INTENSITY
+        });
+    }
+}
+
+function launchShockwave(self) {
+    if (self.custom.shockwaveCooldown <= 0) {
+        for (let ship of game.ships) {
+            launchShockwaveEntity(self, ship);
+        }
+
+        for (let asteroid of game.asteroids) {
+            launchShockwaveEntity(self, asteroid);
+        }
+
+        for (let alien of game.aliens) {
+            launchShockwaveEntity(self, alien);
+        }
+        ship.custom.shockwaveCooldown = SHOCKWAVE_COOLDOWN;
+        hideUI(ship, UIS.LAUNCH_SHOCKWAVE.id);
+    }
 }
 
 function suckPortalEntity(type, entity) {
@@ -1301,20 +1352,6 @@ function updateGlobals() {
         radar.components[i + 2].position = getRadarPosition(game.custom.portals[i].x, game.custom.portals[i].y, RADAR_PORTAL_SIZE);
     }
     game.setUIComponent(radar);
-}
-
-function launchShockwave(self) {
-    if (ship.custom.shockwaveCooldown) {
-        for (let ship of game.ships) {
-            if (getDistance(ship.x, ship.y, self.x, self.y) <= SHOCKWAVE_DISTANCE) {
-                let angle = getAngle(ship.x, ship,y, self.x, self.y);
-                ship.set({
-                    vx: Math.cos(angle) * SHOCKWAVE_INTENSITY,
-                    vy: Math.cos(angle) * SHOCKWAVE_INTENSITY
-                });
-            }
-        }
-    }
 }
 
 function tickTime() {
