@@ -27,4 +27,4 @@ return model =
         z: [0,0]
       width: [185,0]
       height: [185,0]
-      texture: [16.3,49]
+      texture: [16.5,49]
