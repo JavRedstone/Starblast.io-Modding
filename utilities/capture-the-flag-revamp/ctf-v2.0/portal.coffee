@@ -13,7 +13,7 @@ return model =
       z: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     width: [30]
     height: [30]
-    texture: [18]
+    texture: [9.5]
   bodies:
     main:
       section_segments: 88
@@ -27,4 +27,4 @@ return model =
         z: [0,0]
       width: [185,0]
       height: [185,0]
-      texture: [16.5,49]
+      texture: [17,49]
