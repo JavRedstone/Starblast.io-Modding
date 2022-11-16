@@ -211,7 +211,6 @@ const MAPS = [
 ];
 
 const FLAG_SHIELD_BOOST = 100;
-const FLAG_REGENERATION_IMPEDANCE = 20;
 const BODIES = {
     FLAG: {
         section_segments: [44,45,46,135,225,310,315,320],
@@ -957,8 +956,6 @@ function getAllShips() {
 		
         parsedShip.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
 		parsedShip.typespec.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
-        parsedShip.specs.generator.reload[1] -= FLAG_REGENERATION_IMPEDANCE;
-        parsedShip.typespec.specs.generator.reload[i] -= FLAG_REGENERATION_IMPEDANCE;
 		flagShips.push(JSON.stringify(parsedShip));
 	}
 	return [...normShips, ...flagShips];
@@ -1224,10 +1221,9 @@ function setFlagStatus() {
             ship.custom.numCaptures++;
             ship.custom.shockwaveCooldown = SHOCKWAVE_COOLDOWN;
 
-            echo(ship.custom.type + CHOOSE_SHIP.length)
-
             ship.set({
                 type: ship.custom.type + CHOOSE_SHIP.length,
+                shield: SHIELD,
                 stats: STATS,
                 hue: HUES.BLUE
             });
