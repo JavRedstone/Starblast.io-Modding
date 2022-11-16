@@ -1117,6 +1117,7 @@ function spawnShip(ship) {
             captureTime: 0,
             score: 0,
             highScore: 0,
+            numCaptures: 0,
             flagCooldown: 0,
             shockwaveCooldown: 0,
             portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN,
@@ -1220,7 +1221,10 @@ function setFlagStatus() {
             game.custom.hasFlag = false;
             ship.custom.hasFlag = true;
             ship.custom.captureTime = game.custom.roundTime;
+            ship.custom.numCaptures++;
             ship.custom.shockwaveCooldown = SHOCKWAVE_COOLDOWN;
+
+            echo(ship.custom.type + CHOOSE_SHIP.length)
 
             ship.set({
                 type: ship.custom.type + CHOOSE_SHIP.length,
@@ -1492,13 +1496,16 @@ function launchTimeIsUp() {
     let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
     flagMessage.components[0].value = 'Time is up!';
     flagMessage.components[1].value = 'Good game to everyone who played.';
+    flagMessage.components[0].color = TEXT.RED;
+    flagMessage.components[1].color = TEXT.RED;
     game.setUIComponent(flagMessage);
 }
 
 function endGame() {
     for (let ship of game.ships) {
         ship.gameover({
-            'High score': `${ship.custom.highScore}`
+            'High score': `${ship.custom.highScore}`,
+            'Flag captures': `${ship.custom.numCaptures}`
         });
     }
 }
@@ -1525,15 +1532,13 @@ this.tick = function() {
     if (game.step == 0) {
         setRoundDefault();
     }
-    if (game.custom.hasRound) {
+    if (game.custom.hasRound && game.ships.length > 0) {
         if (game.step % GAME_STEP == 0) {
             tickTime();
             if (game.custom.roundTime > 0) {
-                if (game.ships.length > 0) {
-                    updatePlayers();
-                    updateGlobals();
-                    maintainAliens();
-                }
+                updatePlayers();
+                updateGlobals();
+                maintainAliens();
             }
             else if (game.custom.roundTime > -GAMEOVER_TIME) {
                 launchTimeIsUp();
