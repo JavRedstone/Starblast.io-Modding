@@ -18,7 +18,7 @@ CREDITS AFTER V2.0
 - Poster designer (as usual): Tournebulle
 - Ships: 45rfew, ___, Robonuko & ΛΣTΉΣR
 - Objects: JavRedstone & Nerd69420
-- Maps: JavRedstone & ΛΣTΉΣR
+- Maps: JavRedstone, ΛΣTΉΣR & official_troller
 
 */
 
@@ -143,69 +143,77 @@ const MAPS = [
         '9   9999999999999999999999999  9999999999999999999999999   9\n'+
         '   99999999999999999999999999  99999999999999999999999999   \n'+
         '  999999999999999999999999999  999999999999999999999999999  ',
-        // map: '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            \n'+
-        // '                                                            ',
         portalSource: {
             x: 10,
             y: 10
+        }
+    },
+    {
+        name: 'Cards',
+        author: 'official_troller',
+        map: '9     999999  999                          999  999999     9\n'+
+        '99   9     9999999999                  9999999999     9   99\n'+
+        '9 999       999  9999                  9999  999       999 9\n'+
+        '99 99        9    9999999          9999999    9        99 99\n'+
+        '9 9 9        9                                9        9 9 9\n'+
+        '99 99        9                                9        99 99\n'+
+        '9 9 9                                                  9 9 9\n'+
+        '9 999                                                  999 9\n'+
+        ' 9  9                                                  9  9 \n'+
+        '  999                                                  999  \n'+
+        '      9   9                                      9   9      \n'+
+        '    999999999                                  999999999    \n'+
+        '   99  999  99               99               99  999  99   \n'+
+        '   9 99 9 99 9               99               9 99 9 99 9   \n'+
+        '    9 9 9 9 9                99                9 9 9 9 9    \n'+
+        '     9 999 9                 99                 9 999 9     \n'+
+        '      9 9 9           9      99      9           9 9 9      \n'+
+        '       999            99     99     99            999       \n'+
+        '        9             999    99    999             9        \n'+
+        '                      9999   99   9999                      \n'+
+        '                       9999  99  9999                       \n'+
+        '                        9999 99 9999                        \n'+
+        '                   9     9999999999     9                   \n'+
+        '                   99     99999999     99                   \n'+
+        '999999999          999     999999     999          999999999\n'+
+        '99999   9           999     9999     999           9   99999\n'+
+        '99999 9 9            999            999            9 9 99999\n'+
+        '99999 999             999          999             999 99999\n'+
+        '99999                  999        999                  99999\n'+
+        '             9999999999999        9999999999999             \n'+
+        '             9999999999999        9999999999999             \n'+
+        '99999                  999        999                  99999\n'+
+        '99999 999             999          999             999 99999\n'+
+        '99999 9 9            999            999            9 9 99999\n'+
+        '99999   9           999     9999     999           9   99999\n'+
+        '999999999          999     999999     999          999999999\n'+
+        '                   99     99999999     99                   \n'+
+        '                   9     9999999999     9                   \n'+
+        '                        9999 99 9999                        \n'+
+        '                       9999  99  9999                       \n'+
+        '                      9999   99   9999                      \n'+
+        '        9             999    99    999             9        \n'+
+        '       999            99     99     99            999       \n'+
+        '      9 9 9           9      99      9           9 9 9      \n'+
+        '     9 999 9                 99                 9 999 9     \n'+
+        '    9 9 9 9 9                99                9 9 9 9 9    \n'+
+        '   9 99 9 99 9               99               9 99 9 99 9   \n'+
+        '   99  999  99               99               99  999  99   \n'+
+        '    999999999                                  999999999    \n'+
+        '      9   9                                      9   9      \n'+
+        '  999                                                  999  \n'+
+        ' 9  9                                                  9  9 \n'+
+        '9 999                                                  999 9\n'+
+        '9 9 9                                                  9 9 9\n'+
+        '99 99        9                                9        99 99\n'+
+        '9 9 9        9                                9        9 9 9\n'+
+        '99 99        9    9999999          9999999    9        99 99\n'+
+        '9 999       999  9999                  9999  999       999 9\n'+
+        '99   9     9999999999                  9999999999     9   99\n'+
+        '9     999999  999                          999  999999     9',
+        portalSource: {
+            x: 20,
+            y: 0
         }
     }
 ];
@@ -243,6 +251,7 @@ const SHIP_GROUPS = getShipGroups();
 const SHIPS = getAllShips();
 const CHOOSE_SHIP = getChooseShip();
 
+const DEBUG = false;
 const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 5400;
 const PORTAL_SUCKING_DISTANCE = 4;
@@ -576,6 +585,19 @@ const UIS = {
                 type: 'text',
                 position: [5, 0, 90, 100],
                 value: '0:00',
+                color: TEXT.WHITE
+            }
+        ]
+    },
+    MAP_CREDIT: {
+        id: "mapCredit",
+        position: [3, 37.5, 15, 5],
+        visible: true,
+        components: [
+            {
+                type: "text",
+                position: [5, 0, 90, 100],
+                value: '',
                 color: TEXT.WHITE
             }
         ]
@@ -982,15 +1004,15 @@ function getSpawningArea() {
         }
     }
 
-    /*
-    for (let i = 0; i < game.custom.spawnArea.length; i++) {
-        let grid = deepCopy(OBJECTS.GRID);
-        grid.id = `${OBJECTS.GRID.id}-${i}`;
-        grid.position.x = game.custom.spawnArea[i].x;
-        grid.position.y = game.custom.spawnArea[i].y;
-        game.setObject(grid);
+    if (DEBUG) {
+        for (let i = 0; i < game.custom.spawnArea.length; i++) {
+            let grid = deepCopy(OBJECTS.GRID);
+            grid.id = `${OBJECTS.GRID.id}-${i}`;
+            grid.position.x = game.custom.spawnArea[i].x;
+            grid.position.y = game.custom.spawnArea[i].y;
+            game.setObject(grid);
+        }
     }
-    */
 
     return spawnArea;
 }
@@ -1120,6 +1142,9 @@ function spawnShip(ship) {
             portalCooldown: game.custom.portals.length == 0 ? 0 : PORTAL_COOLDOWN,
         };
         ship.setUIComponent(UIS.INSTRUCTIONS);
+        let mapCredit = deepCopy(UIS.MAP_CREDIT);
+        mapCredit.components[0].value = `Map: ${game.custom.mapObj.name} by ${game.custom.mapObj.author}`;
+        ship.setUIComponent(mapCredit);
     }
     let spawnPos = game.custom.hasRound ? randElem(game.custom.spawnArea) : { x: 0, y: 0 };
     ship.set({
