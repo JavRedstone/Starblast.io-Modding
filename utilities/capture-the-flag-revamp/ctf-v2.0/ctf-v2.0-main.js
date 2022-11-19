@@ -51,7 +51,7 @@ const RADAR_ZOOM = 1;
 const MAX_LEVEL = 1;
 const STARTING_SHIP = 801;
 const WEAPONS_STORE = false;
-const SPEED_MOD = 1.5;
+const SPEED_MOD = 2;
 const ASTEROIDS_STRENGTH = 1000000;
 const CRYSTAL_DROP = 0;
 const CRYSTAL_VALUE = 0;
@@ -634,7 +634,7 @@ const PORTAL_COOLDOWN = 1800;
 const FLAG_COOLDOWN = 900;
 const SHOCKWAVE_DISTANCE = 5;
 const SHOCKWAVE_TUNE_DOWN = 0.05;
-const SHOCKWAVE_COOLDOWN = 1800;
+const SHOCKWAVE_COOLDOWN = 5400;
 const UIS = {
     LOGO: {
         id: 'logo',
@@ -876,7 +876,7 @@ const UIS = {
     },
     LAUNCH_SHOCKWAVE: {
         id: 'launch-shockwave',
-        position: [30, 75, 40, 10],
+        position: [40, 75, 20, 7.5],
         clickable: true,
         visible: true,
         components: [
@@ -1159,8 +1159,8 @@ function getAllShips() {
         for (let j = 0; j < normShips.length; j++) {
             let parsedShip = JSON.parse(normShips[j]);
             if (parsedShip.level - 1 == i) {
-                parsedShip.specs.ship.speed = [totalSpeed / shipGroup.length, totalSpeed / shipGroup.length];
-                parsedShip.typespec.specs.ship.speed = [totalSpeed / shipGroup.length, totalSpeed / shipGroup.length];
+                parsedShip.specs.ship.speed[1] =  totalSpeed / shipGroup.length;
+                parsedShip.typespec.specs.ship.speed[1] = totalSpeed / shipGroup.length;
                 normShips[j] = JSON.stringify(parsedShip);
             }
         }
@@ -1697,6 +1697,9 @@ function updateGlobals() {
                 break;
             }
         }
+    }
+    if (game.custom.portals.length == 0) {
+        radar.components.splice(2, 4);
     }
     for (let i = 0; i < game.custom.portals.length; i++) {
         radar.components[i + 2].position = getRadarPosition(game.custom.portals[i].x, game.custom.portals[i].y, RADAR_PORTAL_SIZE);
