@@ -375,24 +375,7 @@ const MAPS = [
         '     99 99       9   999  99    99  999   9       99 99     \n'+
         '    99   99      9   999   99  99   999   9      99   99    \n'+
         '   99     99     9   999            999   9     99     99   ',
-        portalSources: [
-            {
-                x: -23,
-                y: -23
-            },
-            {
-                x: -23,
-                y: 23
-            },
-            {
-                x: 23,
-                y: -23
-            },
-            {
-                x: 23,
-                y: 23
-            }
-        ]
+        portalSources: []
     },
     {
         name: 'Drones',
@@ -1361,12 +1344,12 @@ const MAPS = [
         '677677766666666667767755555455544445554544553445444444554445',
         portalSources: [
             {
-                x: -25,
-                y: -25
+                x: -23,
+                y: -23
             },
             {
-                x: 25,
-                y: 25
+                x: 23,
+                y: 23
             }
         ]
     },
@@ -2481,8 +2464,7 @@ function getAllShips() {
 }
 
 function getChooseShip() {
-    // let shipGroup = randElem(SHIP_GROUPS);
-    let shipGroup = SHIP_GROUPS[0];
+    let shipGroup = randElem(SHIP_GROUPS);
     return shipGroup;
 }
 
@@ -2535,10 +2517,10 @@ function genPortals() {
         game.custom.portals = deepCopy(game.custom.mapObj.portalSources);
         for (let i = 0; i < game.custom.portals.length; i++) {
             game.custom.portals[i].spawnArea = [];
-            for (let spawnArea of game.custom.spawnArea) {
-                let portalDistance = getDistance(spawnArea.x * SCALING_FACTOR, spawnArea.y * SCALING_FACTOR, game.custom.portals[i].x * SCALING_FACTOR, game.custom.portals[i].y * SCALING_FACTOR);
-                if (portalDistance > PORTAL_MIN_RADIUS * SCALING_FACTOR && portalDistance <= PORTAL_MAX_RADIUS * SCALING_FACTOR) {
-                    game.custom.portals[i].spawnArea.push(spawnArea);
+            for (let spawnPos of game.custom.spawnArea) {
+                let portalDistance = getDistance(spawnPos.x, spawnPos.y, game.custom.portals[i].x, game.custom.portals[i].y);
+                if (portalDistance > PORTAL_MIN_RADIUS && portalDistance <= PORTAL_MAX_RADIUS) {
+                    game.custom.portals[i].spawnArea.push(spawnPos);
                 }
             }
             let p = deepCopy(OBJECTS.PORTAL);
