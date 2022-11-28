@@ -68,7 +68,7 @@ const SCALING_FACTOR = 10;
 const SHIFT = 0.5;
 const SPAWN_MIN_RADIUS = 12;
 const SPAWN_MAX_RADIUS = 20;
-const ALIEN_FREQUENCY = 25;
+const ALIEN_FREQUENCY = 40;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
 const ALIEN_LEVELS = [0, 1];
 const ALIEN_WEAPON_DROPS = [10, 11, 12, 20, 21, 91];
@@ -2972,7 +2972,7 @@ function launchEndMessage() {
     let message = 'Time is up!';
     for (let ship of game.ships) {
         if (ship.custom.cumulativeHoldTime >= MAX_CUMULATIVE_HOLD_TIME) {
-            message = `${ship.name} held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
+            message = `${ship.name} cumulatively held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
         }
     }
     let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
