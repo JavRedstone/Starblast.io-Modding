@@ -50,6 +50,7 @@ const RADAR_ZOOM = 1;
 const MAX_LEVEL = 1;
 const STARTING_SHIP = 801;
 const WEAPONS_STORE = false;
+const PROJECTILE_SPEED = 3;
 const SPEED_MOD = 2;
 const ASTEROIDS_STRENGTH = 1000000;
 const CRYSTAL_DROP = 0;
@@ -68,7 +69,7 @@ const SCALING_FACTOR = 10;
 const SHIFT = 0.5;
 const SPAWN_MIN_RADIUS = 12;
 const SPAWN_MAX_RADIUS = 20;
-const ALIEN_FREQUENCY = 40;
+const ALIEN_FREQUENCY = 25;
 const ALIEN_CODES = [10, 11, 14, 16, 17, 18];
 const ALIEN_LEVELS = [0, 1];
 const ALIEN_WEAPON_DROPS = [10, 11, 12, 20, 21, 91];
@@ -2759,6 +2760,7 @@ function dropFlag(ship) {
     flag.position.x = ship.x;
     flag.position.y = ship.y;
     game.setObject(flag);
+    game.setObject(OBJECTS.FLAGSTAND);
     game.custom.hasFlag = true;
     game.custom.flag = {
         x: ship.x,
@@ -2972,7 +2974,7 @@ function launchEndMessage() {
     let message = 'Time is up!';
     for (let ship of game.ships) {
         if (ship.custom.cumulativeHoldTime >= MAX_CUMULATIVE_HOLD_TIME) {
-            message = `${ship.name} cumulatively held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
+            message = `${ship.name} held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
         }
     }
     let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
@@ -3004,6 +3006,7 @@ this.options = {
 	starting_ship: STARTING_SHIP,
     choose_ship: CHOOSE_SHIP,
 	weapons_store: WEAPONS_STORE,
+    projectile_speed: PROJECTILE_SPEED,
 	speed_mod: SPEED_MOD,
 	asteroids_strength: ASTEROIDS_STRENGTH,
 	crystal_drop: CRYSTAL_DROP,
