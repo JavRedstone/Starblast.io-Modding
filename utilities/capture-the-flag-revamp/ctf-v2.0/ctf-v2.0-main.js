@@ -50,7 +50,7 @@ const RADAR_ZOOM = 1;
 const MAX_LEVEL = 1;
 const STARTING_SHIP = 801;
 const WEAPONS_STORE = false;
-const PROJECTILE_SPEED = 3;
+const PROJECTILE_SPEED = 2;
 const SPEED_MOD = 2;
 const ASTEROIDS_STRENGTH = 1000000;
 const CRYSTAL_DROP = 0;
@@ -2760,7 +2760,7 @@ function dropFlag(ship) {
     flag.position.x = ship.x;
     flag.position.y = ship.y;
     game.setObject(flag);
-    game.setObject(OBJECTS.FLAGSTAND);
+    game.setObject(deepCopy(OBJECTS.FLAGSTAND));
     game.custom.hasFlag = true;
     game.custom.flag = {
         x: ship.x,
