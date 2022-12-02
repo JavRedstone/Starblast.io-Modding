@@ -2976,7 +2976,7 @@ function launchEndMessage() {
     let message = 'Time is up!';
     for (let ship of game.ships) {
         if (ship.custom.cumulativeHoldTime >= MAX_CUMULATIVE_HOLD_TIME) {
-            message = `${ship.name} held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
+            message = `${ship.name} cumulatively held the flag for ${formatTime(ship.custom.cumulativeHoldTime)}!`;
         }
     }
     let flagMessage = deepCopy(UIS.FLAG_MESSAGE);
