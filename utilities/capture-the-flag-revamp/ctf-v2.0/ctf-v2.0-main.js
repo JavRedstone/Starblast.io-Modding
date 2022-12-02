@@ -1719,7 +1719,7 @@ const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 1800;
 const PORTAL_SUCKING_DISTANCE = 4;
 const PORTAL_TELEPORTING_DISTANCE = 1;
-const PORTAL_MIN_RADIUS = PORTAL_SUCKING_DISTANCE + 1;
+const PORTAL_MIN_RADIUS = PORTAL_TELEPORTING_DISTANCE;
 const PORTAL_MAX_RADIUS = PORTAL_SUCKING_DISTANCE + 3;
 const PORTAL_INTENSITY = 0.5;
 const GRAVITY_SCALING_FACTOR = 1.25;
@@ -2832,17 +2832,19 @@ function suckPortalEntity(type, entity) {
                     let portals = deepCopy(game.custom.portals);
                     portals.splice(i, 1);
                     let spawnPos = randElem(randElem(portals).spawnArea);
-                    entity.set({
-                        x: spawnPos.x * SCALING_FACTOR,
-                        y: spawnPos.y * SCALING_FACTOR,
-                        invulnerable: INVULNERABLE_TIME
-                    });
-                    if (type == 'ship') {
+                    if (spawnPos != undefined) {
                         entity.set({
-                            vx: 0,
-                            vy: 0
+                            x: spawnPos.x * SCALING_FACTOR,
+                            y: spawnPos.y * SCALING_FACTOR,
+                            invulnerable: INVULNERABLE_TIME
                         });
-                        entity.custom.portalCooldown = PORTAL_COOLDOWN;
+                        if (type == 'ship') {
+                            entity.set({
+                                vx: 0,
+                                vy: 0
+                            });
+                            entity.custom.portalCooldown = PORTAL_COOLDOWN;
+                        }
                     }
                 }
             }
