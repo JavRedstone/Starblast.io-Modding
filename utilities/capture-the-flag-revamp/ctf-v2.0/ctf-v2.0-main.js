@@ -1681,9 +1681,10 @@ const MAPS = [
 ];
 const CUSTOM_MAP = randElem(MAPS);
 
-const SPEED_DELTA = 10;
+const SPEED_DELTA = 15;
+const ROTATION_BOOST = 50;
 const FLAG_SHIELD_BOOST = 200;
-const FLAG_SPEED_REDUCTION = 5;
+const FLAG_SPEED_REDUCTION = 10;
 const BODIES = {
     FLAG: {
         section_segments: [44,45,46,135,225,310,315,320],
@@ -2455,8 +2456,8 @@ function getAllShips() {
                 parsedShip.typespec.specs.ship.speed[0] = totalSpeed / shipGroup.length - SPEED_DELTA;
                 parsedShip.typespec.specs.ship.speed[1] = totalSpeed / shipGroup.length;
 
-                parsedShip.specs.ship.rotation[1] =  totalRotation / shipGroup.length;
-                parsedShip.typespec.specs.ship.rotation[1] = totalRotation / shipGroup.length;
+                parsedShip.specs.ship.rotation[1] =  totalRotation / shipGroup.length + ROTATION_BOOST;
+                parsedShip.typespec.specs.ship.rotation[1] = totalRotation / shipGroup.length + ROTATION_BOOST;
                 normShips[j] = JSON.stringify(parsedShip);
             }
         }
@@ -2687,6 +2688,11 @@ function updatePlayers() {
                     hideUI(ship, UIS.WAIT.id);
     
                     if (ship.custom.hasFlag) {
+                        if (ship.custom.captureTime - game.custom.roundTime <= INVULNERABLE_TIME) {
+                            ship.set({
+                                shield: SHIELD
+                            });
+                        }
                         let numShips = game.ships.length;
                         let shipTier = Math.floor(ship.type / 100);
                         let stats1 = 11111101, stats2 = 22222202, stats3 = 33333303, stats4 = 44444404, stats5 = 55555505, stats6 = 66666606;
@@ -2757,6 +2763,7 @@ function setFlagStatus() {
                 type: ship.custom.type + CHOOSE_SHIP.length,
                 shield: SHIELD,
                 crystals: 0,
+                invulnerable: INVULNERABLE_TIME,
                 team: 1,
                 hue: HUES.BLUE
             });
