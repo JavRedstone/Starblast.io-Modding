@@ -1681,7 +1681,8 @@ const MAPS = [
 ];
 const CUSTOM_MAP = randElem(MAPS);
 
-const FLAG_SHIELD_BOOST = 100;
+const SPEED_DELTA = 10;
+const FLAG_SHIELD_BOOST = 200;
 const FLAG_SPEED_REDUCTION = 5;
 const BODIES = {
     FLAG: {
@@ -2439,11 +2440,23 @@ function getAllShips() {
                 totalSpeed += parsedShip.specs.ship.speed[1];
             }
 	    }
+        let totalRotation = 0;
+        for (let ship of normShips) {
+	    	let parsedShip = JSON.parse(ship);
+            if (parsedShip.level - 1 == i) {
+                totalRotation += parsedShip.specs.ship.rotation[1];
+            }
+	    }
         for (let j = 0; j < normShips.length; j++) {
             let parsedShip = JSON.parse(normShips[j]);
             if (parsedShip.level - 1 == i) {
+                parsedShip.specs.ship.speed[0] = totalSpeed / shipGroup.length - SPEED_DELTA;
                 parsedShip.specs.ship.speed[1] =  totalSpeed / shipGroup.length;
+                parsedShip.typespec.specs.ship.speed[0] = totalSpeed / shipGroup.length - SPEED_DELTA;
                 parsedShip.typespec.specs.ship.speed[1] = totalSpeed / shipGroup.length;
+
+                parsedShip.specs.ship.rotation[1] =  totalRotation / shipGroup.length;
+                parsedShip.typespec.specs.ship.rotation[1] = totalRotation / shipGroup.length;
                 normShips[j] = JSON.stringify(parsedShip);
             }
         }
@@ -2457,7 +2470,9 @@ function getAllShips() {
 		
         parsedShip.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
 		parsedShip.typespec.specs.shield.capacity[1] += FLAG_SHIELD_BOOST;
+        parsedShip.specs.ship.speed[0] -= FLAG_SPEED_REDUCTION;
         parsedShip.specs.ship.speed[1] -= FLAG_SPEED_REDUCTION;
+		parsedShip.typespec.specs.ship.speed[0] -= FLAG_SPEED_REDUCTION;
 		parsedShip.typespec.specs.ship.speed[1] -= FLAG_SPEED_REDUCTION;
 		flagShips.push(JSON.stringify(parsedShip));
 	}
@@ -2672,7 +2687,40 @@ function updatePlayers() {
                     hideUI(ship, UIS.WAIT.id);
     
                     if (ship.custom.hasFlag) {
-                        ship.custom.score = Math.round((ship.custom.captureTime - game.custom.roundTime) / GAME_STEP * (game.ships.length - 1));
+                        let numShips = game.ships.length;
+                        let shipTier = Math.floor(ship.type / 100);
+                        let stats1 = 11111101, stats2 = 22222202, stats3 = 33333303, stats4 = 44444404, stats5 = 55555505, stats6 = 66666606;
+                        if (numShips < 1) {
+                            stats1 = 11111101, stats2 = 22222202, stats3 = 33333303, stats4 = 44444404, stats5 = 55555505, stats6 = 66666606;
+                        }
+                        else if (numShips < 5) {
+                            stats1 = 11111101, stats2 = 22222212, stats3 = 33333313, stats4 = 44444424, stats5 = 55555525, stats6 = 66666636;
+                        }
+                        else {
+                            stats1 = 11111111, stats2 = 22222222, stats3 = 33333333, stats4 = 44444444, stats5 = 55555555, stats6 = 66666666;
+                        }
+                        let stats = 0;
+                        switch (shipTier) {
+                            case 1:
+                                stats = stats1;
+                                break;
+                            case 2:
+                                stats = stats2;
+                                break;
+                            case 3:
+                                stats = stats3;
+                            case 4:
+                                stats = stats4;
+                            case 5:
+                                stats = stats5;
+                            case 6:
+                                stats = stats6;
+                        }
+                        ship.set({
+                            stats: stats
+                        });
+
+                        ship.custom.score += game.ships.length - 1;
                         ship.custom.cumulativeHoldTime += GAME_STEP;
 
                         if (ship.custom.cumulativeHoldTime >= MAX_CUMULATIVE_HOLD_TIME) {
@@ -2708,7 +2756,7 @@ function setFlagStatus() {
             ship.set({
                 type: ship.custom.type + CHOOSE_SHIP.length,
                 shield: SHIELD,
-                stats: STATS,
+                crystals: 0,
                 team: 1,
                 hue: HUES.BLUE
             });
