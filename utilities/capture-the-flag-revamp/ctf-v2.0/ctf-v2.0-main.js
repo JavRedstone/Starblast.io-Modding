@@ -2485,9 +2485,10 @@ function getChooseShip() {
     return shipGroup;
 }
 
-function getSpawningArea() {
+function setSpawningArea() {
     let map = game.custom.mapObj.map.split('\n');
     let spawnArea = [];
+    let totalSpawnArea = [];
     for (let i = 0; i < MAP_SIZE; i++) {
         for (let j = 0; j < MAP_SIZE; j++) {
             let char = map[i].charAt(j);
@@ -2498,8 +2499,15 @@ function getSpawningArea() {
                     y: MAP_SIZE / 2 - SHIFT - i
                 });
             }
+            totalSpawnArea.push({
+                x: j - MAP_SIZE / 2 + SHIFT,
+                y: MAP_SIZE / 2 - SHIFT - i
+            });
         }
     }
+
+    game.custom.spawnArea = spawnArea;
+    game.custom.totalSpawnArea = totalSpawnArea;
 
     if (DEBUG) {
         for (let i = 0; i < spawnArea.length; i++) {
@@ -2510,8 +2518,6 @@ function getSpawningArea() {
             game.setObject(grid);
         }
     }
-
-    return spawnArea;
 }
 
 function maintainAliens() {
@@ -2534,7 +2540,7 @@ function genPortals() {
         game.custom.portals = deepCopy(game.custom.mapObj.portalSources);
         for (let i = 0; i < game.custom.portals.length; i++) {
             game.custom.portals[i].spawnArea = [];
-            for (let spawnPos of game.custom.spawnArea) {
+            for (let spawnPos of game.custom.totalSpawnArea) {
                 let portalDistance = getDistance(spawnPos.x, spawnPos.y, game.custom.portals[i].x, game.custom.portals[i].y);
                 if (portalDistance > PORTAL_MIN_RADIUS && portalDistance <= PORTAL_MAX_RADIUS) {
                     game.custom.portals[i].spawnArea.push(spawnPos);
@@ -2568,7 +2574,7 @@ function setRoundDefault() {
         flagMessageCountdown: 0,
         portals: []
     };
-    game.custom.spawnArea = getSpawningArea();
+    setSpawningArea();
     resetFlag();
     genPortals();
     game.setObject(OBJECTS.RING);
