@@ -1716,7 +1716,7 @@ const SHIP_GROUPS = getShipGroups();
 const SHIPS = getAllShips();
 const CHOOSE_SHIP = getChooseShip();
 
-const MAX_CUMULATIVE_HOLD_TIME = 18000;
+const MAX_CUMULATIVE_HOLD_TIME = 27000;
 const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 1800;
 const PORTAL_SUCKING_DISTANCE = 4;
