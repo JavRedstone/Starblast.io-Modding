@@ -2481,7 +2481,8 @@ function getAllShips() {
 }
 
 function getChooseShip() {
-    let shipGroup = randElem(SHIP_GROUPS);
+    // let shipGroup = randElem(SHIP_GROUPS);
+    let shipGroup = SHIP_GROUPS[1];
     return shipGroup;
 }
 
