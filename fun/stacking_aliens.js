@@ -6,7 +6,14 @@
 
 this.options = {
   root_mode: "team",
-  map_size: 60
+  map_size: 60,
+  crystal_value: 8,
+  asteroids_strength: 0.1,
+  station_crystal_capacity: 0.1,
+  station_size: 5,
+  station_regeneration: 2,
+  all_ships_can_dock: true,
+  friendly_colors: 2
 };
 
 const amount = 10;
@@ -19,6 +26,10 @@ this.tick = function(game) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
       alien.set({rate: 10, damage: 15, laser_speed: 240});
+    }
+    
+    if (game.step % 1800 === 0) {
+      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 60 * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 60 * 5});
     }
   }
 }
