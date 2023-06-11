@@ -5,8 +5,8 @@
 */
 
 this.options = {
-  root_mode: "survival",
-  map_size: 30
+  root_mode: "team",
+  map_size: 60
 };
 
 const amount = 10;
