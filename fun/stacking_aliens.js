@@ -259,7 +259,7 @@ this.options = {
 };
 
 var amount = 1;
-var tp_rate = 48000;
+var tp_rate = 1800;
 
 this.tick = function(game) {
   amount = Math.ceil(game.step / 10000);
@@ -279,7 +279,7 @@ this.tick = function(game) {
     }
     
     if (game.step % tp_rate === 0) {
-      echo("TP ALIEN");
+      echo("TP ALIEN, RATE IS " + tp_rate);
       tp_rate -= 50;
       if (tp_rate < 30) {
         tp_rate = 30;
