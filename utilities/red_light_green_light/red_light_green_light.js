@@ -133,7 +133,7 @@ var vocabulary = [
 var control = {
   light: {
     timer: {
-      timer: 7200,
+      timer: 21600,
       max: 7200,
       up: false
     },
@@ -153,7 +153,7 @@ var control = {
   },
   wait: {
     started: false,
-    players: 4,
+    players: 6,
     i: null
   },
   instructions: []
@@ -441,11 +441,11 @@ this.event = function(event) {
       
       control.wait.i += 50;
       
-      if (control.wait.started) {
-        ship.gameover({
-          "Round already started": "Wait until next time"
-        });
-      }
+      // if (control.wait.started) {
+      //   ship.gameover({
+      //     "Round already started": "Wait until next time"
+      //   });
+      // }
       
       generate_instructions(ship);
       break;
