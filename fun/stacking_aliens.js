@@ -327,7 +327,7 @@ this.options = {
 };
 
 var amount = 1;
-var tp_rate = 1800; // change back to 1800
+var tp_rate = 60; // change back to 1800
 
 // Distance
 const d1 = 225;
@@ -393,7 +393,11 @@ this.tick = function(game) {
     for (let i = 0; i < game.aliens.length; i++) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      alien.set({rate: 5, damage: 10, laser_speed: 125, shield: 250});
+      alien.set({rate: 10, damage: 150, laser_speed: 125});
+      if (alien.custom.shield == null) {
+        alien.set({shield: 250});
+        alien.custom.shield = true;
+      }
     }
     
     if (game.step % tp_rate === 0) {
@@ -406,7 +410,7 @@ this.tick = function(game) {
     }
     
     if (game.step % (tp_rate * 4) === 0) {
-      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 3, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 3});
+      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 4, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 4});
     }
     
     if (game.step % 1200 === 0) {
