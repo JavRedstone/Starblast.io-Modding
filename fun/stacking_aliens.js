@@ -386,14 +386,14 @@ this.tick = function(game) {
   a1 = orbit(d1, a1, m1, game.asteroids[0], 0, 0, 100);
   a2 = orbit(d2, a2, m2, game.asteroids[1], game.asteroids[0].x, game.asteroids[0].y, 50);
     // var arr = [10, 11, 14, 16, 17, 18]; // alien
-    var arr = [10] // chicken
+    var arr = [15] // hirsuite
     var arr2 = [10, 11, 40, 41, 42, 90, 91, 12]; // collectible, last one is only for alien
     var alien_code = arr[Math.floor(Math.random() * arr.length)];
     if (game.aliens.length < amount) game.addAlien({code: alien_code, level: Math.floor(Math.random() * 3), crystal_drop: 600, weapon_drop: arr2[Math.floor(Math.random() * arr2.length)]});
     for (let i = 0; i < game.aliens.length; i++) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      alien.set({rate: 5, damage: 10, laser_speed: 125});
+      alien.set({rate: 5, damage: 10, laser_speed: 125, shield: 250});
     }
     
     if (game.step % tp_rate === 0) {
