@@ -316,8 +316,8 @@ this.options = {
   crystal_value: 6,
   asteroids_strength: 0.1,
   station_crystal_capacity: 0.25,
-  station_size: 3,
-  station_regeneration: 0.25,
+  station_size: 1,
+  station_regeneration: 1.25,
   all_ships_can_dock: true,
   friendly_colors: 2,
   ships: ships,
@@ -329,37 +329,87 @@ this.options = {
 var amount = 1;
 var tp_rate = 1800; // change back to 1800
 
+// Distance
+const d1 = 225;
+const d2 = 30;
+
+// Angle
+var a1 = 0;
+var a2 = 0;
+
+// Amount added to the angle to create the change in speed / period of motion
+const m1 = 0.001;
+const m2 = 0.1;
+
+// Orbit function
+const orbit = (d, a, m, asteroid, cx, cy, size) => {
+  a += m;
+  
+  var x = d * Math.cos(a) + cx;
+  var y = d * Math.sin(a) + cy;
+  
+  asteroid.set({
+    x: x,
+    y: y,
+    vx: 0,
+    vy: 0,
+    size: size
+  });
+  
+  return a;
+};
+
 this.tick = function(game) {
+  
   amount = Math.ceil(game.step / 10000);
   if (amount > 15) {
     amount = 15;
   }
   if (game.step > 500 && game.step % 5 === 0) {
+    
+    if (game.asteroids.length < 2) {
+    // Earth
+    game.addAsteroid({
+      x: d1,
+      y: 0,
+      size: 100
+    });
+    
+    // Moon
+    game.addAsteroid({
+      x: d1 + d2,
+      y: 0,
+      size: 50
+    });
+  }
+  // Orbit the asteroids
+  a1 = orbit(d1, a1, m1, game.asteroids[0], 0, 0, 100);
+  a2 = orbit(d2, a2, m2, game.asteroids[1], game.asteroids[0].x, game.asteroids[0].y, 50);
     // var arr = [10, 11, 14, 16, 17, 18]; // alien
     var arr = [10] // chicken
-    var arr2 = [10, 11, 20, 21, 12]; // collectible
+    var arr2 = [10, 11, 40, 41, 42, 90, 91, 12]; // collectible, last one is only for alien
     var alien_code = arr[Math.floor(Math.random() * arr.length)];
-    if (game.aliens.length < amount) game.addAlien({code: alien_code, level: Math.floor(Math.random() * 3), crystal_drop: 200, weapon_drop: arr2[Math.floor(Math.random() * arr2.length)]});
+    if (game.aliens.length < amount) game.addAlien({code: alien_code, level: Math.floor(Math.random() * 3), crystal_drop: 600, weapon_drop: arr2[Math.floor(Math.random() * arr2.length)]});
     for (let i = 0; i < game.aliens.length; i++) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      alien.set({rate: 5, damage: amount * 10, laser_speed: 125});
+      alien.set({rate: 5, damage: 10, laser_speed: 125});
     }
     
     if (game.step % tp_rate === 0) {
       // echo("TP ALIEN, RATE IS " + tp_rate);
-      tp_rate -= 15;
-      if (tp_rate < 30) {
-        tp_rate = 30;
+      tp_rate -= 30;
+      if (tp_rate < 120) {
+        tp_rate = 120;
       }
-      game.addAsteroid({size: Math.round(Math.random()) * 50,x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5, vx:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 1, vy: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 1});
+      game.addAsteroid({size: (Math.round(Math.random()) + 1) * 25,x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5, vx:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 2, vy: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 2});
     }
     
     if (game.step % (tp_rate * 4) === 0) {
-      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 4, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 4});
+      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 3, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 3});
     }
     
-    if (game.step % 720 === 0) {
+    if (game.step % 1200 === 0) {
       for (let i = 0; i < 50; i++) {
         game.addCollectible({code: arr2[Math.floor(Math.random() * (arr2.length - 1))], x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * game.options.map_size * 5});
       }
@@ -380,7 +430,7 @@ this.tick = function(game) {
     
     // game.addCollectible({code:12,x:game.ships[0].x,y:game.ships[0].y})
     
-    //game.ships[0].set({invulnerable:500})
+    // game.ships[0].set({invulnerable:500})
     // game.aliens[0].set({x:game.ships[0].x, y:game.ships[0].y})
   }
 }
