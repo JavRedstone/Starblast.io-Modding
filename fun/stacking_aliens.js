@@ -327,7 +327,7 @@ this.options = {
   ships: ships,
   radar_zoom: 1,
   strafe: 1,
-  healing_enabled: false,
+  healing_enabled: true,
   map_density: 2,
   friction_ratio: 0.25,
   weapon_drop: 1,
