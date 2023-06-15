@@ -308,14 +308,14 @@ ships.push(K_Smasher_704);
 // ships.push(BonccTato_792);
 // ships.push(BIG_SHOT_793);
 
-const MAP_SIZE = 50;
+const MAP_SIZE = 40;
 
 this.options = {
   // root_mode: "survival",
   root_mode: "team",
   map_size: MAP_SIZE,
   soundtrack: "warp_drive.mp3",
-  map_name: "MOST's Hell",
+  map_name: "Alien Mod by JavRedstone",
   // map_size: 100,
   crystal_value: 6,
   asteroids_strength: 0.1,
@@ -331,12 +331,15 @@ this.options = {
   map_density: 2,
   friction_ratio: 0.25,
   weapon_drop: 1,
-  power_regen_factor: 0.9
+  power_regen_factor: 1.5
   // choose_ship: [101, 102, 103] // only for nerd
 };
 
 var amount = 1;
-var tp_rate = 30; // change back to 1800
+var tp_rate = 1800; // change back to 1800
+
+var ALIEN_SPAWN = 3.5;
+var ASTEROID_SPEED = 2;
 
 // Distance
 const d1 = MAP_SIZE * 5 * 0.8;
@@ -373,10 +376,27 @@ const orbit = (d, a, m, asteroid, cx, cy, size) => {
 
 this.tick = function(game) {
   
-  amount = Math.ceil(game.step / 10000);
-  if (amount > 15) {
-    amount = 15;
+  amount = Math.ceil(game.step / (60 * 60 * 2));
+  if (amount > 20) {
+    amount = 20;
   }
+  // 60 * 60 * 5
+  if (game.step > 0 && game.step % 5 === 0) {
+        // var arr = [10, 11, 14, 16, 17, 18]; // alien
+    var arr = [15] // hirsuite
+    var arr2 = [10, 11, 40, 41, 42, 90, 91, 12]; // collectible, last one is only for alien
+    var alien_code = arr[Math.floor(Math.random() * arr.length)];
+    if (game.aliens.length < amount) {
+      game.addAlien({code: alien_code, level: Math.floor(Math.random() * 3), crystal_drop: 600, weapon_drop: arr2[Math.floor(Math.random() * arr2.length)]});
+    }
+    for (let i = 0; i < game.aliens.length; i++) {
+      var alien = game.aliens[i];
+      if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
+      var stats = {rate: 10, damage: amount * 5, laser_speed: 125, regen: 0, shield: 150};
+      alien.set(stats);
+    }
+  }
+  
   if (game.step > 500 && game.step % 5 === 0) {
     
     if (game.asteroids.length < 2) {
@@ -398,33 +418,17 @@ this.tick = function(game) {
     a1 = orbit(d1, a1, m1, game.asteroids[0], 0, 0, 100);
     a2 = orbit(d2, a2, m2, game.asteroids[1], game.asteroids[0].x, game.asteroids[0].y, 50);
     
-    
-    // var arr = [10, 11, 14, 16, 17, 18]; // alien
-    var arr = [15] // hirsuite
-    var arr2 = [10, 11, 40, 41, 42, 90, 91, 12]; // collectible, last one is only for alien
-    var alien_code = arr[Math.floor(Math.random() * arr.length)];
-    if (game.aliens.length < amount) game.addAlien({code: alien_code, level: Math.floor(Math.random() * 3), crystal_drop: 600, weapon_drop: arr2[Math.floor(Math.random() * arr2.length)]});
-    for (let i = 0; i < game.aliens.length; i++) {
-      var alien = game.aliens[i];
-      if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      alien.set({rate: 10, damage: 100, laser_speed: 125});
-      if (alien.custom.shield !== true) {
-        alien.set({shield: 250, shield_regen: 0});
-        alien.custom.shield = true;
-      }
-    }
-    
     if (game.step % tp_rate === 0) {
       // echo("TP ALIEN, RATE IS " + tp_rate);
       tp_rate -= 30;
       if (tp_rate < 120) {
         tp_rate = 120;
       }
-      game.addAsteroid({size: (Math.round(Math.random()) + 1) * 25,x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, vx:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 5, vy: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * 5});
+      game.addAsteroid({size: (Math.round(Math.random()) + 1) * 25,x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, vx:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * ASTEROID_SPEED, vy: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * ASTEROID_SPEED});
     }
     
     if (game.step % (tp_rate * 4) === 0) {
-      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 4, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 4});
+      game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * ALIEN_SPAWN, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * ALIEN_SPAWN});
     }
     
     if (game.step % 1200 === 0) {
