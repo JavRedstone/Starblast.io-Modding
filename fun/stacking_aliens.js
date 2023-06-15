@@ -375,13 +375,12 @@ const orbit = (d, a, m, asteroid, cx, cy, size) => {
 };
 
 this.tick = function(game) {
-  
-  amount = Math.ceil(game.step / (60 * 60 * 2));
-  if (amount > 20) {
-    amount = 20;
-  }
   // 60 * 60 * 5
-  if (game.step > 0 && game.step % 5 === 0) {
+  if (game.step > 60 * 60 * 2 && game.step % 5 === 0) {
+    amount = Math.ceil((game.step - 60 * 60 * 2) / (60 * 60 * 2));
+    if (amount > 20) {
+      amount = 20;
+    }
         // var arr = [10, 11, 14, 16, 17, 18]; // alien
     var arr = [15] // hirsuite
     var arr2 = [10, 11, 40, 41, 42, 90, 91, 12]; // collectible, last one is only for alien
@@ -392,7 +391,7 @@ this.tick = function(game) {
     for (let i = 0; i < game.aliens.length; i++) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      var stats = {rate: 10, damage: amount * 5, laser_speed: 125, regen: 0, shield: 150};
+      var stats = {rate: 10, damage: amount * 10, laser_speed: 125, regen: 0, shield: 150};
       alien.set(stats);
     }
   }
@@ -427,7 +426,7 @@ this.tick = function(game) {
       game.addAsteroid({size: (Math.round(Math.random()) + 1) * 25,x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, vx:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * ASTEROID_SPEED, vy: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * ASTEROID_SPEED});
     }
     
-    if (game.step % (tp_rate * 4) === 0) {
+    if (game.step % (tp_rate * 2) === 0) {
       game.aliens[0].set({x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * ALIEN_SPAWN, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * ALIEN_SPAWN});
     }
     
