@@ -19,7 +19,7 @@ var ships = [
 
 this.options = {
   map_name: "Grid Capture by JavRedstone",
-  map_size: 30,
+  map_size: 60,
   custom_map: "",
   weapons_store: false,
   reset_tree: true,
@@ -40,18 +40,18 @@ var control = {
   },
   dirs: {
     length: 4,
-    tick: 20,
+    tick: 5,
     names: ["left", "right", "up", "down"],
     values: ["🡸", "🡺", "🡹", "🡻"],
     shortcuts: ["A", "D", "W", "S"],
     list: []
   },
-  map: {
+  map: { // its actually the center tile location, don't change this
     size: 0
   },
   ships: [101, 102, 103],
   tiles: {
-    size: 20,
+    size: 10,
     base_spawn: [],
     tiles: [],
     types: [],
@@ -59,7 +59,7 @@ var control = {
   },
   rounds: {
     num: 0,
-    total: 25,
+    total: 50,
     tick: null,
     tickrate: 2000,
     ship_msg_tickrate: 400,
@@ -595,7 +595,7 @@ this.tick = function () {
               
               if (control.rounds.num == control.rounds.total) {
                 generate_message (`${control.rounds.total} rounds have been reached! Good game!`, ship);
-                generate_message (`${get_winning_msg ()}`, ship, "magenta", [0, 16, 100, 10]);
+                // generate_message (`${get_winning_msg ()}`, ship, "magenta", [0, 16, 100, 10]);
                 ship.custom.rmsg_tick = game.step;
               }
             }
