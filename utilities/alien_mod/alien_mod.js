@@ -629,7 +629,7 @@ this.tick = function(game) {
     for (let i = 0; i < game.aliens.length; i++) {
       var alien = game.aliens[i];
       if (i > 0) alien.set({x: game.aliens[0].x, y: game.aliens[0].y, vx: 0, vy: 0});
-      var stats = {rate: 10, damage: amount * 7.5, laser_speed: 125, regen: 0, shield: 100};
+      var stats = {rate: 10, damage: amount * 10, laser_speed: 200, regen: 0, shield: 100};
       alien.set(stats);
     }
   }
