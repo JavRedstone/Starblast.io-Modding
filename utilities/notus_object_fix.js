@@ -4,6 +4,10 @@ Credit to notus: https://discord.com/channels/265400368765075456/741214091741364
 Issue: when you remove your custom 3D objects, after that newly joined players still can see old "removed" objects.
 
 Fix: add this code to your mod before you set any objects:
+
+OR
+
+by bhpsngum: set that object scale to 0, z position to very low before call the removeObject
 */
 
 if (!game.setObject.old) {
