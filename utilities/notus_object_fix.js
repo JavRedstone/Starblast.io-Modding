@@ -8,6 +8,8 @@ Fix: add this code to your mod before you set any objects:
 OR
 
 by bhpsngum: set that object scale to 0, z position to very low before call the removeObject
+
+Number.MIN_VALUE for minimum
 */
 
 if (!game.setObject.old) {
