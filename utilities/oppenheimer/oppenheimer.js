@@ -217,11 +217,12 @@ let map = "  9    9      4  99                      99   5     69    8 \n"+
 "89    9    823   99                      99  4    4 8  3 7  ";
 
 const MAP_SIZE = 60;
-const SPEED = 1;
-const SPEED_SHOCKWAVE = 5;
+const SPEED = 2;
+const SPEED_SHOCKWAVE = 4;
+const SPEED_BEF = 4;
 const SIZE = 50;
-const SIZE_SHOCKWAVE = 20;
-const WAVE_TIME = 60*60 * 2;
+const SIZE_SHOCKWAVE = 30;
+const WAVE_TIME = 60*60 * 0.75;
 const MAX_ALIEN_COUNT = 5;
 const ALIEN_ARR = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const COL_ARR = [20, 21, 12, 11];
@@ -337,8 +338,20 @@ this.tick = function(game) {
     }
   }
   if ((game.step + 1) % WAVE_TIME == 0) {
-    for (let i = 0; i < 200; i++) {
-        let angle = i / 200 * 2 * Math.PI;
+    for (let i = 0; i < 50; i++) {
+      let angle = i / 50 * 2 * Math.PI;
+      game.addAsteroid({
+        x: Math.cos(angle) * 21*5,
+        y: Math.sin(angle) * 21*5,
+        vx: -Math.cos(angle) * SPEED_BEF,
+        vy: -Math.sin(angle) * SPEED_BEF,
+        size: SIZE_SHOCKWAVE
+      });
+    }
+    setTimeout(
+      () => {
+      for (let i = 0; i < 150; i++) {
+        let angle = i / 150 * 2 * Math.PI;
         game.addAsteroid({
           x: 0,
           y: 0,
@@ -346,30 +359,33 @@ this.tick = function(game) {
           vy: Math.sin(angle) * SPEED_SHOCKWAVE,
           size: SIZE_SHOCKWAVE
         });
-    }
-    setTimeout(
-      () => {
-        for (let i = 0; i < 100; i++) {
-            let angle = i / 100 * 2 * Math.PI;
-            game.addAsteroid({
-              x: 0,
-              y: 0,
-              vx: Math.cos(angle) * SPEED_SHOCKWAVE,
-              vy: Math.sin(angle) * SPEED_SHOCKWAVE,
-              size: SIZE_SHOCKWAVE
-            });
-        } 
-    }, 2500);
-    for (let i = 0; i < 100; i++) {
+      }
+      for (let i = 0; i < 50; i++) {
         let angle = 2 * Math.PI * Math.random();
         game.addAsteroid({
           x: 0,
           y: 0,
-          vx: Math.cos(angle) * SPEED,
-          vy: Math.sin(angle) * SPEED,
-          size: SIZE * Math.random()
+          vx: Math.cos(angle) * SPEED + Math.random() * 2 - 1,
+          vy: Math.sin(angle) * SPEED + Math.random() * 2 - 1,
+          size: Math.round(SIZE * Math.random())
         });
-    }
+      }
+      setTimeout(
+        () => {
+          for (let a of game.asteroids) {
+            a.set({kill:true});
+          }
+          setTimeout(
+            () => {
+              for (let a of game.asteroids) {
+                a.set({kill:true});
+              }
+            }, 5000
+          )
+        }, 5000
+      )
+      }, 500
+    );
   }
   if (game.step % 1200 === 0) {
     for (let i = 0; i < 50; i++) {
