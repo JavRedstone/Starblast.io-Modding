@@ -217,34 +217,41 @@ let map = "  9    9      4  99                      99   5     69    8 \n"+
 "89    9    823   99                      99  4    4 8  3 7  ";
 
 const MAP_SIZE = 60;
-const SPEED = 2;
+const SPEED = 1;
 const SPEED_SHOCKWAVE = 5;
 const SIZE = 50;
-const SIZE_SHOCKWAVE = 10;
+const SIZE_SHOCKWAVE = 20;
+const WAVE_TIME = 60*60 * 2;
+const MAX_ALIEN_COUNT = 5;
+const ALIEN_ARR = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+const COL_ARR = [20, 21, 12, 11];
 
 this.options = {
-  root_mode: "team",
+  root_mode: "survival",
+  survival_time: 10,
   map_size: MAP_SIZE,
   custom_map: map,
   soundtrack: "warp_drive.mp3",
   map_name: "Oppenheimer by JavRedstone",
   crystal_value: 8,
   asteroids_strength: 0.25,
-  station_crystal_capacity: 0.15,
-  station_size: 2,
-  station_regeneration: 0.75,
-  all_ships_can_dock: true,
-  friendly_colors: 2,
+  // station_crystal_capacity: 0.15,
+  // station_size: 2,
+  // station_regeneration: 0.75,
+  // all_ships_can_dock: true,
+  // friendly_colors: 2,
   ships: ships,
   radar_zoom: 1,
   strafe: 1,
   healing_enabled: true,
   map_density: 2,
+  crystal_drop: 0,
   weapon_drop: 1,
   power_regen_factor: 2,
   speed_mod: 1.5,
-  projectile_speed0: 1,
+  projectile_speed: 1,
   friction_ratio: 0.5,
+  mines_destroy_delay: 0,
   choose_ship: [101, 102, 103]
 };
 
@@ -255,7 +262,6 @@ function formatTime(time) {
     seconds %= 60;
     return `${minutes}:${seconds < 10 ? 0 : ''}${seconds}`;
 }
-let waveTime = 60*60 * 3;
 this.tick = function(game) {
   if (game.step == 0) {
     let oppenheimerLogo = {
@@ -295,46 +301,42 @@ this.tick = function(game) {
     game.setObject(safeZone1);
     game.setObject(safeZone2);
   }
-  if (game.step % 5 == 0) {
-    for (let i = 0; i < game.asteroids.length; i++) {
-      if (game.asteroids[i] != null) {
-        if ((game.asteroids[i].y < -24 * 5 || game.asteroids[i].y > 24 * 5) && (game.asteroids[i].x > -14 * 5 && game.asteroids[i].x < 14 * 5)) {
-          game.asteroids[i].set({
-            vx: 0,
-            vy: 0,
-            kill: true
-          });
-        }
-        
-      }
-    }
-  }
   if (game.step % 60 == 0) {
+    if (game.aliens.length < MAX_ALIEN_COUNT) {
+      game.addAlien({weapon_drop: COL_ARR[Math.floor(Math.random() * (COL_ARR.length - 1))], crystal_drop:100, code: ALIEN_ARR[Math.floor(Math.random() * (ALIEN_ARR.length - 1))], x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5});
+    }
+    
     let timer = {
       id: 'timer',
-      position: [3, 30, 15, 5],
+      position: [50 - 7.5, 5, 15, 15],
       visible: true,
       components: [
           {
               type: 'box',
-              position: [0, 0, 100, 100],
+              position: [0, 50, 100, 50],
               stroke: '#ffffff',
               width: 2
           },
           {
               type: 'text',
-              position: [5, 0, 90, 100],
+              position: [5, 50, 90, 50],
               value: '0:00',
+              color: '#ffffff'
+          },
+          {
+              type: 'text',
+              position: [5, -25, 90, 100],
+              value: 'Next Blast',
               color: '#ffffff'
           }
       ]
     };
     for (let s of game.ships) {
-      timer.components[1].value = formatTime(waveTime - game.step % waveTime);
+      timer.components[1].value = formatTime(WAVE_TIME - game.step % WAVE_TIME);
       s.setUIComponent(timer);
     }
   }
-  if ((game.step + 1) % waveTime == 0) {
+  if ((game.step + 1) % WAVE_TIME == 0) {
     for (let i = 0; i < 200; i++) {
         let angle = i / 200 * 2 * Math.PI;
         game.addAsteroid({
@@ -345,6 +347,19 @@ this.tick = function(game) {
           size: SIZE_SHOCKWAVE
         });
     }
+    setTimeout(
+      () => {
+        for (let i = 0; i < 100; i++) {
+            let angle = i / 100 * 2 * Math.PI;
+            game.addAsteroid({
+              x: 0,
+              y: 0,
+              vx: Math.cos(angle) * SPEED_SHOCKWAVE,
+              vy: Math.sin(angle) * SPEED_SHOCKWAVE,
+              size: SIZE_SHOCKWAVE
+            });
+        } 
+    }, 2500);
     for (let i = 0; i < 100; i++) {
         let angle = 2 * Math.PI * Math.random();
         game.addAsteroid({
@@ -358,8 +373,7 @@ this.tick = function(game) {
   }
   if (game.step % 1200 === 0) {
     for (let i = 0; i < 50; i++) {
-      arr2 = [20, 21, 11, 10]
-      game.addCollectible({code: arr2[Math.floor(Math.random() * (arr2.length - 1))], x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5});
+      game.addCollectible({code: colArr[Math.floor(Math.random() * (colArr.length - 1))], x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5});
     }
   }
   
