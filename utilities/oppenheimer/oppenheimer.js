@@ -284,7 +284,8 @@ var Pyro_Elite_707 = '{"name":"Pyro Elite","level":7,"model":7,"size":0.6,"zoom"
               ships.push(H_Raider_703);
               ships.push(UltraScorpion_704);
               ships.push(Sub_Atomic_705);
-              ships.push(Spectator_707);
+              // ships.push(Spectator_707);
+              ships.push(Pyro_Elite_707);
               
               
               // ships.push(STARSHIP_702);
@@ -563,9 +564,35 @@ this.tick = function(game) {
           }
       ]
     };
+    
+    let heal = {
+      id: 'heal',
+      position: [3, 50, 15, 15],
+      visible: true,
+      components: [
+        {
+          type: 'box',
+          position: [0, 0, 100, 100],
+          stroke: 'white',
+          width: 2,
+          value: 'Heal'
+        }
+      ]
+    };
     for (let s of game.ships) {
       timer.components[1].value = formatTime(WAVE_TIME - game.step % WAVE_TIME);
       s.setUIComponent(timer);
+      
+      if (ship.idle) { // in depot
+        heal.components[0].value = !ship.healing ? 'Heal' : 'Attack';
+        ship.setUIComponent(heal);
+      }
+      else {
+        heal.visible = false;
+        heal.position = [0, 0, 0, 0];
+        heal.components = [];
+        ship.setUIComponent(heal);
+      }
     }
   }
   if ((game.step + 1) % WAVE_TIME == 0) {
@@ -636,5 +663,12 @@ this.tick = function(game) {
       var ship = game.ships[a];
       echo(a+", " + ship.id + ": "+ship.name);
     }
+  }
+}
+
+this.event = function(event, game) {
+  let ship = event.ship;
+  if (event == 'ui_component_pressed') {
+    
   }
 }
