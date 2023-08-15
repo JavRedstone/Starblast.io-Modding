@@ -439,108 +439,174 @@ ships.push(falseoddy_801);
 // ships.push(Poseidon_706);
 // ships.push(Aries_707);
 
-let map = "  9    9      4  99                      99   5     69    8 \n"+
-"   7    7 2    9                          34    4    36    5\n"+
-"    5 9    8    8                           9    93    3    \n"+
-"246    6    5    99                      99  79    9    9 4 \n"+
-"   4    3    25  999                    999   57    78    89\n"+
-"    9    9    9  999999999999999999999999995    4     58    \n"+
-"7    7    6      99999999999999999999999999 2    936    5   \n"+
-" 4    47          999999999999999999999999   8     93    2  \n"+
-"  946  9                                        9    9    8 \n"+
-"3  8 3                                           7    679  5\n"+
-"89    9     2                                     4 8  357  \n"+
-"  7    6                                           9 5    4 \n"+
-"   4    36                                          7 2    9\n"+
-"    94                                                 8    \n"+
-"89    9                                            6    5   \n"+
-" 579                                                3    257\n"+
-"   5                                                 93     \n"+
-"4     6               9              9                699   \n"+
-" 9                     9   9    9   9                    8  \n"+
-"  79                    9 9      9 9                      57\n"+
-"    7                    9        9                        9\n"+
-"4    4                   999    999                    82   \n"+
-" 9               9       9999999999       9              8  \n"+
-"  8               9      999    999      9                57\n"+
-"                   9    99        99    9                   \n"+
-"47                  99999    99    99999                    \n"+
-"  4                9 999  9      9  999 9                 9 \n"+
-"   9              9  999   9 99 9   999  9                 8\n"+
-"    7                 9              9                      \n"+
-"5                     9  9 9    9 9  9                  2   \n"+
-" 2                    9  9 9    9 9  9                   9 4\n"+
-"  8                   9              9                      \n"+
-"                  9  999   9 99 9   999  9                  \n"+
-"                   9 999  9      9  999 9                5  \n"+
-"  4                 99999    99    99999                  9 \n"+
-"   94              9    99        99    9                  8\n"+
-"    79            9      999    999      9             6    \n"+
-"58               9       9999999999       9             3 7 \n"+
-"                         999    999                      9 4\n"+
-"                         9        9                         \n"+
-"9    93                 9 9      9 9                        \n"+
-" 79    9               9   9    9   9                    5  \n"+
-"  47                  9              9                    25\n"+
-"    4                                                 92    \n"+
-"2                                                      69   \n"+
-" 8                                                 46       \n"+
-"    9    9                                                 4\n"+
-"7    6    6                                      9          \n"+
-" 4    3    3                                            82  \n"+
-"  9    9                                            69    8 \n"+
-"   7      2                                           6    5\n"+
-"    4 9    8    7                                93    3    \n"+
-"2      6    5    5999999999999999999999999    9    9      4 \n"+
-"   3    3    25  99999999999999999999999999    7    7 9    9\n"+
-"    9    934    4999999999999999999999999995    4     58    \n"+
-"7    7    6 9    999                    999 2     36    5   \n"+
-" 4    46     7   99                      99  8 3    3    2  \n"+
-"  946    5    479                              79    9    8 \n"+
-"   8 3    2    946                          7    6    6 9  5\n"+
-"89    9    823   99                      99  4    4 8  3 7  ";
+// let map = "  9    9      4  99                      99   5     69    8 \n"+
+// "   7    7 2    9                          34    4    36    5\n"+
+// "    5 9    8    8                           9    93    3    \n"+
+// "246    6    5    99                      99  79    9    9 4 \n"+
+// "   4    3    25  999                    999   57    78    89\n"+
+// "    9    9    9  999999999999999999999999995    4     58    \n"+
+// "7    7    6      99999999999999999999999999 2    936    5   \n"+
+// " 4    47          999999999999999999999999   8     93    2  \n"+
+// "  946  9                                        9    9    8 \n"+
+// "3  8 3                                           7    679  5\n"+
+// "89    9     2                                     4 8  357  \n"+
+// "  7    6                                           9 5    4 \n"+
+// "   4    36                                          7 2    9\n"+
+// "    94                                                 8    \n"+
+// "89    9                                            6    5   \n"+
+// " 579                                                3    257\n"+
+// "   5                                                 93     \n"+
+// "4     6               9              9                699   \n"+
+// " 9                     9   9    9   9                    8  \n"+
+// "  79                    9 9      9 9                      57\n"+
+// "    7                    9        9                        9\n"+
+// "4    4                   999    999                    82   \n"+
+// " 9               9       9999999999       9              8  \n"+
+// "  8               9      999    999      9                57\n"+
+// "                   9    99        99    9                   \n"+
+// "47                  99999    99    99999                    \n"+
+// "  4                9 999  9      9  999 9                 9 \n"+
+// "   9              9  999   9 99 9   999  9                 8\n"+
+// "    7                 9              9                      \n"+
+// "5                     9  9 9    9 9  9                  2   \n"+
+// " 2                    9  9 9    9 9  9                   9 4\n"+
+// "  8                   9              9                      \n"+
+// "                  9  999   9 99 9   999  9                  \n"+
+// "                   9 999  9      9  999 9                5  \n"+
+// "  4                 99999    99    99999                  9 \n"+
+// "   94              9    99        99    9                  8\n"+
+// "    79            9      999    999      9             6    \n"+
+// "58               9       9999999999       9             3 7 \n"+
+// "                         999    999                      9 4\n"+
+// "                         9        9                         \n"+
+// "9    93                 9 9      9 9                        \n"+
+// " 79    9               9   9    9   9                    5  \n"+
+// "  47                  9              9                    25\n"+
+// "    4                                                 92    \n"+
+// "2                                                      69   \n"+
+// " 8                                                 46       \n"+
+// "    9    9                                                 4\n"+
+// "7    6    6                                      9          \n"+
+// " 4    3    3                                            82  \n"+
+// "  9    9                                            69    8 \n"+
+// "   7      2                                           6    5\n"+
+// "    4 9    8    7                                93    3    \n"+
+// "2      6    5    5999999999999999999999999    9    9      4 \n"+
+// "   3    3    25  99999999999999999999999999    7    7 9    9\n"+
+// "    9    934    4999999999999999999999999995    4     58    \n"+
+// "7    7    6 9    999                    999 2     36    5   \n"+
+// " 4    46     7   99                      99  8 3    3    2  \n"+
+// "  946    5    479                              79    9    8 \n"+
+// "   8 3    2    946                          7    6    6 9  5\n"+
+// "89    9    823   99                      99  4    4 8  3 7  ";
 
+let map = "  9        36 9999999                  9999999 63         8 \n"+
+"   7  9     9 9999999                  9999999 9     96    5\n"+
+"    5 15                                            51 3    \n"+
+"246    2      9999999                  9999999      2   9 4 \n"+
+"   4 99999  319999999999999999999999999999999913  99999   89\n"+
+"    9 9999 65 99999999999999999999999999999999 56 999958    \n"+
+"7    7 999  4 99999966669699699699996666999999 4  999   5   \n"+
+" 4     299 4  99999999969699699699996999999999  4 992    2  \n"+
+"  946    9 5  99999966669666699666696666999999  5 9       8 \n"+
+"3  8 3 1 9 3  99999969999699699699996999999999  3 9 1 679  5\n"+
+"89     449   5999999666696666996667966669999995   944  357  \n"+
+"  7    5 9   2999999999999999999999999999999992   9 55    4 \n"+
+"   4   3 9  4 99999999999999999999999999999999 4  9 3 2    9\n"+
+"    94  69   6    5          66          5    6   96   8    \n"+
+"89    9  9     5    9  6  6  55  6  6  9    5     9     5   \n"+
+" 579    99 66 5 2   4  5  8  99  8  5  4   2 5 66 993    257\n"+
+"   5   999 323   81  5 4  79 66 97  4 5  18   323 99993     \n"+
+"4     9999  6 3   33 2 1            1 2 33   3 6  9999699   \n"+
+" 9   99999   888             66             888   99999  8  \n"+
+"  79            6    6  9 9  55  9 9  6    6              57\n"+
+"    7  1    3      8 83  9   11   9  38 8      3    1      9\n"+
+"4    4  6    3 66  1  53 999    999 35  1  66 3    6   82   \n"+
+" 9      61    5     5    9999669999    5     5    16     8  \n"+
+"  8  65  76   21         999    999         12   67  56   57\n"+
+"      935  4       9    99        99    9       4  539      \n"+
+"47                  99999    66    99999                    \n"+
+"  4     5    48    9 999  6      6  999 9    84    5      9 \n"+
+"   9 8   31     1    999   6 66 6   999    1     13   8    8\n"+
+"    7 8    9 83165    95            59    56138 9    8      \n"+
+"5                 5 6 6  6 6    6 6  6 6 5              2   \n"+
+" 2                5 6 6  6 6    6 6  6 6 5               9 4\n"+
+"  8   8    9 83165    95            59    56138 9    8      \n"+
+"     8   31     1    999   6 66 6   999    1     13   8     \n"+
+"        5    48    9 999  6      6  999 9    84    5     5  \n"+
+"  4                 99999    66    99999                  9 \n"+
+"   94 935  4       9    99        99    9       4  539     8\n"+
+"    765  76   21         999    999         12   67  566    \n"+
+"58      61    5     5    9999669999    5     5    16    3 7 \n"+
+"        6    3 66  1  53 999    999 35  1  66 3    6     9 4\n"+
+"       1    3      8 83  9   11   9  38 8      3    1       \n"+
+"9    93         6    6  9 9  55  9 9  6    6                \n"+
+" 79  99999   888             66             888   99999  5  \n"+
+"  47  9999  6 3   33 2 1            1 2 33   3 6  9999    25\n"+
+"    4  999 323   81  5 4  79 66 97  4 5  18   323 999 92    \n"+
+"2       99 66 5 2   4  5  8  99  8  5  4   2 5 66 99   69   \n"+
+" 8       9     5    9  6  6  55  6  6  9    5     9         \n"+
+"    9   69   6    5          66          5    6   96       4\n"+
+"7    6 3 9  4 99999999999999999999999999999999 4  9 3       \n"+
+" 4    35 9   2999999999999999999999999999999992   9 5   82  \n"+
+"  9    449   5999999666696666996667966669999995   944     8 \n"+
+"   7   1 9 3  99999969999699699699996999999999  3 9 1 6    5\n"+
+"    4    9 5  99999966669666699666696666999999  5 9    3    \n"+
+"2      299 4  99999999969699699699996999999999  4 992     4 \n"+
+"   3   999  4 99999966669699699699996666999999 4  999 9    9\n"+
+"    9 9999 65 99999999999999999999999999999999 56 999958    \n"+
+"7    99999  319999999999999999999999999999999913  99999 5   \n"+
+" 4     2      9999999                  9999999      2    2  \n"+
+"  946 15                                            51    8 \n"+
+"   8 39     9 9999999                  9999999 9     96 9  5\n"+
+"89         36 9999999                  9999999 63      3 7  ";
 const MAP_SIZE = 60;
+const WAVE_TIME = 60 * 60 * 1.5;
+const INITIAL_WAVE_TIME = 60 * 60 * 3;
 const SPEED = 1;
-const SPEED_SHOCKWAVE = 4;
-const SPEED_BEF = 3;
-const SIZE = 75;
-const SIZE_SHOCKWAVE = 30;
-const SIZE_BEF = 15;
-const WAVE_TIME = 60*60 * 2;
+const SPEED_SHOCKWAVE = 5;
+const SPEED_BEF = 5;
+const SIZE = 65;
+const SIZE_SHOCKWAVE = 25;
+const SIZE_BEF = 30;
 const MAX_ALIEN_COUNT = 5;
 const ALIEN_ARR = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-const COL_ARR = [20, 21, 10, 11];
+const COL_ARR = [20, 21, 11, 12];
+const SHIELD_LOSS = 25;
+const CRYSTAL_LOSS = 50;
+const SAFEX = 16 * 10;
+const SAFEY = 18 * 10;
+let waveTime = INITIAL_WAVE_TIME;
 // const COL_ARR = [12];
 
 this.options = {
-  root_mode: 'team',
-  // root_mode: "survival",
+  // root_mode: 'team',
+  root_mode: "survival",
   // root_mode: "invasion",
-  // survival_time: 10,
+  survival_time: 15,
   map_size: MAP_SIZE,
   custom_map: map,
   soundtrack: "warp_drive.mp3",
   map_name: "Oppenheimer by JavRedstone",
-  crystal_value: 8,
-  asteroids_strength: 0.25,
-  station_crystal_capacity: 0.15,
-  station_size: 2,
-  station_regeneration: 0.1,
-  station_repair_threshold: 0.25,
-  all_ships_can_dock: true,
-  friendly_colors: 2,
+  crystal_value: 5,
+  asteroids_strength: 0.5,
+  // station_crystal_capacity: 0.15,
+  // station_size: 2,
+  // station_regeneration: 0.1,
+  // station_repair_threshold: 0.25,
+  // all_ships_can_dock: true,
+  // friendly_colors: 2,
   ships: ships,
   radar_zoom: 1,
-  strafe: 1,
   healing_enabled: true,
   map_density: 2,
-  crystal_drop: 0,
+  crystal_drop: 1,
   weapon_drop: 1,
   power_regen_factor: 1,
   speed_mod: 1.5,
   projectile_speed: 1,
   friction_ratio: 0.5,
+  bouncing_lasers: 0.9,
   mines_destroy_delay: 3000,
   choose_ship: [101, 102, 103] // only nerd
   // choose_ship: [101, 103] // kest
@@ -555,6 +621,65 @@ function formatTime(time) {
 }
 this.tick = function(game) {
   if (game.step == 0) {
+  //   for (let i = -11; i < 12; i++) {
+  //     for (let j = -1; j < 2; j+=2) {
+  //       let a = game.addAsteroid({
+  //         x: i * 10,
+  //         y: j * 24 * 10,
+  //         size: 100
+  //       });
+  //       a.custom.safeZone = true;
+  //       a.custom.coordinates = {x: a.x, y: a.y};
+  //     }
+  //   }
+    
+  //   for (let i = -1; i < 2; i+= 2) {
+  //     for (let j = -1; j < 2; j+=2) {
+  //       let a = game.addAsteroid({
+  //         x: i * 110,
+  //         y: j * 29 * 10,
+  //         size: 100
+  //       });
+  //       a.custom.safeZone = true;
+  //       a.custom.coordinates = {x: a.x, y: a.y};
+  //     }
+  //   }
+  
+    // let safeCube = {
+    //   id: 'Safe Cube',
+    //   type: {
+    //     id: "Safe Cube 1",
+    //     obj: "https://starblast.data.neuronality.com/mods/objects/cube/cube.obj",
+    //     diffuse: "https://starblast.data.neuronality.com/mods/objects/cube/diffuse.jpg",
+    //     emissive: "https://starblast.data.neuronality.com/mods/objects/cube/emissive.jpg",
+    //     bump: "https://starblast.data.neuronality.com/mods/objects/cube/bump.jpg",
+    //     emissiveColor: 0x80FFFF,
+    //     specularColor: 0x805010,
+    //     diffuseColor:0xFF8080,
+    //     transparent: false,
+    //     physics: {
+    //       mass: 10000,
+    //       shape: [2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.308,3.048,2.878,2.759,2.697,2.697,2.759,2.878,3.048,3.308,3.672,3.678,3.474,3.169,2.958,2.806,2.723,2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.307,3.054,2.878,2.761,2.698,2.698,2.761,2.878,3.054,3.307,3.672,3.678,3.474,3.169,2.958,2.806,2.723],
+    //       fixed: true
+    //     }
+    //   },
+    //   position: {x:0,y:20*10,z:-2000},
+    //   rotation: {x:0,y:Math.PI,z:Math.PI},
+    //   scale: {x:15,y:15,z:1000}
+    // };
+    
+    // let n = 0;
+    // for (let i = -2; i < 3; i++) {
+    //   for (let j = -1; j < 2; j+=2) {
+    //     let sc = JSON.parse(JSON.stringify(safeCube));
+    //     sc.id = "Safe Cube " + n;
+    //     sc.position.x = i * 15 * 5;
+    //     sc.position.y = j * 20 * 10;
+    //     let a = game.setObject(sc);
+    //     n++;
+    //   }
+    // }
+    
     let oppenheimerLogo = {
       id: "Oppenheimer Logo",
       type: {
@@ -588,87 +713,10 @@ this.tick = function(game) {
       rotation: {x:0,y:Math.PI,z:Math.PI},
       scale: {x:100,y:100,z:1}
     };
-    // let safeCube1 = {
-    //   id: 'Safe Cube 1',
-    //   type: {
-    //     id: "Safe Cube 1",
-    //     obj: "https://starblast.data.neuronality.com/mods/objects/cube/cube.obj",
-    //     diffuse: "https://starblast.data.neuronality.com/mods/objects/cube/diffuse.jpg",
-    //     emissive: "https://starblast.data.neuronality.com/mods/objects/cube/emissive.jpg",
-    //   /*  bump: "https://starblast.data.neuronality.com/mods/objects/cube/bump.jpg",*/
-    //     emissiveColor: 0x80FFFF,
-    //     specularColor: 0x805010,
-    //     diffuseColor:0xFF8080,
-    //     transparent: false,
-    //     physics: {
-    //       mass: 10000,
-    //       shape: [2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.308,3.048,2.878,2.759,2.697,2.697,2.759,2.878,3.048,3.308,3.672,3.678,3.474,3.169,2.958,2.806,2.723,2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.307,3.054,2.878,2.761,2.698,2.698,2.761,2.878,3.054,3.307,3.672,3.678,3.474,3.169,2.958,2.806,2.723],
-    //       fixed: true
-    //     }
-    //   },
-    //   position: {x:0,y:24*10,z:0},
-    //   rotation: {x:0,y:Math.PI,z:Math.PI},
-    //   scale: {x:9,y:9,z:9}
-    // };
-    // let safeCube2 = {
-    //   id: 'Safe Cube 2',
-    //   type: {
-    //     id: "Safe Cube 2",
-    //     obj: "https://starblast.data.neuronality.com/mods/objects/cube/cube.obj",
-    //     diffuse: "https://starblast.data.neuronality.com/mods/objects/cube/diffuse.jpg",
-    //     emissive: "https://starblast.data.neuronality.com/mods/objects/cube/emissive.jpg",
-    //   /*  bump: "https://starblast.data.neuronality.com/mods/objects/cube/bump.jpg",*/
-    //     emissiveColor: 0x80FFFF,
-    //     specularColor: 0x805010,
-    //     diffuseColor:0xFF8080,
-    //     transparent: false,
-    //     physics: {
-    //       mass: 10000,
-    //       shape: [2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.308,3.048,2.878,2.759,2.697,2.697,2.759,2.878,3.048,3.308,3.672,3.678,3.474,3.169,2.958,2.806,2.723,2.682,2.723,2.806,2.958,3.169,3.474,3.678,3.672,3.307,3.054,2.878,2.761,2.698,2.698,2.761,2.878,3.054,3.307,3.672,3.678,3.474,3.169,2.958,2.806,2.723],
-    //       fixed: true
-    //     }
-    //   },
-    //   position: {x:0,y:-24*10,z:0},
-    //   rotation: {x:0,y:Math.PI,z:Math.PI},
-    //   scale: {x:9,y:9,z:9}
-    // };
+    
     game.setObject(oppenheimerLogo);
     game.setObject(safeZone1);
     game.setObject(safeZone2);
-    // game.setObject(safeCube1);
-    // game.setObject(safeCube2);
-    // let safeCube3 = JSON.parse(JSON.stringify(safeCube1));
-    // safeCube3.id = "Safe Cube 3";
-    // safeCube3.position.x = -9*5;
-    // let safeCube4 = JSON.parse(JSON.stringify(safeCube1));
-    // safeCube4.id = "Safe Cube 4";
-    // safeCube4.position.x = 9*5;
-    // let safeCube5 = JSON.parse(JSON.stringify(safeCube2));
-    // safeCube5.id = "Safe Cube 5";
-    // safeCube5.position.x = -9*5;
-    // let safeCube6 = JSON.parse(JSON.stringify(safeCube2));
-    // safeCube6.id = "Safe Cube 6";
-    // safeCube6.position.x = 9*5;
-    // let safeCube7 = JSON.parse(JSON.stringify(safeCube1));
-    // safeCube7.id = "Safe Cube 7";
-    // safeCube7.position.x = -18*5;
-    // let safeCube8 = JSON.parse(JSON.stringify(safeCube1));
-    // safeCube8.id = "Safe Cube 8";
-    // safeCube8.position.x = 18*5;
-    // let safeCube9 = JSON.parse(JSON.stringify(safeCube2));
-    // safeCube9.id = "Safe Cube 9";
-    // safeCube9.position.x = -18*5;
-    // let safeCube10 = JSON.parse(JSON.stringify(safeCube2));
-    // safeCube10.id = "Safe Cube 10";
-    // safeCube10.position.x = 18*5;
-    // game.setObject(safeCube3);
-    // game.setObject(safeCube4);
-    // game.setObject(safeCube5);
-    // game.setObject(safeCube6);
-    // game.setObject(safeCube7);
-    // game.setObject(safeCube8);
-    // game.setObject(safeCube9);
-    // game.setObject(safeCube10);
   }
   // if (game.step%(15*60) <= 240) {
   //   if (game.step % 10 === 0) {
@@ -681,6 +729,22 @@ this.tick = function(game) {
   // else {
   //   s.emptyWeapons();
   // }
+  // if (game.step % 10 == 0) {
+  //   for (let a of game.asteroids) {
+  //     if (a.custom.safeZone) {
+  //       a.set({
+  //         size:100,  // reset life points
+  //         x: a.custom.coordinates.x,
+  //         y: a.custom.coordinates.y,
+  //         vx: 0, 
+  //         vy: 0
+  //       });
+  //       a.custom.safeZone = true;
+  //       a.custom.coordinates = {x: a.x, y: a.y}
+  //     }
+  //   }
+  // }
+  
   if (game.step % 60 == 0) {
     if (game.aliens.length < MAX_ALIEN_COUNT) {
       game.addAlien({weapon_drop: COL_ARR[Math.floor(Math.random() * (COL_ARR.length - 1))], crystal_drop:100, code: ALIEN_ARR[Math.floor(Math.random() * (ALIEN_ARR.length - 1))], x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5});
@@ -733,7 +797,15 @@ this.tick = function(game) {
           }
         ]
       };
-      timer.components[1].value = formatTime(WAVE_TIME - game.step % WAVE_TIME);
+      
+      let damage = {
+        id: "damage",
+        position: [30,30,40,40],
+        visible: true,
+        components: [
+          {type:"text",position:[0,0,100,100],value:"The Safe Zone is closed before blast - your ship will take damage!",color:"red"}]
+      };
+      timer.components[1].value = formatTime(waveTime - game.step % waveTime);
       s.setUIComponent(timer);
       if (s.idle) { // in depot
         heal.components[1].value = s.healing ? 'Change to attack' : 'Change to heal';
@@ -744,9 +816,36 @@ this.tick = function(game) {
         heal.position = [0, 0, 0, 0];
         s.setUIComponent(heal);
       }
+      
+      let px = s.x;
+      let py = s.y;
+      if ((game.step + 1) % waveTime >= waveTime * 1/4 && (game.step + 1) % waveTime <= waveTime * 3/4 && px >= -SAFEX && px <= SAFEX && (py >= SAFEY || py <= -SAFEY)) {
+        s.setUIComponent(damage);
+        if (s.shield > 0) {
+          s.set({
+            shield: s.shield < SHIELD_LOSS ? 0 : s.shield - SHIELD_LOSS
+          });
+        }
+        if (s.shield - SHIELD_LOSS <= 0 && s.crystals > 0) {
+          s.set({
+            crystals: s.crystals < CRYSTAL_LOSS ? 0 : s.crystals - CRYSTAL_LOSS
+          });
+        }
+        if (s.shield - SHIELD_LOSS <= 0 && s.crystals - CRYSTAL_LOSS <= 0) {
+          s.set({
+            kill:true
+          });
+        }
+      }
+      else {
+        damage.visible = false;
+        damage.position = [0, 0, 0, 0];
+        s.setUIComponent(damage);
+      }
     }
   }
-  if ((game.step + 1) % WAVE_TIME == 0) {
+  if ((game.step + 1) % waveTime == 0) {
+    if (waveTime == INITIAL_WAVE_TIME) waveTime = WAVE_TIME;
     // let posX = (Math.random() * 2 - 1) * MAP_SIZE * 5;
     // let posY = (Math.random() * 2 - 1) * MAP_SIZE * 5;
     // let randShip = game.ships[Math.trunc(game.ships.length * Math.random())];
@@ -754,11 +853,11 @@ this.tick = function(game) {
     // let posY = randShip.y;
     let posX = 0;
     let posY = 0;
-    for (let i = 0; i < 100 ; i++) {
-      let angle = i / 100 * 2 * Math.PI;
+    for (let i = 0; i < 200 ; i++) {
+      let angle = i / 200 * 2 * Math.PI;
       game.addAsteroid({
-        x: posX + Math.cos(angle) * 30*5,
-        y: posY + Math.sin(angle) * 30*5,
+        x: posX + Math.cos(angle) * 15*10,
+        y: posY + Math.sin(angle) * 15*10,
         vx: -Math.cos(angle) * SPEED_BEF,
         vy: -Math.sin(angle) * SPEED_BEF,
         size: SIZE_BEF
@@ -794,21 +893,25 @@ this.tick = function(game) {
           setTimeout(
             () => {
               for (let a of game.asteroids) {
+                if (!a.custom.safeZone)
                 a.set({kill:true});
               }
               setTimeout(
                 () => {
                   for (let a of game.asteroids) {
+                    if (!a.custom.safeZone)
                     a.set({kill:true});
                   }
                   setTimeout(
                     () => {
                       for (let a of game.asteroids) {
+                        if (!a.custom.safeZone)
                         a.set({kill:true});
                       }
                       setTimeout(
                       () => {
                         for (let a of game.asteroids) {
+                          if (!a.custom.safeZone)
                           a.set({kill:true});
                         }
                       }, 5000
@@ -817,7 +920,7 @@ this.tick = function(game) {
                   );
                 }, 5000
               );
-            }, 5000
+            }, 10000
           );
           }, 1500
         );  
@@ -836,6 +939,8 @@ this.tick = function(game) {
       echo(a+", " + ship.id + ": "+ship.name);
     }
   }
+  
+  // game.ships[0].set({invulnerable:360});
 }
 
 this.event = function(event, game) {
