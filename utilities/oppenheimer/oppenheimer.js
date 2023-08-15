@@ -934,6 +934,8 @@ this.tick = function(game) {
   }
   
   if (game.step % 600 === 0) {
+    echo("=== PLAYER LIST ===");
+    echo("index | id | name");
     for (let a = 0; a < game.ships.length; a++) {
       var ship = game.ships[a];
       echo(a+", " + ship.id + ": "+ship.name);
