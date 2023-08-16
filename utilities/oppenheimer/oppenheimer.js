@@ -684,7 +684,7 @@ this.options = {
   // root_mode: 'team',
   root_mode: "survival",
   // root_mode: "invasion",
-  survival_time: 30,
+  survival_time: 15,
   map_size: MAP_SIZE,
   custom_map: map,
   soundtrack: "warp_drive.mp3",
@@ -1157,17 +1157,17 @@ function launchExplosion(mult) {
                       if (!a.custom.safeZone)
                       a.set({kill:true});
                     }
-                    // setTimeout(
-                  //   () => {
-                  //     for (let a of game.asteroids) {
-                  //       if (!a.custom.safeZone)
-                  //       a.set({kill:true});
-                  //     }
-                  //   }, 5000
-                  // );
-                  }, 5000
+                    setTimeout(
+                    () => {
+                      for (let a of game.asteroids) {
+                        if (!a.custom.safeZone)
+                        a.set({kill:true});
+                      }
+                    }, 2500
+                  );
+                  }, 2500
                 );
-              }, 5000
+              }, 2500
             );
           }, 10000
         );
@@ -1186,7 +1186,7 @@ this.event = function(event, game) {
     else if (event.id == 'trigger_explosion') {
       if (!triggeredExplosion) {
         triggeredExplosion = true;
-        launchExplosion(0.5);
+        launchExplosion(0.75);
         ship.custom.bombs -= BOMBS_REQUIRED;
         ship.set({invulnerable: 720});
         for (let s of game.ships) {
