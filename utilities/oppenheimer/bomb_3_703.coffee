@@ -160,3 +160,4 @@ model =
       height: [0,8,10,0]
       texture: [3]
       propeller: true
+return model
