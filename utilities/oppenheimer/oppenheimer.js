@@ -665,7 +665,7 @@ const SPEED_SHOCKWAVE = 5;
 const SPEED_BEF = 5;
 const SIZE = 65;
 const SIZE_SHOCKWAVE = 35;
-const SIZE_BEF = 20;
+const SIZE_BEF = 17;
 const MAX_ALIEN_COUNT = 5;
 const ALIEN_ARR = [10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
 const COL_ARR = [20, 21, 11, 12];
@@ -673,7 +673,7 @@ const SHIELD_LOSS = 25;
 const CRYSTAL_LOSS = 25;
 const SAFEX = 16 * 10;
 const SAFEY = 18 * 10;
-const BOMBS_LENGTH = 20;
+const BOMBS_LENGTH = 50;
 const BOMB_PICKUP_RADIUS = 10;
 const BOMBS_REQUIRED = 5;
 let waveTime = WAVE_TIME;
@@ -684,7 +684,7 @@ this.options = {
   // root_mode: 'team',
   root_mode: "survival",
   // root_mode: "invasion",
-  survival_time: 15,
+  survival_time: 30,
   map_size: MAP_SIZE,
   custom_map: map,
   soundtrack: "warp_drive.mp3",
@@ -1050,7 +1050,7 @@ this.tick = function(game) {
   }
   if ((game.step + 1) % waveTime == 0) {
     triggeredExplosion = false;
-    launchExplosion();
+    launchExplosion(1);
   }
   if (game.step % 1200 === 0) {
     for (let i = 0; i < 50; i++) {
@@ -1074,7 +1074,7 @@ this.tick = function(game) {
           emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/emissive.png',
           diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/diffuse.png'
         },
-        position: {x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 2.5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 2.5, z: 0},
+        position: {x:(Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, y: (Math.round(Math.random()) == 0 ? 1 : -1) * Math.random() * MAP_SIZE * 5, z: 0},
         rotation: {x: Math.random() * 2 * Math.PI, y: Math.random() * 2 * Math.PI, z: Math.random() * 2 * Math.PI },
         scale: {x:10, y:10, z: 10}
       };
@@ -1094,7 +1094,7 @@ this.tick = function(game) {
   // game.ships[0].set({invulnerable:360});
 }
 
-function launchExplosion() {
+function launchExplosion(mult) {
   // let posX = (Math.random() * 2 - 1) * MAP_SIZE * 5;
   // let posY = (Math.random() * 2 - 1) * MAP_SIZE * 5;
   // let randShip = game.ships[Math.trunc(game.ships.length * Math.random())];
@@ -1107,9 +1107,9 @@ function launchExplosion() {
     game.addAsteroid({
       x: posX + Math.cos(angle) * 15*10,
       y: posY + Math.sin(angle) * 15*10,
-      vx: -Math.cos(angle) * SPEED_BEF,
-      vy: -Math.sin(angle) * SPEED_BEF,
-      size: SIZE_BEF
+      vx: -Math.cos(angle) * SPEED_BEF * mult,
+      vy: -Math.sin(angle) * SPEED_BEF * mult,
+      size: SIZE_BEF * mult
     });
   }
   // setTimeout(
@@ -1124,9 +1124,9 @@ function launchExplosion() {
           game.addAsteroid({
             x: posX,
             y: posY,
-            vx: Math.cos(angle) * SPEED_SHOCKWAVE,
-            vy: Math.sin(angle) * SPEED_SHOCKWAVE,
-            size: SIZE_SHOCKWAVE
+            vx: Math.cos(angle) * SPEED_SHOCKWAVE * mult,
+            vy: Math.sin(angle) * SPEED_SHOCKWAVE * mult,
+            size: SIZE_SHOCKWAVE * mult
           });
         }
         for (let i = 0; i < 50; i++) {
@@ -1134,9 +1134,9 @@ function launchExplosion() {
           game.addAsteroid({
             x: posX,
             y: posY,
-            vx: Math.cos(angle) * SPEED + Math.random() * 2 - 1,
-            vy: Math.sin(angle) * SPEED + Math.random() * 2 - 1,
-            size: Math.round(SIZE * Math.random())
+            vx: Math.cos(angle) * SPEED * mult + Math.random() * 2 - 1,
+            vy: Math.sin(angle) * SPEED * mult + Math.random() * 2 - 1,
+            size: Math.round(SIZE * Math.random() * mult)
           });
         }
         setTimeout(
@@ -1157,14 +1157,14 @@ function launchExplosion() {
                       if (!a.custom.safeZone)
                       a.set({kill:true});
                     }
-                    setTimeout(
-                    () => {
-                      for (let a of game.asteroids) {
-                        if (!a.custom.safeZone)
-                        a.set({kill:true});
-                      }
-                    }, 5000
-                  );
+                    // setTimeout(
+                  //   () => {
+                  //     for (let a of game.asteroids) {
+                  //       if (!a.custom.safeZone)
+                  //       a.set({kill:true});
+                  //     }
+                  //   }, 5000
+                  // );
                   }, 5000
                 );
               }, 5000
@@ -1184,27 +1184,29 @@ this.event = function(event, game) {
       ship.set({healing: !ship.healing});
     }
     else if (event.id == 'trigger_explosion') {
-      launchExplosion();
-      triggeredExplosion = true;
-      ship.custom.bombs -= BOMBS_REQUIRED;
-      ship.set({invulnerable: 720});
-      for (let s of game.ships) {
-        s.set({x:0, y: 0});
-        let triggeredExplosion = {
-          id: 'triggered_explosion',
-          position: [30,70,40,8],
-          visible: true,
-          components: [
-            {type:"text",position:[5,0,90,100],value: ship.name + " triggered an explosion!",color:"red"}]
-        };
-        s.setUIComponent(triggeredExplosion);
-        setTimeout(
-          () => {
-            triggeredExplosion.visible = false;
-            triggeredExplosion.position = [0, 0, 0, 0];
-            s.setUIComponent(triggeredExplosion);
-          }, 5000
-        );
+      if (!triggeredExplosion) {
+        triggeredExplosion = true;
+        launchExplosion(0.5);
+        ship.custom.bombs -= BOMBS_REQUIRED;
+        ship.set({invulnerable: 720});
+        for (let s of game.ships) {
+          s.set({x:0, y: 0});
+          let triggeredExplosion = {
+            id: 'triggered_explosion',
+            position: [30,70,40,8],
+            visible: true,
+            components: [
+              {type:"text",position:[5,0,90,100],value: ship.name + " triggered an explosion!",color:"red"}]
+          };
+          s.setUIComponent(triggeredExplosion);
+          setTimeout(
+            () => {
+              triggeredExplosion.visible = false;
+              triggeredExplosion.position = [0, 0, 0, 0];
+              s.setUIComponent(triggeredExplosion);
+            }, 5000
+          );
+        } 
       }
     }
   }
