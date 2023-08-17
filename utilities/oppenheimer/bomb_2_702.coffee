@@ -1,20 +1,20 @@
 return model =
   name: 'Bomb 2'
   level: 7
-  model: 1
-  size: 2.2
+  model: 2
+  size: 8
   specs:
     shield:
       capacity: [300,400]
-      reload: [12,15]
+      reload: [15,20]
     generator:
-      capacity: [500,500]
-      reload: [150,150]
+      capacity: [400,600]
+      reload: [120,150]
     ship:
       mass: 300
-      speed: [120,120]
-      rotation: [60,60]
-      acceleration: [45,45]
+      speed: [150,200]
+      rotation: [40,60]
+      acceleration: [100,150]
   bodies:
     main:
       section_segments: 8
@@ -30,6 +30,14 @@ return model =
       height: [0,6,12,13.5,12.75,12,10.5,9,6,0]
       texture: [4,63,18,17,15.1,17,63,12,17]
       propeller: 1
+      laser:
+        damage: [100,100]
+        rate: 2
+        type: 2
+        speed: [200,200]
+        recoil: 70
+        number: 1
+        error: 0
     circle:
       section_segments: [40,50,130,140,220,230,310,320,400]
       offset:
@@ -62,7 +70,7 @@ return model =
       angle: 90
       laser:
         damage: [82.5,82.5]
-        rate: 2
+        rate: 3
         type: 2
         speed: [200,200]
         recoil: 0
