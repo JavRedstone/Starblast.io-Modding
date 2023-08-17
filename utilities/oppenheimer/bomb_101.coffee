@@ -19,15 +19,16 @@ return model =
     section_segments: 8
     offset:
       x: 0
-      y: -37.5
+      y: -30
       z: 0
     position:
       x: [0,0,0,0,0,0,0,0,0,0]
-      y: [0,3,12,42.5,42.5,47.5,47.5,60,67.5,65]
+      y: [0,3,12,42.5,42.5,47.5,47.5,60,65,60]
       z: [0,0,0,0,0,0,0,0,0,0]
     width: [0,6,12,13.5,12.75,12,10.5,9,6,0]
     height: [0,6,12,13.5,12.75,12,10.5,9,6,0]
-    texture: [2,2,1,3,3,3,1,2,4]
+    texture: [4,11,18,17,15.1,17,11,12,17]
+    propeller: 1
   wings:
     fin1:
       doubleside: true
@@ -39,7 +40,7 @@ return model =
       width: [15,9]
       angle: [ -45 ]
       position: [0,9]
-      texture: 63
+      texture: 11
       bump:
         position: 0
         size: 15
@@ -53,7 +54,7 @@ return model =
       width: [15,9]
       angle: [ 45 ]
       position: [0,9]
-      texture: 63
+      texture: 11
       bump:
         position: 0
         size: 15
