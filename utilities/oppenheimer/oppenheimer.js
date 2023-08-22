@@ -590,9 +590,9 @@ const C = {
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/emissive.png',
                 diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/diffuse.png'
             },
-            position: { x: 0, y: 0, z: 0 },
+            position: { x: 0, y: 0, z: -50 },
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
-            scale: { x: 50, y: 50, z: 50 }
+            scale: { x: 100, y: 100, z: 100 }
         },
         SMALL_BOMB: {
             id: 'small_bomb',
@@ -604,14 +604,14 @@ const C = {
             },
             position: { x: 0, y : 0, z: 0 },
             rotation: { x: 0, y : 0, z: 0 },
-            scale: { x: 10, y : 10, z: 10 }
+            scale: { x: 20, y : 20, z: 20 }
         }
     },
     MAIN_BOMB_OPTIONS: {
         POSITION: { x: 0, y: 0 },
         VELOCITY: { x: 0, y: 0 },
 
-        POINTS: 100,
+        POINTS: 0,
         CRYSTAL_DROP: 0,
         WEAPON_DROP: 0,
         
@@ -620,7 +620,8 @@ const C = {
         LASER_SPEED: 1,
 
         MAX_SHIELD: 10000,
-        INDIVIDUAL_SHIELD: 250,
+        SHIELD_REGEN: 0,
+        INDIVIDUAL_SHIELD: 500,
 
         WINNING_THRESHOLD: 1000
     },
@@ -630,8 +631,7 @@ const C = {
         SPAWN_RATE: 60,
         MAX_AMOUNT: 5,
 
-        PICKUP_RADIUS: 5,
-        SCORE: 100,
+        PICKUP_RADIUS: 10,
         HEAL: 125
     },
     SAFE_ZONE_OPTIONS: {
@@ -659,7 +659,7 @@ const C = {
         INVULERNABLE: 60 * 5,
 
         WINNING_THRESHOLD: 0.25,
-        WINNING_SCORE: 10000,
+        WINNING_SCORE: 5,
         WINNING_INVULNERABLE: 60 * 10,
 
         MESSAGE_TIME: 60 * 3
@@ -786,10 +786,10 @@ const C = {
             {
                 NAME: 'Saucer',
                 CODE: 19,
-                LEVELS: [0, 1],
-                POINTS: [1000, 2500],
-                CRYSTAL_DROPS: [100, 200],
-                WEAPON_DROPS: [21, 12]
+                LEVELS: [0, 1, 2],
+                POINTS: [1000, 2500, 4000],
+                CRYSTAL_DROPS: [100, 200, 300],
+                WEAPON_DROPS: [21, 12, 12]
             }
         ],
         MAX_AMOUNT: 20,
@@ -914,7 +914,7 @@ class Game {
 
     spawnNewMainBomb() {
         let alien = C.ALIEN_OPTIONS.ALIENS[7];
-        let level = alien.LEVELS[0];
+        let level = alien.LEVELS[2];
         this.mainBomb = new Alien(
             new Vector2(C.MAIN_BOMB_OPTIONS.POSITION.x, C.MAIN_BOMB_OPTIONS.POSITION.y),
             new Vector2(C.MAIN_BOMB_OPTIONS.VELOCITY.x, C.MAIN_BOMB_OPTIONS.VELOCITY.y),
@@ -1002,6 +1002,7 @@ class Game {
     resetShips() {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
+            ship.setType(Helper.getRandomArrayElement(C.GAME_OPTIONS.CHOOSE_SHIP));
             this.resetShip(ship);
         }
     }
@@ -1041,6 +1042,25 @@ class Game {
             }
         }
 
+        if (game.step % C.ROUND_OPTIONS.MAIN_BOMB_MAINTENANCE === 0) {
+            if (this.mainBomb != null && game.aliens.includes(this.mainBomb.alien) && this.mainBomb.alien.id != -1) { // making sure init
+                if (!this.mainBombReady) {
+                    this.mainBomb
+                        .setRate(C.MAIN_BOMB_OPTIONS.LASER_RATE)
+                        .setDamage(C.MAIN_BOMB_OPTIONS.LASER_DAMAGE)
+                        .setLaserSpeed(C.MAIN_BOMB_OPTIONS.LASER_SPEED)
+                        .setShield(C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD)
+                        .setRegen(C.MAIN_BOMB_OPTIONS.SHIELD_REGEN)
+                    this.mainBombReady = true;
+                }
+                this.mainBomb
+                    .setPosition(new Vector2(C.MAIN_BOMB_OPTIONS.POSITION.x, C.MAIN_BOMB_OPTIONS.POSITION.y),)
+                    .setVelocity(new Vector2(C.MAIN_BOMB_OPTIONS.VELOCITY.x, C.MAIN_BOMB_OPTIONS.VELOCITY.y),)
+            }
+
+            this.mainBombShield = Helper.clamp(this.mainBombShield, 0, C.MAIN_BOMB_OPTIONS.MAX_SHIELD);
+        }
+
         if (!this.waitingForPlayers) {
             if (this.numRounds < C.ROUND_OPTIONS.MAX_ROUNDS && (this.mainBombShield <= 0 || (game.step - this.waitingEndTime + 1) % C.ROUND_OPTIONS.ROUND_RATE === 0)) {
                 if (this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * C.MAIN_BOMB_OPTIONS.MAX_SHIELD) {
@@ -1051,7 +1071,7 @@ class Game {
                     for (let ship of this.ships) {
                         if (!ship.team.isDefending) {
                             ship.setInvulnerable(C.ROUND_OPTIONS.WINNING_INVULNERABLE);
-                            ship.setScore(ship.ship.score + C.ROUND_OPTIONS.WINNING_SCORE);
+                            ship.setScore(ship.score + C.ROUND_OPTIONS.WINNING_SCORE);
                             ship.setRoundsWon(ship.roundsWon + 1);
                             ship.sendMessage('You won the round! The bomb is now triggered!', '#00ff00');
                         }
@@ -1067,7 +1087,7 @@ class Game {
 
                     for (let ship of this.ships) {
                         if (ship.team.isDefending) {
-                            ship.setScore(ship.ship.score + C.ROUND_OPTIONS.WINNING_SCORE);
+                            ship.setScore(ship.score + C.ROUND_OPTIONS.WINNING_SCORE);
                             ship.setRoundsWon(ship.roundsWon + 1);
                             ship.sendMessage('You won the round! The bomb is now protected!', '#00ff00');
                         }
@@ -1085,10 +1105,10 @@ class Game {
                 for (let gameShip of game.ships) { // we do raw here
                     let ship = this.findShip(gameShip);
                     let gameOver = {
-                        'Thank you for playing': 'Oppenheimer',
-                        score: gameShip.score
+                        'Thank you for playing': 'Oppenheimer'
                     };
                     if (ship != null) {
+                        gameOver['Score'] = ship.score;
                         gameOver['Rounds Won'] = ship.roundsWon;
                         gameOver['Rounds Lost'] = ship.roundsLost;
                     }
@@ -1133,24 +1153,6 @@ class Game {
                     this.reset();
                 }
             }
-        }
-
-        if (game.step % C.ROUND_OPTIONS.MAIN_BOMB_MAINTENANCE === 0) {
-            if (this.mainBomb != null && game.aliens.includes(this.mainBomb.alien) && this.mainBomb.alien.id != -1) { // making sure init
-                if (!this.mainBombReady) {
-                    this.mainBomb
-                        .setRate(C.MAIN_BOMB_OPTIONS.LASER_RATE)
-                        .setDamage(C.MAIN_BOMB_OPTIONS.LASER_DAMAGE)
-                        .setLaserSpeed(C.MAIN_BOMB_OPTIONS.LASER_SPEED)
-                        .setShield(C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD)
-                    this.mainBombReady = true;
-                }
-                this.mainBomb
-                    .setPosition(new Vector2(C.MAIN_BOMB_OPTIONS.POSITION.x, C.MAIN_BOMB_OPTIONS.POSITION.y),)
-                    .setVelocity(new Vector2(C.MAIN_BOMB_OPTIONS.VELOCITY.x, C.MAIN_BOMB_OPTIONS.VELOCITY.y),)
-            }
-
-            this.mainBombShield = Helper.clamp(this.mainBombShield, 0, C.MAIN_BOMB_OPTIONS.MAX_SHIELD);
         }
     }
     
@@ -1266,7 +1268,7 @@ class Game {
                                 Helper.deleteFromArray(this.smallBombs, sb);
 
                                 this.mainBombShield += C.SMALL_BOMB_OPTIONS.HEAL;
-                                ship.setScore(ship.ship.score + C.SMALL_BOMB_OPTIONS.SCORE);
+                                ship.setScore(ship.score + 1);
                             }
                         }
 
@@ -1352,10 +1354,10 @@ class Game {
                 for (let ship of this.ships) {
                     if (ship.team != null) {
                         if (ship.team.team == 0) {
-                            players1.push(ship.ship);
+                            players1.push(ship);
                         }
                         else if (ship.team.team == 1) {
-                            players2.push(ship.ship);
+                            players2.push(ship);
                         }
                     }
                 }
@@ -1366,7 +1368,7 @@ class Game {
                         scoreboard.components.push({
                             type: 'player',
                             position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
-                            id: players1[i].id,
+                            id: players1[i].ship.id,
                             color: '#ffffff',
                             align: 'left'
                         },
@@ -1387,7 +1389,7 @@ class Game {
                         scoreboard.components.push({
                             type: 'player',
                             position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
-                            id: players2[i].id,
+                            id: players2[i].ship.id,
                             color: '#ffffff',
                             align: 'left'
                         },
@@ -1413,6 +1415,7 @@ class Game {
     hideShipUIs(ship) {
         ship.hideUI(Helper.deepCopy(C.UIS.ROUND_TIMER));
         ship.hideUI(Helper.deepCopy(C.UIS.BLAST_TIMER));
+        ship.hideUI(Helper.deepCopy(C.UIS.MESSAGE));
         ship.hideUI(Helper.deepCopy(C.UIS.SAFE_ZONE_STATE));
         ship.hideUI(Helper.deepCopy(C.UIS.MAIN_BOMB_SHIELD_BAR));
         ship.hideUI(Helper.deepCopy(C.UIS.RADAR_BACKGROUND));
@@ -1551,6 +1554,7 @@ class Game {
             let ship = this.findShip(gameShip);
             if (ship != null && !ship.team.isDefending) {
                 this.mainBombShield -= C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD;
+                ship.setScore(ship.score + 1);
             }
             this.spawnNewMainBomb();
         }
@@ -1701,6 +1705,8 @@ class Ship {
     roundsWon = 0;
     roundsLost = 0;
 
+    score = 0;
+
     constructor(ship) {
         this.ship = ship;
     }
@@ -1729,6 +1735,8 @@ class Ship {
                 this.message = null;
             }
         }
+
+        this.ship.score = this.score;
     }
 
     sendMessage(text, baseColor) {
@@ -1829,8 +1837,16 @@ class Ship {
     }
 
     setScore(score) {
+        this.score = score;
         if (game.ships.includes(this.ship)) {
             this.ship.set({ score: score });
+        }
+        return this;
+    }
+
+    setType(type) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ type: type });
         }
         return this;
     }
