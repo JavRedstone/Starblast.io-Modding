@@ -92,7 +92,7 @@ const C = {
         VOCABULARY: [
             { text: 'Help', icon:'\u00a5', key:'H' },
             { text: 'Me', icon:'\u004f', key:'E' },
-            { text: 'Safe Zone', icon:'\u002a', key:'B' },
+            { text: 'Bomb', icon:'\u{1F4A3}', key:'B' },
             { text: 'Wait', icon:'\u0048', key:'T' },
             { text: 'Yes', icon:'\u004c', key:'Y' },
             { text: 'No', icon:'\u004d', key:'N' },
@@ -863,6 +863,7 @@ class Game {
     waitingForPlayers = false;
     waitingForRound = false;
     waitingEndTime = 0;
+    doneRound = false;
 
     safeZoneOpen = true;
 
@@ -1068,7 +1069,7 @@ class Game {
                 (
                     this.mainBombShield <= 0 ||
                     (  
-                        game.step - this.waitingEndTime > 0 &&
+                        !this.waitingForRound && 
                         (game.step - this.waitingEndTime + 1) % C.ROUND_OPTIONS.ROUND_RATE === 0
                     )
                 )
@@ -1105,13 +1106,11 @@ class Game {
                             ship.sendMessage('You lost the round! The bomb is now protected!', '#ff0000');
                         }
                     }
-
-                    this.reset();
                 }
 
                 this.numRounds++;
-                this.waitingEndTime = game.step + C.ROUND_OPTIONS.ROUND_WAIT;
-                this.waitingForRound = true;
+                this.doneRound = true;
+                this.waitingEndTime = game.step;
             }
             if (this.numRounds >= C.ROUND_OPTIONS.MAX_ROUNDS && game.step - this.waitingEndTime >= C.ROUND_OPTIONS.MESSAGE_TIME) {
                 for (let gameShip of game.ships) { // we do raw here
@@ -1129,8 +1128,14 @@ class Game {
                     );
                 }
             }
+            else if (!this.blastEnd && this.doneRound && game.step - this.waitingEndTime == C.ROUND_OPTIONS.MESSAGE_TIME) {
+                this.waitingEndTime = game.step + C.ROUND_OPTIONS.ROUND_WAIT;
+                this.waitingForRound = true;
+                this.doneRound = false;
+                this.reset();
+            }
 
-            if ((game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE === 0) {
+            if (!this.waitingForRound && (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE === 0) {
                 this.blast = new Blast(1);
                 for (let ship of this.ships) {
                     ship.sendMessage('The bomb is exploding!', '#0000ff');
@@ -1138,7 +1143,7 @@ class Game {
             }
 
             if (
-                game.step - this.waitingEndTime > 0 &&
+                !this.waitingForRound && 
                 (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE >= C.SAFE_ZONE_OPTIONS.OPEN * C.BLAST_OPTIONS.BLAST_RATE &&
                 (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE <= C.SAFE_ZONE_OPTIONS.CLOSE * C.BLAST_OPTIONS.BLAST_RATE
             ) {
@@ -1148,7 +1153,7 @@ class Game {
                 this.safeZoneOpen = true;
             }
 
-            if (game.step - this.waitingEndTime > 0 && 
+            if (!this.waitingForRound &&  
                 (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE == C.SAFE_ZONE_OPTIONS.CLOSE * C.BLAST_OPTIONS.BLAST_RATE) {
                 for (let ship of this.ships) {
                     ship.sendMessage('The bomb is about to explode! Hide in the safe zone!', '#0000ff');
@@ -1164,7 +1169,6 @@ class Game {
                 this.blast = null;
                 if (this.blastEnd) {
                     this.blastEnd = false;
-                    this.reset();
                 }
             }
         }
@@ -1766,7 +1770,7 @@ class Ship {
             }
         }
 
-        this.ship.score = this.score;
+        this.ship.set({ score: this.score });
     }
 
     sendMessage(text, baseColor) {
