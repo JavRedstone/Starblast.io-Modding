@@ -223,13 +223,13 @@ const C = {
                 {
                     type: 'text',
                     position: [5, 0, 90, 50],
-                    value: 'Waiting for more players',
+                    value: '',
                     color: '#ffffff'
                 },
                 {
                     type: 'text',
                     position: [10, 50, 80, 50],
-                    value: '0 players required to start',
+                    value: '',
                     color: '#ffffff'
                 }
             ]
@@ -590,7 +590,7 @@ const C = {
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/emissive.png',
                 diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/diffuse.png'
             },
-            position: { x: 0, y: 0, z: -50 },
+            position: { x: 0, y: 0, z: 0 },
             rotation: { x: 0, y: Math.PI / 2, z: 0 },
             scale: { x: 100, y: 100, z: 100 }
         },
@@ -649,20 +649,21 @@ const C = {
         STARTING_POSITION: { x: 0, y: 0 },
         STARTING_VELOCITY: { x: 0, y: 0 },
 
-        ROUND_RATE: 60 * 60 * 6,
+        ROUND_RATE: 60 * 60 * 5,
         MAX_ROUNDS: 3,
         SHIP_UPDATE: 60,
         MAIN_BOMB_MAINTENANCE: 2,
         ENTITY_MANAGER: 60,
         UI_TEMP: 15 * 1000,
 
-        INVULERNABLE: 60 * 5,
 
         WINNING_THRESHOLD: 0.25,
         WINNING_SCORE: 5,
         WINNING_INVULNERABLE: 60 * 10,
 
-        MESSAGE_TIME: 60 * 3
+        INVULERNABLE: 60 * 5,
+        MESSAGE_TIME: 60 * 3,
+        ROUND_WAIT: 60 * 10
     },
     BLAST_OPTIONS: {
         ORIGIN: {
@@ -723,7 +724,7 @@ const C = {
             CLOUD: 60 * 1.5,
             DESTROY: 60 * 10
         },
-        BLAST_RATE: 60 * 60 * 4,
+        BLAST_RATE: 60 * 60 * 2,
     },
     ALIEN_OPTIONS: {
         ALIENS: [
@@ -860,6 +861,7 @@ class Game {
     smallBombs = [];
 
     waitingForPlayers = false;
+    waitingForRound = false;
     waitingEndTime = 0;
 
     safeZoneOpen = true;
@@ -1062,7 +1064,15 @@ class Game {
         }
 
         if (!this.waitingForPlayers) {
-            if (this.numRounds < C.ROUND_OPTIONS.MAX_ROUNDS && (this.mainBombShield <= 0 || (game.step - this.waitingEndTime + 1) % C.ROUND_OPTIONS.ROUND_RATE === 0)) {
+            if (this.numRounds < C.ROUND_OPTIONS.MAX_ROUNDS &&
+                (
+                    this.mainBombShield <= 0 ||
+                    (  
+                        game.step - this.waitingEndTime > 0 &&
+                        (game.step - this.waitingEndTime + 1) % C.ROUND_OPTIONS.ROUND_RATE === 0
+                    )
+                )
+            ) {
                 if (this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * C.MAIN_BOMB_OPTIONS.MAX_SHIELD) {
                     this.mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD;
                     this.blast = new Blast(2);
@@ -1083,7 +1093,6 @@ class Game {
                 }
                 else {
                     this.blast = null;
-                    this.reset();
 
                     for (let ship of this.ships) {
                         if (ship.team.isDefending) {
@@ -1096,10 +1105,13 @@ class Game {
                             ship.sendMessage('You lost the round! The bomb is now protected!', '#ff0000');
                         }
                     }
+
+                    this.reset();
                 }
 
                 this.numRounds++;
-                this.waitingEndTime = game.step;
+                this.waitingEndTime = game.step + C.ROUND_OPTIONS.ROUND_WAIT;
+                this.waitingForRound = true;
             }
             if (this.numRounds >= C.ROUND_OPTIONS.MAX_ROUNDS && game.step - this.waitingEndTime >= C.ROUND_OPTIONS.MESSAGE_TIME) {
                 for (let gameShip of game.ships) { // we do raw here
@@ -1126,6 +1138,7 @@ class Game {
             }
 
             if (
+                game.step - this.waitingEndTime > 0 &&
                 (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE >= C.SAFE_ZONE_OPTIONS.OPEN * C.BLAST_OPTIONS.BLAST_RATE &&
                 (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE <= C.SAFE_ZONE_OPTIONS.CLOSE * C.BLAST_OPTIONS.BLAST_RATE
             ) {
@@ -1135,7 +1148,8 @@ class Game {
                 this.safeZoneOpen = true;
             }
 
-            if ((game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE == C.SAFE_ZONE_OPTIONS.CLOSE * C.BLAST_OPTIONS.BLAST_RATE) {
+            if (game.step - this.waitingEndTime > 0 && 
+                (game.step - this.waitingEndTime + 1) % C.BLAST_OPTIONS.BLAST_RATE == C.SAFE_ZONE_OPTIONS.CLOSE * C.BLAST_OPTIONS.BLAST_RATE) {
                 for (let ship of this.ships) {
                     ship.sendMessage('The bomb is about to explode! Hide in the safe zone!', '#0000ff');
                 }
@@ -1239,7 +1253,7 @@ class Game {
                 }
 
                 if (ship.isMaxed && ship.doneInstructions) {
-                    if (!this.waitingForPlayers) {
+                    if (!this.waitingForPlayers && !this.waitingForRound) {
                         ship.hideUI(Helper.deepCopy(C.UIS.WAIT));
                         ship.setIdle(false);
                         ship.setCollider(true);
@@ -1304,8 +1318,24 @@ class Game {
                         this.hideShipUIs(ship);
     
                         let wait = Helper.deepCopy(C.UIS.WAIT);
-                        wait.components[2].value = `${C.ROUND_OPTIONS.MIN_PLAYERS} players required to start`;
+                        if (this.waitingForPlayers) {
+                            wait.components[1].value = 'Waiting for more players...';
+                            wait.components[2].value = `${C.ROUND_OPTIONS.MIN_PLAYERS} players required to start`;
+                            wait.components[0].stroke = '#ff0000';
+                            wait.components[0].fill = '#ff000080';
+                        }
+                        else {
+                            wait.components[1].value = 'Next round starts in...';
+                            wait.components[2].value = Helper.formatTime(this.waitingEndTime - game.step);
+                            wait.components[0].stroke = '#0000ff';
+                            wait.components[0].fill = '#0000ff80';
+
+                            if (this.waitingEndTime <= game.step) {
+                                this.waitingForRound = false;
+                            }
+                        }
                         ship.sendUI(wait);
+
                         ship.setIdle(true);
                         ship.setCollider(false);
                         ship.setInvulnerable(C.ROUND_OPTIONS.INVULERNABLE);
