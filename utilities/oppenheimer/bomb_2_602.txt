@@ -34,10 +34,10 @@ return model =
         damage: [10, 15]
         rate: 10
         type: 2
-        speed: [300,400]
+        speed: [150,250]
         recoil: 0
         number: 1
-        error: 10
+        error: 45
     circle:
       section_segments: [40,50,130,140,220,230,310,320,400]
       offset:
@@ -67,15 +67,15 @@ return model =
       height: [8,7,4,3,0]
       texture: [63,16.9,5,16.9]
       vertical: false
-      angle: 170
+      angle: 20
       laser:
         damage: [15,20]
-        rate: 10
+        rate: 3
         type: 2
-        speed: [-100,-200]
-        recoil: 0
+        speed: [100,200]
+        recoil: 5
         number: 5
-        angle: 25
+        angle: 45
   wings:
     fin1:
       doubleside: true

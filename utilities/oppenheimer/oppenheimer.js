@@ -84,9 +84,9 @@ const C = {
             // Bomb 1 601
             '{"name":"Bomb 1","level":6,"model":1,"size":8,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[200,300],"reload":[100,150]},"ship":{"mass":500,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,3,12,42.5,42.5,47.5,47.5,60,65,60],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,6,12,13.5,12.75,12,10.5,9,6,0],"height":[0,6,12,13.5,12.75,12,10.5,9,6,0],"texture":[4,63,18,17,15.1,17,63,12,17],"propeller":1,"laser":{"damage":[2,3],"rate":1,"type":2,"speed":[200,200],"recoil":10,"number":100,"error":0}}},"wings":{"fin1":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[21],"width":[15,9],"angle":[-45],"position":[0,9],"texture":63,"bump":{"position":0,"size":15}},"fin2":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[21],"width":[15,9],"angle":[45],"position":[0,9],"texture":63,"bump":{"position":0,"size":15}}},"typespec":{"name":"Bomb 1","level":6,"model":1,"code":601,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[200,300],"reload":[100,150]},"ship":{"mass":500,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"shape":[4.8,4.661,4.458,4.062,3.727,3.489,3.046,2.675,2.444,2.278,2.169,2.095,2.064,2.088,2.156,2.26,2.396,2.617,2.944,3.106,3.395,5.575,5.863,5.555,5.682,5.611,5.682,5.555,5.863,5.575,3.395,3.106,2.944,2.617,2.396,2.26,2.156,2.088,2.064,2.095,2.169,2.278,2.444,2.675,3.046,3.489,3.727,4.062,4.458,4.661],"lasers":[{"x":0,"y":-4.8,"z":0,"angle":0,"damage":[2,3],"rate":1,"type":2,"speed":[200,200],"number":100,"spread":0,"error":0,"recoil":10}],"radius":5.863}}',
             // Bomb 2 602
-            '{"name":"Bomb 2","level":6,"model":2,"size":8,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[300,500],"reload":[200,240]},"ship":{"mass":400,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,3,12,42.5,42.5,47.5,47.5,60,65,60],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,6,12,13.5,12.75,12,10.5,9,6,0],"height":[0,6,12,13.5,12.75,12,10.5,9,6,0],"texture":[4,63,18,17,15.1,17,63,12,17],"propeller":1,"laser":{"damage":[10,15],"rate":10,"type":2,"speed":[300,400],"recoil":0,"number":1,"error":10}},"circle":{"section_segments":[40,50,130,140,220,230,310,320,400],"offset":{"x":0,"y":40,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-15,-3,-15,-15,-3,-3],"z":[0,0,0,0,0,0]},"width":[25,25,25,30,30,25],"height":[25,25,25,30,30,25],"texture":[4,16,4,63,4,4],"propeller":false,"vertical":false},"things1":{"section_segments":10,"offset":{"x":2,"y":-3,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[7,12,11,12,12],"z":[0,0,0,0,0,0]},"width":[8,7,4,3,0],"height":[8,7,4,3,0],"texture":[63,16.9,5,16.9],"vertical":false,"angle":170,"laser":{"damage":[15,20],"rate":10,"type":2,"speed":[-100,-200],"recoil":0,"number":5,"angle":25}}},"wings":{"fin1":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[-45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}},"fin2":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}}},"typespec":{"name":"Bomb 2","level":6,"model":2,"code":602,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[300,500],"reload":[200,240]},"ship":{"mass":400,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"shape":[4.8,4.661,4.458,4.062,3.727,3.489,3.046,2.675,2.444,2.278,2.169,2.095,2.064,2.088,2.156,2.26,2.396,2.617,2.944,5.766,6.855,6.969,6.542,6.221,6.023,5.932,6.023,6.221,6.542,6.969,6.855,5.766,2.944,2.617,2.396,2.26,2.156,2.088,2.064,2.095,2.169,2.278,2.444,2.675,3.046,3.489,3.727,4.062,4.458,4.661],"lasers":[{"x":0,"y":-4.8,"z":0,"angle":0,"damage":[10,15],"rate":10,"type":2,"speed":[300,400],"number":1,"spread":0,"error":10,"recoil":0},{"x":0.514,"y":-1.583,"z":0,"angle":170,"damage":[15,20],"rate":10,"type":2,"speed":[-100,-200],"number":5,"spread":25,"error":0,"recoil":0},{"x":-0.514,"y":-1.583,"z":0,"angle":-170,"damage":[15,20],"rate":10,"type":2,"speed":[-100,-200],"number":5,"spread":25,"error":0,"recoil":0}],"radius":6.969}}',
+            '{"name":"Bomb 2","level":6,"model":2,"size":8,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[300,500],"reload":[200,240]},"ship":{"mass":400,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,3,12,42.5,42.5,47.5,47.5,60,65,60],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,6,12,13.5,12.75,12,10.5,9,6,0],"height":[0,6,12,13.5,12.75,12,10.5,9,6,0],"texture":[4,63,18,17,15.1,17,63,12,17],"propeller":1,"laser":{"damage":[10,15],"rate":10,"type":2,"speed":[150,250],"recoil":0,"number":1,"error":45}},"circle":{"section_segments":[40,50,130,140,220,230,310,320,400],"offset":{"x":0,"y":40,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-15,-3,-15,-15,-3,-3],"z":[0,0,0,0,0,0]},"width":[25,25,25,30,30,25],"height":[25,25,25,30,30,25],"texture":[4,16,4,63,4,4],"propeller":false,"vertical":false},"things1":{"section_segments":10,"offset":{"x":2,"y":-3,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[7,12,11,12,12],"z":[0,0,0,0,0,0]},"width":[8,7,4,3,0],"height":[8,7,4,3,0],"texture":[63,16.9,5,16.9],"vertical":false,"angle":20,"laser":{"damage":[15,20],"rate":3,"type":2,"speed":[100,200],"recoil":5,"number":5,"angle":45}}},"wings":{"fin1":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[-45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}},"fin2":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}}},"typespec":{"name":"Bomb 2","level":6,"model":2,"code":602,"specs":{"shield":{"capacity":[500,600],"reload":[15,20]},"generator":{"capacity":[300,500],"reload":[200,240]},"ship":{"mass":400,"speed":[75,100],"rotation":[100,150],"acceleration":[100,150]}},"shape":[4.8,4.661,4.458,4.062,3.727,3.489,3.046,2.675,2.444,2.278,2.169,2.095,2.064,2.088,2.156,2.26,2.396,2.617,2.944,5.766,6.855,6.969,6.542,6.221,6.023,5.932,6.023,6.221,6.542,6.969,6.855,5.766,2.944,2.617,2.396,2.26,2.156,2.088,2.064,2.095,2.169,2.278,2.444,2.675,3.046,3.489,3.727,4.062,4.458,4.661],"lasers":[{"x":0,"y":-4.8,"z":0,"angle":0,"damage":[10,15],"rate":10,"type":2,"speed":[150,250],"number":1,"spread":0,"error":45,"recoil":0},{"x":0.703,"y":0.572,"z":0,"angle":20,"damage":[15,20],"rate":3,"type":2,"speed":[100,200],"number":5,"spread":45,"error":0,"recoil":5},{"x":-0.703,"y":0.572,"z":0,"angle":-20,"damage":[15,20],"rate":3,"type":2,"speed":[100,200],"number":5,"spread":45,"error":0,"recoil":5}],"radius":6.969}}',
             // Bomb 3 603
-            '{"name":"Bomb 3","level":6,"model":3,"size":8,"specs":{"shield":{"capacity":[500,600],"reload":[25,50]},"generator":{"capacity":[400,600],"reload":[50,75]},"ship":{"mass":500,"speed":[100,150],"rotation":[100,150],"acceleration":[100,120],"dash":{"rate":2,"burst_speed":[200,300],"speed":[150,200],"acceleration":[400,500],"initial_energy":[150,300],"energy":[200,300]}}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,3,12,42.5,42.5,47.5,47.5,60,65,60],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,6,18,20,12.75,12,10.5,9,6,0],"height":[0,6,18,20,12.75,12,10.5,9,6,0],"texture":[4,63,18,17,15.1,17,63,12,17],"propeller":1},"circle":{"section_segments":6,"offset":{"x":0,"y":40,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-15,-3,-15,-15,-3,-3],"z":[0,0,0,0,0,0]},"width":[25,25,25,30,30,25],"height":[25,25,25,30,30,25],"texture":[4,63,3.9,63,3.9,4],"propeller":false,"vertical":false},"toppropulsors":{"section_segments":10,"offset":{"x":17,"y":25,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true},"toppropulsors2":{"section_segments":10,"offset":{"x":0,"y":25,"z":20},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true},"toppropulsors3":{"section_segments":10,"offset":{"x":0,"y":25,"z":-20},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true}},"wings":{"fin1":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[-45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}},"fin2":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}}},"typespec":{"name":"Bomb 3","level":6,"model":3,"code":603,"specs":{"shield":{"capacity":[500,600],"reload":[25,50]},"generator":{"capacity":[400,600],"reload":[50,75]},"ship":{"mass":500,"speed":[100,150],"rotation":[100,150],"acceleration":[100,120],"dash":{"rate":2,"burst_speed":[200,300],"speed":[150,200],"acceleration":[400,500],"initial_energy":[150,300],"energy":[200,300]}}},"shape":[4.8,4.661,4.458,4.258,4.114,4.044,4.073,3.947,3.605,3.373,3.213,3.108,3.069,3.119,3.216,3.377,3.61,3.774,3.4,6.516,7.234,7.787,7.78,7.402,7.066,7.054,7.066,7.402,7.78,7.787,7.234,6.516,3.4,3.774,3.61,3.377,3.216,3.119,3.069,3.108,3.213,3.373,3.605,3.947,4.073,4.044,4.114,4.258,4.458,4.661],"lasers":[],"radius":7.787}}'
+            '{"name":"Bomb 3","level":6,"model":3,"size":8,"specs":{"shield":{"capacity":[500,600],"reload":[25,50]},"generator":{"capacity":[100,150],"reload":[50,75]},"ship":{"mass":500,"speed":[100,150],"rotation":[100,150],"acceleration":[100,120]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,3,12,42.5,42.5,47.5,47.5,60,65,60],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,6,18,20,12.75,12,10.5,9,6,0],"height":[0,6,18,20,12.75,12,10.5,9,6,0],"texture":[4,63,18,17,15.1,17,63,12,17],"propeller":1},"mainGun":{"section_segments":0,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0],"y":[0],"z":[0]},"width":[0],"height":[0],"texture":0,"angle":180,"laser":{"damage":[100,150],"rate":1,"type":2,"speed":[100,150],"recoil":1000,"number":1,"error":0}},"circle":{"section_segments":6,"offset":{"x":0,"y":40,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-15,-3,-15,-15,-3,-3],"z":[0,0,0,0,0,0]},"width":[25,25,25,30,30,25],"height":[25,25,25,30,30,25],"texture":[4,63,3.9,63,3.9,4],"propeller":false,"vertical":false},"toppropulsors":{"section_segments":10,"offset":{"x":17,"y":25,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true},"toppropulsors2":{"section_segments":10,"offset":{"x":0,"y":25,"z":20},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true},"toppropulsors3":{"section_segments":10,"offset":{"x":0,"y":25,"z":-20},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-7,-6,0,4,8,12,15,17,19,15],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,3,5,5,6,3,3,5,4,0],"height":[0,3,5,5,6,3,3,5,4,0],"texture":[3,4,10,3,3,63,4,12,17],"propeller":true}},"wings":{"fin1":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[-45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}},"fin2":{"doubleside":true,"offset":{"x":0,"y":20,"z":0},"length":[25],"width":[15,9],"angle":[45],"position":[0,11],"texture":63,"bump":{"position":0,"size":25}}},"typespec":{"name":"Bomb 3","level":6,"model":3,"code":603,"specs":{"shield":{"capacity":[500,600],"reload":[25,50]},"generator":{"capacity":[100,150],"reload":[50,75]},"ship":{"mass":500,"speed":[100,150],"rotation":[100,150],"acceleration":[100,120]}},"shape":[4.8,4.661,4.458,4.258,4.114,4.044,4.073,3.947,3.605,3.373,3.213,3.108,3.069,3.119,3.216,3.377,3.61,3.774,3.4,6.516,7.234,7.787,7.78,7.402,7.066,7.054,7.066,7.402,7.78,7.787,7.234,6.516,3.4,3.774,3.61,3.377,3.216,3.119,3.069,3.108,3.213,3.373,3.605,3.947,4.073,4.044,4.114,4.258,4.458,4.661],"lasers":[{"x":0,"y":0,"z":0,"angle":180,"damage":[100,150],"rate":1,"type":2,"speed":[100,150],"number":1,"spread":0,"error":0,"recoil":1000}],"radius":7.787}}'
         ],
 
         VOCABULARY: [
@@ -619,7 +619,8 @@ const C = {
         LASER_DAMAGE: 1,
         LASER_SPEED: 1,
 
-        MAX_SHIELD: 10000,
+        MAX_BASE_SHIELD: 5000,
+        MAX_SHIELD_PER_PLAYER: 2500,
         SHIELD_REGEN: 0,
         INDIVIDUAL_SHIELD: 500,
 
@@ -632,7 +633,7 @@ const C = {
         MAX_AMOUNT: 5,
 
         PICKUP_RADIUS: 10,
-        HEAL: 125
+        HEAL: 250
     },
     SAFE_ZONE_OPTIONS: {
         OPEN: 1 / 8,
@@ -650,12 +651,11 @@ const C = {
         STARTING_VELOCITY: { x: 0, y: 0 },
 
         ROUND_RATE: 60 * 60 * 5,
-        MAX_ROUNDS: 3,
+        MAX_ROUNDS: 5,
         SHIP_UPDATE: 60,
         MAIN_BOMB_MAINTENANCE: 2,
         ENTITY_MANAGER: 60,
         UI_TEMP: 15 * 1000,
-
 
         WINNING_THRESHOLD: 0.25,
         WINNING_SCORE: 5,
@@ -856,7 +856,8 @@ class Game {
 
     mainBomb = null;
     mainBombReady = false;
-    mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD;
+    mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_BASE_SHIELD;
+    mainBombMaxShield = C.MAIN_BOMB_OPTIONS.MAX_BASE_SHIELD;
 
     smallBombs = [];
 
@@ -885,12 +886,15 @@ class Game {
         this.manageEntities();
     }
 
-    reset() {
+    reset(resetShips = true) {
         this.deleteEverything();
         this.resetMainBomb();
         this.spawnInactiveObjects();
-        this.selectRandomTeams();
-        this.resetShips();
+        if (resetShips) {
+            this.selectRandomTeams();
+            this.resetShips();
+        }
+        this.resetRoundWait();
     }
 
     deleteEverything() {
@@ -911,7 +915,7 @@ class Game {
     resetMainBomb() {
         this.mainBomb = null;
         this.mainBombReady = false;
-        this.mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD;
+        this.mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_BASE_SHIELD;
         this.spawnNewMainBomb();
     }
 
@@ -1033,6 +1037,12 @@ class Game {
         ship.setVelocity(new Vector2(C.ROUND_OPTIONS.STARTING_VELOCITY.x, C.ROUND_OPTIONS.STARTING_VELOCITY.y));
     }
 
+    resetRoundWait() {
+        this.waitingEndTime = game.step + C.ROUND_OPTIONS.ROUND_WAIT;
+        this.waitingForRound = true;
+        this.doneRound = false;
+    }
+
     manageRounds() {
         if (this.ships.length < C.ROUND_OPTIONS.MIN_PLAYERS) {
             this.waitingForPlayers = true;
@@ -1042,10 +1052,12 @@ class Game {
             this.waitingForPlayers = false;
             if (this.waitingEndTime === 0) {
                 this.waitingEndTime = game.step;
+                this.reset(false);
             }
         }
 
         if (game.step % C.ROUND_OPTIONS.MAIN_BOMB_MAINTENANCE === 0) {
+            this.mainBombShield = Helper.clamp(this.mainBombShield, 0, this.mainBombMaxShield);
             if (this.mainBomb != null && game.aliens.includes(this.mainBomb.alien) && this.mainBomb.alien.id != -1) { // making sure init
                 if (!this.mainBombReady) {
                     this.mainBomb
@@ -1060,8 +1072,6 @@ class Game {
                     .setPosition(new Vector2(C.MAIN_BOMB_OPTIONS.POSITION.x, C.MAIN_BOMB_OPTIONS.POSITION.y),)
                     .setVelocity(new Vector2(C.MAIN_BOMB_OPTIONS.VELOCITY.x, C.MAIN_BOMB_OPTIONS.VELOCITY.y),)
             }
-
-            this.mainBombShield = Helper.clamp(this.mainBombShield, 0, C.MAIN_BOMB_OPTIONS.MAX_SHIELD);
         }
 
         if (!this.waitingForPlayers) {
@@ -1074,8 +1084,7 @@ class Game {
                     )
                 )
             ) {
-                if (this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * C.MAIN_BOMB_OPTIONS.MAX_SHIELD) {
-                    this.mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD;
+                if (this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * this.mainBombMaxShield) {
                     this.blast = new Blast(2);
                     this.blastEnd = true;
 
@@ -1128,10 +1137,7 @@ class Game {
                     );
                 }
             }
-            else if (!this.blastEnd && this.doneRound && game.step - this.waitingEndTime == C.ROUND_OPTIONS.MESSAGE_TIME) {
-                this.waitingEndTime = game.step + C.ROUND_OPTIONS.ROUND_WAIT;
-                this.waitingForRound = true;
-                this.doneRound = false;
+            else if (!this.blastEnd && this.doneRound && game.step - this.waitingEndTime >= C.ROUND_OPTIONS.MESSAGE_TIME) {
                 this.reset();
             }
 
@@ -1256,8 +1262,8 @@ class Game {
                     ship.isMaxed = true;
                 }
 
-                if (ship.isMaxed && ship.doneInstructions) {
-                    if (!this.waitingForPlayers && !this.waitingForRound) {
+                if (!this.waitingForPlayers && !this.waitingForRound) {
+                    if (ship.isMaxed && ship.doneInstructions) {
                         ship.hideUI(Helper.deepCopy(C.UIS.WAIT));
                         ship.setIdle(false);
                         ship.setCollider(true);
@@ -1271,12 +1277,12 @@ class Game {
                         ship.sendUI(blastTimer);
 
                         let mainBombShieldBar = Helper.deepCopy(C.UIS.MAIN_BOMB_SHIELD_BAR);
-                        mainBombShieldBar.components[1].value = `Round ${this.numRounds + 1} | Main Bomb Shield: ${this.mainBombShield} / ${C.MAIN_BOMB_OPTIONS.MAX_SHIELD} | You are ${ship.team.isDefending ? 'defending' : 'attacking'}`;
+                        mainBombShieldBar.components[1].value = `Round ${this.numRounds + 1} | Main Bomb Shield: ${this.mainBombShield} / ${C.MAIN_BOMB_OPTIONS.MAX_SHIELD_PER_PLAYER} | You are ${ship.team.isDefending ? 'defending' : 'attacking'}`;
                         mainBombShieldBar.components[2].stroke = ship.team.isDefending ? '#00ff00' : '#ff0000';
                         mainBombShieldBar.components[2].fill = ship.team.isDefending ? '#00ff0080' : '#ff000080';
                         mainBombShieldBar.components[3].fill = ship.team.isDefending ? '#00ff00' : '#ff0000';
-                        mainBombShieldBar.components[3].position[2] = this.mainBombShield / C.MAIN_BOMB_OPTIONS.MAX_SHIELD * 100;
-                        mainBombShieldBar.components[4].value = `Predicted winner: ${this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * C.MAIN_BOMB_OPTIONS.MAX_SHIELD ? `Team ${this.teams[1].color} | Attackers` : `Team ${this.teams[0].color} | Defenders`}`
+                        mainBombShieldBar.components[3].position[2] = this.mainBombShield / C.MAIN_BOMB_OPTIONS.MAX_SHIELD_PER_PLAYER * 100;
+                        mainBombShieldBar.components[4].value = `Predicted winner: ${this.mainBombShield <= C.ROUND_OPTIONS.WINNING_THRESHOLD * C.MAIN_BOMB_OPTIONS.MAX_SHIELD_PER_PLAYER ? `Team ${this.teams[1].color} | Attackers` : `Team ${this.teams[0].color} | Defenders`}`
                         ship.sendUI(mainBombShieldBar);
 
                         for (let sb of this.smallBombs) {
@@ -1317,38 +1323,41 @@ class Game {
 
                             ship.sendMessage('The safe zone is closed! Your ship will take damage!', '#ff0000');
                         }
+                        ship.setStats(99999999);
                     }
                     else {
                         this.hideShipUIs(ship);
-    
-                        let wait = Helper.deepCopy(C.UIS.WAIT);
-                        if (this.waitingForPlayers) {
-                            wait.components[1].value = 'Waiting for more players...';
-                            wait.components[2].value = `${C.ROUND_OPTIONS.MIN_PLAYERS} players required to start`;
-                            wait.components[0].stroke = '#ff0000';
-                            wait.components[0].fill = '#ff000080';
-                        }
-                        else {
-                            wait.components[1].value = 'Next round starts in...';
-                            wait.components[2].value = Helper.formatTime(this.waitingEndTime - game.step);
-                            wait.components[0].stroke = '#0000ff';
-                            wait.components[0].fill = '#0000ff80';
-
-                            if (this.waitingEndTime <= game.step) {
-                                this.waitingForRound = false;
-                            }
-                        }
-                        ship.sendUI(wait);
-
-                        ship.setIdle(true);
-                        ship.setCollider(false);
-                        ship.setInvulnerable(C.ROUND_OPTIONS.INVULERNABLE);
-                        ship.setPosition(new Vector2(C.ROUND_OPTIONS.STARTING_POSITION.x, C.ROUND_OPTIONS.STARTING_POSITION.y));
-                        ship.setVelocity(new Vector2(C.ROUND_OPTIONS.STARTING_VELOCITY.x, C.ROUND_OPTIONS.STARTING_VELOCITY.y));
                     }
                 }
                 else {
                     this.hideShipUIs(ship);
+
+                    let wait = Helper.deepCopy(C.UIS.WAIT);
+                    if (this.waitingForPlayers) {
+                        wait.components[1].value = 'Waiting for more players...';
+                        wait.components[2].value = `${C.ROUND_OPTIONS.MIN_PLAYERS} players required to start`;
+                        wait.components[0].stroke = '#ff0000';
+                        wait.components[0].fill = '#ff000080';
+                    }
+                    else {
+                        wait.components[1].value = 'Next round starts in...';
+                        wait.components[2].value = this.waitingEndTime - game.step > 0 ? Helper.formatTime(this.waitingEndTime - game.step) : '0:00';
+                        wait.components[0].stroke = '#0000ff';
+                        wait.components[0].fill = '#0000ff80';
+
+                        if (this.waitingEndTime <= game.step) {
+                            this.waitingForRound = false;
+                            this.mainBombMaxShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD_PER_PLAYER * this.ships.length;
+                            this.mainBombShield = C.MAIN_BOMB_OPTIONS.MAX_SHIELD_PER_PLAYER * this.ships.length;
+                        }
+                    }
+                    ship.sendUI(wait);
+
+                    ship.setIdle(true);
+                    ship.setCollider(false);
+                    ship.setInvulnerable(C.ROUND_OPTIONS.INVULERNABLE);
+                    ship.setPosition(new Vector2(C.ROUND_OPTIONS.STARTING_POSITION.x, C.ROUND_OPTIONS.STARTING_POSITION.y));
+                    ship.setVelocity(new Vector2(C.ROUND_OPTIONS.STARTING_VELOCITY.x, C.ROUND_OPTIONS.STARTING_VELOCITY.y));
                 }
 
                 let radarBackground = Helper.deepCopy(C.UIS.RADAR_BACKGROUND);
@@ -1556,6 +1565,7 @@ class Game {
             ship.setCrystals(ship.getMaxCrystals());
             ship.setShield(999999);
             ship.setStats(99999999);
+            ship.setType(Helper.getRandomArrayElement(C.GAME_OPTIONS.CHOOSE_SHIP));
             ship.setPosition(new Vector2(C.ROUND_OPTIONS.STARTING_POSITION.x, C.ROUND_OPTIONS.STARTING_POSITION.y));
             ship.setVelocity(new Vector2(C.ROUND_OPTIONS.STARTING_VELOCITY.x, C.ROUND_OPTIONS.STARTING_VELOCITY.y));
         }

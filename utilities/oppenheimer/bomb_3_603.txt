@@ -8,20 +8,13 @@ return model =
       capacity: [500,600]
       reload: [25,50]
     generator:
-      capacity: [400,600]
+      capacity: [100,150]
       reload: [50,75]
     ship:
       mass: 500
       speed: [100,150]
       rotation: [100,150]
       acceleration: [100,120]
-      dash:
-        rate: 2
-        burst_speed: [200,300]
-        speed: [150,200]
-        acceleration: [400,500]
-        initial_energy: [150,300]
-        energy: [200,300]
   bodies:
     main:
       section_segments: 8
@@ -37,6 +30,28 @@ return model =
       height: [0,6,18,20,12.75,12,10.5,9,6,0]
       texture: [4,63,18,17,15.1,17,63,12,17]
       propeller: 1
+    mainGun:
+      section_segments: 0
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0]
+        y: [0]
+        z: [0]
+      width: [0]
+      height: [0]
+      texture: 0
+      angle: 180
+      laser:
+        damage: [100, 150]
+        rate: 1
+        type: 2
+        speed: [100,150]
+        recoil: 1000
+        number: 1
+        error: 0
     circle:
       section_segments: 6
       offset:
