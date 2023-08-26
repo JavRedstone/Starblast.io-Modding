@@ -8,7 +8,7 @@ CREDITS BEFORE V2.0:
 - Original author: 45rfew & Bhpsngum
 - Testing and debugging help: 123 Notus & PMGL (Gilles)
 - Poster designer (as usual): Tournebulle
-- Ships: 45rfew, ___, Robonuko, & ΛΣTΉΣR
+- Ships: 45rfew, ___ & Robonuko
 - Maps: Gummie, Liberal, Healer, Robonuko, Kirito, EDEN & JavRedstone
 
 CREDITS AFTER V2.0
