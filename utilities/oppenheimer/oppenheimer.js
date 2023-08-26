@@ -1190,6 +1190,7 @@ class Game {
                         gameOver
                     );
                 }
+                game.setOpen(false);
             }
             else if (this.numRounds < C.ROUND_OPTIONS.MAX_ROUNDS && !this.blastEnd && this.doneRound && game.step - this.waitingEndTime >= C.ROUND_OPTIONS.MESSAGE_TIME) {
                 this.reset();
