@@ -1927,13 +1927,13 @@ const UIS = {
             {
                 type: 'text',
                 position: [0, 50, 100, 25],
-                value: 'A collaboration between 45rfew and Bhpsngum',
+                value: 'A collaboration between JavRedstone and Robonuko',
                 color: TEXT.WHITE
             },
             {
                 type: 'text',
                 position: [0, 75, 100, 25],
-                value: 'Reworked by JavRedstone and Robonuko',
+                value: 'Original 1.0 by 45rfew and Bhpsngum',
                 color: TEXT.WHITE
             }
         ]
