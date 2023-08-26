@@ -3055,6 +3055,7 @@ function endGame() {
             'Cumulative hold time': `${formatTime(ship.custom.cumulativeHoldTime)}`,
             'Flag captures': `${ship.custom.numCaptures}`
         });
+	game.setOpen(false);
     }
 }
 
