@@ -1716,7 +1716,7 @@ const SHIP_GROUPS = getShipGroups();
 const SHIPS = getAllShips();
 const CHOOSE_SHIP = getChooseShip();
 
-const MAX_CUMULATIVE_HOLD_TIME = 3600; // 1 minute
+const MAX_CUMULATIVE_HOLD_TIME = 7200; // 1 minute
 const FLAG_DISTANCE = 1;
 const FLAG_EXPIRY_TIME = 1800;
 const PORTAL_SUCKING_DISTANCE = 4;
@@ -2732,7 +2732,7 @@ function updatePlayers() {
                             stats: stats
                         });
 
-                        ship.custom.score += game.ships.length - 1;
+                        ship.custom.score += GAME_STEP;
                         ship.custom.cumulativeHoldTime += GAME_STEP;
 
                         if (ship.custom.cumulativeHoldTime >= MAX_CUMULATIVE_HOLD_TIME) {
