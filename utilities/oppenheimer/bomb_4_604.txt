@@ -1,0 +1,129 @@
+return model =
+  name: 'B41 Nuclear Weapon'
+  level: 6
+  model: 4
+  size: 3
+  specs:
+    shield:
+      capacity: [450, 450]
+      reload: [30, 30]
+    generator:
+      capacity: [1200, 1200]
+      reload: [400, 500]
+    ship:
+      mass: 400
+      speed: [145,145]
+      rotation: [130,130]
+      acceleration: [120,120]
+  bodies:
+    main:
+      section_segments: 16
+      offset:
+        x: 0
+        y: -90
+        z: 0
+      position:
+        x: [0, 0 ,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        y: [0, 0, 5, 10, 15, 20, 30, 119, 119, 121, 121, 141.5, 141.5, 143.5, 143.5, 172.5, 180, 165]
+        z: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+      width: [0, 12, 21, 25.5, 28.5, 30, 30, 30, 31.5, 31.5, 28.5, 28.5, 31.5, 31.5, 30, 27, 18, 0]
+      height: [0, 12, 21, 25.5, 28.5, 30, 30, 30, 31.5, 31.5, 28.5, 28.5, 31.5, 31.5, 30, 27, 18, 0]
+      texture: [4, 3, 8, 63, 13, 4, 18, 4, 63, 17, 15.005, 17, 63, 4, 13, 63,17]
+      propeller: true
+    fireworks:
+      section_segments: 16
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0]
+        y: [0]
+        z: [0]
+      width: [0]
+      height: [0]
+      texture: 0
+      laser:
+        damage: [30, 30]
+        rate: 0.5
+        type: 2
+        speed: [150, 200]
+        number: 20
+        angle: 360
+    fireworks2:
+      section_segments: 16
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0]
+        y: [0]
+        z: [0]
+      width: [0]
+      height: [0]
+      texture: 0
+      angle: 90
+      laser:
+        damage: [30, 30]
+        rate: 0.5
+        type: 2
+        speed: [100, 150]
+        number: 20
+        angle: 360
+    lpsides1:
+      section_segments: 0
+      offset:
+        x: 0
+        y: 25
+        z: -30
+      position:
+        x: [0,0]
+        y: [0,0]
+        z: [0,0]
+      width: [0,10]
+      height: [0,10]
+      texture: [ 0 ]
+    lpsides2:
+      section_segments: 0
+      offset:
+        x: 0
+        y: -45
+        z: -30
+      position:
+        x: [0,0]
+        y: [0,0]
+        z: [0,0]
+      width: [0,10]
+      height: [0,10]
+      texture: [ 0 ]-
+      angle: 180
+  wings:
+    wings2:
+      doubleside: true
+      offset:
+        x: 18
+        y: 75
+        z: 18
+      length: [5, 10]
+      width: [45, 37.5, 30]
+      angle: [45, 45]
+      position: [0, 6, 12]
+      texture: [4, 63]
+      bump:
+        position: -15
+        size: 5
+    wings1:
+      doubleside: true
+      offset:
+        x: 18
+        y: 75
+        z: -18
+      length: [5, 10]
+      width: [45, 37.5, 30]
+      angle: [-45, -45]
+      position: [0, 6, 12]
+      texture: [4, 63]
+      bump:
+        position: -15
+        size: 5

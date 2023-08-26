@@ -1,5 +1,5 @@
 return model =
-  name: 'Bomb 3'
+  name: 'Fat Man'
   level: 6
   model: 3
   size: 8
@@ -8,8 +8,8 @@ return model =
       capacity: [500,600]
       reload: [25,50]
     generator:
-      capacity: [100,150]
-      reload: [50,75]
+      capacity: [200,250]
+      reload: [75,100]
     ship:
       mass: 500
       speed: [100,150]
@@ -45,7 +45,7 @@ return model =
       texture: 0
       angle: 180
       laser:
-        damage: [100, 150]
+        damage: [200, 250]
         rate: 1
         type: 2
         speed: [100,150]

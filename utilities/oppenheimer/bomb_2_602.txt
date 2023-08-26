@@ -1,5 +1,5 @@
 return model =
-  name: 'Bomb 2'
+  name: 'Little Boy'
   level: 6
   model: 2
   size: 8
@@ -32,12 +32,12 @@ return model =
       propeller: 1
       laser:
         damage: [10, 15]
-        rate: 10
+        rate: 5
         type: 2
         speed: [150,250]
         recoil: 0
         number: 1
-        error: 45
+        error: 20
     circle:
       section_segments: [40,50,130,140,220,230,310,320,400]
       offset:
@@ -67,10 +67,10 @@ return model =
       height: [8,7,4,3,0]
       texture: [63,16.9,5,16.9]
       vertical: false
-      angle: 20
+      angle: 0
       laser:
         damage: [15,20]
-        rate: 3
+        rate: 2
         type: 2
         speed: [100,200]
         recoil: 5
