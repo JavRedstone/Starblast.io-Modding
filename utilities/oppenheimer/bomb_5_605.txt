@@ -1,0 +1,424 @@
+return model =
+  name: 'Castle Bravo'
+  level: 6
+  model: 5
+  size: 3.4
+  designer: 'Aether'
+  specs:
+    shield:
+      capacity: [265,265]
+      reload: [10,10]
+    generator:
+      capacity: [16,16]
+      reload: [285,285]
+    ship:
+      mass: 500
+      speed: [100,100]
+      rotation: [70,70]
+      acceleration: [110,110]
+  tori:
+    ring1:
+      segments: 20
+      radius: 20
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]
+      width: [20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,null]
+      height: [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null]
+      texture: [4,10,4,63,13,13,63,4,10,4,4,10,4,63,13,13,63,4,10,4]
+    ring2:
+      segments: 20
+      radius: 20
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: 45
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]
+      width: [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,null]
+      height: [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null]
+      texture: [4,13,10,4,63,63,4,10,13,4,4,13,10,4,63,63,4,10,13,4]
+    ring3:
+      segments: 20
+      radius: 25
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: 70
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]
+      width: [10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,null]
+      height: [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null]
+      texture: [4,10,4,63,13,13,63,4,10,4,4,10,4,63,13,13,63,4,10,4]
+    ring4:
+      segments: 20
+      radius: 15
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: 84
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,0,0]
+      width: [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null]
+      height: [5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,null]
+      texture: [4,10,4,63,13,13,63,4,10,4,4,10,4,63,13,13,63,4,10,4]
+  bodies:
+    main: 
+      section_segments: 12
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-50,-50,-40,-38,60,60,40,40,50,50,30,25,25]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0]
+      width: [0,10,15,20,20,17,17,15,13,10,10,5,0]
+      height: [0,10,15,20,20,17,17,15,13,10,10,5,0]
+      texture: [7,9,63,18,63,13,17,18,17,16,17,17]
+      propeller: 1
+    joins1:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 0
+        y: 60
+        z: 22
+      position:
+        x: [0,0,0,0,0]
+        y: [-45,-45,-4,10,10]
+        z: [-3,-3,0,0,0]
+      width: [0,10,10,10,0]
+      height: [0,5,5,5,0]
+      texture: [4,4,63,63]
+      vertical: 0
+      angle: 0
+    joins2:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 0
+        y: 60
+        z: -22
+      position:
+        x: [0,0,0,0,0]
+        y: [-45,-45,-4,10,10]
+        z: [3,3,0,0,0]
+      width: [0,10,10,10,0]
+      height: [0,5,5,5,0]
+      texture: [4,4,63,63]
+      vertical: false
+      angle: 0
+    joins2:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 22
+        y: 60
+        z: 0
+      position:
+        x: [-2,-2,0,0,0]
+        y: [-45,-45,-4,10,10]
+        z: [0,0,0,0,0]
+      width: [0,5,5,5,0]
+      height: [0,10,10,10,0]
+      texture: [4,4,63,63]
+      vertical: false
+      angle: 0
+    jjoins1:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 0
+        y: 22
+        z: -72
+      position:
+        x: [0,0,0,0,0]
+        y: [-10,-10,-4,5,5]
+        z: [-12,-12,0,0,0]
+      width: [0,10,10,10,0]
+      height: [0,5,5,5,0]
+      texture: [4,4,63,63]
+      vertical: true
+      angle: 0
+    jjoins2:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 0
+        y: -22
+        z: -72
+      position:
+        x: [0,0,0,0,0]
+        y: [-10,-10,-4,5,5]
+        z: [-12,-12,0,0,0]
+      width: [0,10,10,10,0]
+      height: [0,5,5,5,0]
+      texture: [4,4,63,63]
+      vertical: true
+      angle: 180
+    jjoins3:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 22
+        y: 0
+        z: -72
+      position:
+        x: [0,0,0,0,0]
+        y: [-10,-10,-4,5,5]
+        z: [-12,-12,0,0,0]
+      width: [0,10,10,10,0]
+      height: [0,5,5,5,0]
+      texture: [4,4,63,63]
+      vertical: true
+      angle: 90
+    cannons1:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 17
+      position:
+        x: [0,0,0,0,0,0]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons2:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 14.5
+      position:
+        x: [9,9,9,9,9,9]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons3:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 8.5
+      position:
+        x: [15,15,15,15,15,15]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons4:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 0
+      position:
+        x: [17,17,17,17,17,17]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons5:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: -8.5
+      position:
+        x: [15,15,15,15,15,15]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons6:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: -14.5
+      position:
+        x: [9,9,9,9,9,9]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons7:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: -17
+      position:
+        x: [0,0,0,0,0,0]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons8:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: -14.5
+      position:
+        x: [-9,-9,-9,-9,-9,-9]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons9:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: -8.5
+      position:
+        x: [-15,-15,-15,-15,-15,-15]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons10:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 0
+      position:
+        x: [-17,-17,-17,-17,-17,-17]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons11:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 8.5
+      position:
+        x: [-15,-15,-15,-15,-15,-15]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1
+    cannons12:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: -20
+        z: 14.5
+      position:
+        x: [-9,-9,-9,-9,-9,-9]
+        y: [-25,-20,0,20,40,30]
+        z: [0,0,0,0,0,0]
+      width: [0,2,2,2,2,0]
+      height: [0,2,2,2,2,0]
+      texture: [6,4,3,4,17]
+      propeller: 1
+      laser:
+        damage: [15,15]
+        rate: 5
+        type: 1
+        speed: [200,200]
+        number: 1

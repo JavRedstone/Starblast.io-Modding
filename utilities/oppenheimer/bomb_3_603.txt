@@ -3,10 +3,11 @@ return model =
   level: 6
   model: 3
   size: 8
+  designer: 'Aether'
   specs:
     shield:
-      capacity: [500,600]
-      reload: [25,50]
+      capacity: [400,500]
+      reload: [10,20]
     generator:
       capacity: [200,250]
       reload: [75,100]

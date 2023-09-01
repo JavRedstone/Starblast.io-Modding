@@ -1,0 +1,145 @@
+return model =
+  name: 'XM-2'
+  level: 6
+  model: 8
+  size: 1.5
+  designer: 'Pulse'
+  specs:
+    shield:
+      capacity: [200,200]
+      reload: [24,24]
+    generator:
+      capacity: [450,450]
+      reload: [60,60]
+    ship:
+      mass: 600
+      speed: [120,120]
+      rotation: [45,45]
+      acceleration: [150,150]
+      dash:
+        rate: 10
+        burst_speed: [15,15]
+        speed: [15,15]
+        acceleration: [100,100]
+        initial_energy: [435,435]
+        energy: [-540,-540]
+  bodies:
+    main:
+      section_segments: 12
+      offset:
+        x: 0
+        y: -195
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0]
+        y: [-45,15,75,142.5,150,180,240,270,315,330]
+        z: [0,0,0,0,0,0,0,0,0,0]
+      width: [0,1.5,18,18,18,25.5,25.5,19.5,13.5,0]
+      height: [0,1.5,18,18,18,25.5,25.5,19.5,13.5,0]
+      texture: [3,4,4,62,3,4,63,8,4]
+    boosters1:
+      section_segments: 8
+      offset:
+        x: 18
+        y: 15
+        z: 18
+      position:
+        x: [0,0,0,0,0,0]
+        y: [0,60,120,135,180,150]
+        z: [0,0,0,0,0,0]
+      width: [0,12,15,15,18,0]
+      height: [0,12,15,15,18,0]
+      texture: [3,4,63,4,17]
+      propeller: true
+    boostersGun:
+      section_segments: 8
+      offset:
+        x: 0
+        y: 15
+        z: 18
+      position:
+        x: [18,18]
+        y: [0,60]
+        z: [0,0]
+      width: [0,12]
+      height: [0,12]
+      texture: 2
+      propeller: true
+      laser:
+        damage: [10,10]
+        rate: -1
+        type: 1
+        speed: [600,600]
+        number: 1
+        error: 5
+    boosters2:
+      section_segments: 8
+      offset:
+        x: 18
+        y: 15
+        z: -18
+      position:
+        x: [0,0,0,0,0,0]
+        y: [0,60,120,135,180,150]
+        z: [0,0,0,0,0,0]
+      width: [0,12,15,15,18,0]
+      height: [0,12,15,15,18,0]
+      texture: [3,4,63,4,17]
+      propeller: true
+  wings:
+    wing1:
+      doubleside: true
+      offset:
+        x: 24
+        y: 135
+        z: 24
+      length: [ 37.5 ]
+      width: [75,30]
+      angle: [ 45 ]
+      position: [0,45]
+      texture: 3
+      bump:
+        position: 15
+        size: 7.5
+    wing2:
+      doubleside: true
+      offset:
+        x: 24
+        y: 135
+        z: -24
+      length: [ 37.5 ]
+      width: [75,30]
+      angle: [ -45 ]
+      position: [0,45]
+      texture: 3
+      bump:
+        position: 15
+        size: 7.5
+    stabs1:
+      doubleside: true
+      offset:
+        x: 15
+        y: -15
+        z: 15
+      length: [ 30 ]
+      width: [45,30]
+      angle: [ 45 ]
+      position: [0,37.5]
+      texture: 4
+      bump:
+        position: 15
+        size: 7.5
+    stabs2:
+      doubleside: true
+      offset:
+        x: 15
+        y: -15
+        z: -15
+      length: [ 30 ]
+      width: [45,30]
+      angle: [ -45 ]
+      position: [0,37.5]
+      texture: 4
+      bump:
+        position: 15
+        size: 7.5

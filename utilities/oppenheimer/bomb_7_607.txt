@@ -1,0 +1,166 @@
+model =
+  name: 'XM-1'
+  level: 6
+  model: 7
+  size: 1.5
+  designer: 'Pulse'
+  specs:
+    shield:
+      capacity: [200,200]
+      reload: [12,12]
+    generator:
+      capacity: [750,750]
+      reload: [150,150]
+    ship:
+      mass: 300
+      speed: [100,100]
+      rotation: [60,60]
+      acceleration: [120,120]
+  bodies:
+    main:
+      section_segments: 12
+      offset:
+        x: 0
+        y: -195
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0]
+        y: [-45,15,75,142.5,150,180,240,270,315,330]
+        z: [0,0,0,0,0,0,0,0,0,0]
+      width: [0,1.5,18,18,18,25.5,25.5,19.5,13.5,0]
+      height: [0,1.5,18,18,18,25.5,25.5,19.5,13.5,0]
+      texture: [4,1,1,62,2,1,63,8,4]
+      laser:
+        damage: [750, 750]
+        rate: 10
+        type: 2
+        speed: [600, 600]
+        number: 150
+    boosters1:
+      section_segments: 8
+      offset:
+        x: 18
+        y: 15
+        z: 18
+      position:
+        x: [0,0,0,0,0,0,0,0,0]
+        y: [0,60,120,135,180,150]
+        z: [0,0,0,0,0,0,0,0,0]
+      width: [0,12,15,15,18,0]
+      height: [0,12,15,15,18,0]
+      texture: [2,3,63,4,17]
+      propeller: true
+    boosters2:
+      section_segments: 8
+      offset:
+        x: 18
+        y: 15
+        z: -18
+      position:
+        x: [0,0,0,0,0,0,0,0,0]
+        y: [0,60,120,135,180,150]
+        z: [0,0,0,0,0,0,0,0,0]
+      width: [0,12,15,15,18,0]
+      height: [0,12,15,15,18,0]
+      texture: [2,3,63,4,17]
+      propeller: true
+  wings:
+    wing1:
+      doubleside: true
+      offset:
+        x: 24
+        y: 135
+        z: 24
+      length: [37.5]
+      width: [75,30]
+      angle: [45]
+      position: [0,45]
+      texture: 2
+      bump:
+        position: 15
+        size: 7.5
+    wing2:
+      doubleside: true
+      offset:
+        x: 24
+        y: 135
+        z: -24
+      length: [37.5]
+      width: [75,30]
+      angle: [-45]
+      position: [0,45]
+      texture: 2
+      bump:
+        position: 15
+        size: 7.5
+    stabs1:
+      doubleside: true
+      offset:
+        x: 15
+        y: -15
+        z: 15
+      length: [22.5]
+      width: [45,30]
+      angle: [45]
+      position: [0,30]
+      texture: 3
+      bump:
+        position: 15
+        size: 7.5
+    stabs2:
+      doubleside: true
+      offset:
+        x: 15
+        y: -15
+        z: -15
+      length: [22.5]
+      width: [45,30]
+      angle: [-45]
+      position: [0,30]
+      texture: 3
+      bump:
+        position: 15
+        size: 7.5
+for a in [0...4]
+  for b in [0..8]
+    model.bodies["r"+a+"_"+b] =
+      section_segments: 0
+      offset:
+        x: 9.375*a
+        y: 9.375*b+9.375*a-242.5
+        z: 0
+      position:
+        x: [0,0,0]
+        y: [-1,0,1]
+        z: [0,0,0]
+      width: [0,1,0]
+      height: [0,1,0]
+      texture: 0
+      laser:
+        damage: [6, 6]
+        rate: 0.2
+        type: 1
+        speed: [180, 180]
+        number: 1
+for c in [0..4]
+  for d in [0..(8-2*c)]
+    model.bodies["r2"+c+"_"+d] =
+      section_segments: 0
+      offset:
+        x: 9.375*(c+4)
+        y: 9.375*d+9.375*c-207.5
+        z: 0
+      position:
+        x: [0,0,0]
+        y: [-1,0,1]
+        z: [0,0,0]
+      width: [0,1,0]
+      height: [0,1,0]
+      texture: 0
+      laser:
+        damage: [6, 6]
+        rate: 0.2
+        type: 1
+        speed: [180, 180]
+        number: 1
+return model;

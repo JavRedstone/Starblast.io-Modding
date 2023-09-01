@@ -3,6 +3,7 @@ return model =
   level: 6
   model: 2
   size: 8
+  designer: 'Aether'
   specs:
     shield:
       capacity: [500,600]
@@ -12,7 +13,7 @@ return model =
       reload: [200,240]
     ship:
       mass: 400
-      speed: [75,100]
+      speed: [100,150]
       rotation: [100,150]
       acceleration: [100,150]
   bodies:

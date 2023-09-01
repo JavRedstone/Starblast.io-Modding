@@ -3,6 +3,7 @@ return model =
   level: 1
   model: 1
   size: 1.5
+  designer: 'JavRedstone'
   specs:
     shield:
       capacity: [15,15]
