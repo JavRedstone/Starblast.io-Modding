@@ -334,7 +334,6 @@ class Game {
             ship.emptyWeapons();
         }
         game.removeObject();
-        this.smallBombs = [];
     }
 
     spawnInactiveObjects() {
