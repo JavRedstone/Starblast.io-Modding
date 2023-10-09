@@ -556,7 +556,6 @@ class Game {
         }
         game.removeObject();
         this.spawningArea = [];
-        this.totalSpawnArea = [];
     }
 
     spawnInactiveObjects() {
