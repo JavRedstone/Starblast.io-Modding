@@ -110,12 +110,13 @@ const C = {
         MILLISECONDS_PER_TICK: 1000 / 60,
 
         ENTITY_MANAGER: 60,
-        SHIP_MANAGER: 60,
+        SHIP_MANAGER: 40,
 
         MESSAGE_TIME: 120,
 
         DEBUG: false,
-        LIGHT_LEVEL: 10
+        LIGHT_LEVEL: 10,
+        MAX_LIGHT_LEVEL: 15
     },
     TEAM_OPTIONS: {
         TEAMS: [
@@ -582,6 +583,7 @@ class Game {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
             this.resetShip(ship);
+            this.hideShipUIs(ship);
         }
     }
 
@@ -891,7 +893,7 @@ class Game {
                                         10,
                                         10
                                     ),
-                                    fill: `rgba(255, 255, 0, ${light.level / C.GAME_OPTIONS.LIGHT_LEVEL})`
+                                    fill: `rgba(255, 255, 0, ${light.level / C.GAME_OPTIONS.MAX_LIGHT_LEVEL})`
                                 });
                             }
                         }
@@ -905,7 +907,9 @@ class Game {
     }
 
     hideShipUIs(ship) {
-        
+        ship.hideUI(Helper.deepCopy(C.UIS.LIVES_BLOCKER));
+        ship.hideUI(Helper.deepCopy(C.UIS.SCOREBOARD));
+        ship.hideUI(Helper.deepCopy(C.UIS.RADAR_BACKGROUND));
     }
 
     spawnAliens() {
