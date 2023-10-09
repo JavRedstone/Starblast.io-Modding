@@ -523,7 +523,9 @@ class Game {
     }
 
     hideShipUIs(ship) {
-        
+        ship.hideUI(Helper.deepCopy(C.UIS.LIVES_BLOCKER));
+        ship.hideUI(Helper.deepCopy(C.UIS.SCOREBOARD));
+        ship.hideUI(Helper.deepCopy(C.UIS.RADAR_BACKGROUND));        
     }
 
     spawnAliens() {
