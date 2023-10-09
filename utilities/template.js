@@ -837,26 +837,6 @@ class Ship {
         return this;
     }
 
-    setRoundsWon(roundsWon) {
-        this.roundsWon = roundsWon;
-        return this;
-    }
-
-    setRoundsLost(roundsLost) {
-        this.roundsLost = roundsLost;
-        return this;
-    }
-
-    setMainBombShieldBarVisible(visible) {
-        this.mainBombShieldBarVisible = visible;
-        return this;
-    }
-
-    setChooseShipListVisible(visible) {
-        this.chooseShipListVisible = visible;
-        return this;
-    }
-
     destroySelf() {
         if (game.ships.includes(this.ship)) {
             this.ship.set({ kill: true });
