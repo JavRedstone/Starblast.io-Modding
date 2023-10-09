@@ -360,6 +360,7 @@ class Game {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
             this.resetShip(ship);
+            this.hideShipUIs(ship);
         }
     }
 
