@@ -1017,8 +1017,6 @@ class Obj {
             type: type,
             position: position, rotation: rotation, scale: scale
         };
-
-        game.setObject(this.obj);
     }
 
     update() {
