@@ -1,4 +1,4 @@
-// Template for creating a new game mode
+// Starblast optifine dynamic lights (warning, may be laggy af)
 
 /*
     @author JavRedstone
