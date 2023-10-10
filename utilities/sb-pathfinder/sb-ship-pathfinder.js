@@ -1,4 +1,4 @@
-// Template for creating a new game mode
+// Starblast ship pathfinder
 
 /*
     @author JavRedstone
@@ -7,9 +7,38 @@
 
 const C = {
     GAME_OPTIONS: {
-        ROOT_MODE: '',
-        MAP_SIZE: 60,
-        MAP: null,
+        ROOT_MODE: 'survival',
+        MAP_SIZE: 30,
+        MAP: "    6  9              5 4847 7\n"+
+        "   7     9 9 9                \n"+
+        "  5 4             4 37 696  9 \n"+
+        "       9 8                    \n"+
+        "373696          2  5 5  8     \n"+
+        "       7                  9 83\n"+
+        " 58         9  5 4            \n"+
+        "        8               7 79 9\n"+
+        "7          4 3                \n"+
+        "    7 7             6    9    \n"+
+        "                              \n"+
+        "6 695           5  8 8        \n"+
+        "            3               2 \n"+
+        " 8 7           7 7 6          \n"+
+        "        2 9 9           9 9  4\n"+
+        "9                             \n"+
+        "    9 9 9  3        9 9  3 2  \n"+
+        "             4  7             \n"+
+        "9 938  2           2 9 9      \n"+
+        "            6 5 5           5 \n"+
+        " 9 9                          \n"+
+        "        5 5 4           4 47 7\n"+
+        "  3              8  9         \n"+
+        "      4 3  6             6959 \n"+
+        "                9 9 9  3      \n"+
+        "  3 26 5                  79  \n"+
+        "              8 8             \n"+
+        "95 4847                26     \n"+
+        "          7 7 694           69\n"+
+        " 36 6  9           9  4 47 7  ",
         CRYSTAL_VALUE: 0,
 
         FRIENDLY_COLORS: 2,
@@ -24,26 +53,26 @@ const C = {
 
         STARTING_SHIP: 800,
         RESET_TREE: false,
-        CHOOSE_SHIP: null,
+        CHOOSE_SHIP: [701, 702, 703, 704],
         SHIP_NAMES: [],
         SHIP_CODES: [],
         SHIPS: [],
 
         VOCABULARY: [
-            { text: 'Heal', icon:'\u0038', key:'H' },
-            { text: 'Me', icon:'\u004f', key:'E' },
-            { text: 'Wait', icon:'\u0048', key:'T' },
-            { text: 'Yes', icon:'\u004c', key:'Y' },
-            { text: 'No', icon:'\u004d', key:'N' },
-            { text: 'Sorry', icon:'\u00a1', key:'S' },
-            { text: 'Attack', icon:'\u0049', key:'A' },
-            { text: 'Follow Me', icon:'\u0050', key:'F' },
-            { text: 'Good Game', icon:'\u00a3', key:'G' },
-            { text: 'Bruh', icon:'\u{1F480}', key:'I' },
-            { text: 'Hmm?', icon:'\u004b', key:'Q' },
-            { text: 'No Problem', icon:'\u0047', key:'P' },
-            { text: 'Defend', icon:'\u0025', key:'D' },
-            { text: 'Thanks', icon:'\u0041', key:'X' },
+            { text: 'Heal', icon: '\u0038', key: 'H' },
+            { text: 'Me', icon: '\u004f', key: 'E' },
+            { text: 'Wait', icon: '\u0048', key: 'T' },
+            { text: 'Yes', icon: '\u004c', key: 'Y' },
+            { text: 'No', icon: '\u004d', key: 'N' },
+            { text: 'Sorry', icon: '\u00a1', key: 'S' },
+            { text: 'Attack', icon: '\u0049', key: 'A' },
+            { text: 'Follow Me', icon: '\u0050', key: 'F' },
+            { text: 'Good Game', icon: '\u00a3', key: 'G' },
+            { text: 'Bruh', icon: '\u{1F480}', key: 'I' },
+            { text: 'Hmm?', icon: '\u004b', key: 'Q' },
+            { text: 'No Problem', icon: '\u0047', key: 'P' },
+            { text: 'Defend', icon: '\u0025', key: 'D' },
+            { text: 'Thanks', icon: '\u0041', key: 'X' },
             { text: '', icon: '>:D', key: 'L' }
         ],
 
@@ -51,13 +80,14 @@ const C = {
         MILLISECONDS_PER_TICK: 1000 / 60,
 
         ENTITY_MANAGER: 60,
-        SHIP_MANAGER: 30,
+        SHIP_MANAGER: 80,
 
-        MESSAGE_TIME: 120
+        MESSAGE_TIME: 120,
+        DEBUG: false
     },
     TEAM_OPTIONS: {
         TEAMS: [
-            [   
+            [
                 {
                     TEAM: 0,
                     COLOR: 'Red',
@@ -142,7 +172,7 @@ const C = {
             id: 'radar_background',
             visible: true,
             components: [
-                
+
             ]
         },
         LIVES_BLOCKER: {
@@ -150,7 +180,7 @@ const C = {
             visible: true,
             clickable: true,
             shortcut: String.fromCharCode(187),
-            position: [65,0,10,10],
+            position: [65, 0, 10, 10],
             components: []
         },
         MESSAGE: {
@@ -197,6 +227,41 @@ const C = {
                 obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/sb-optifine/grid.png'
             }
+        },
+        PATH: {
+            id: 'path',
+            position: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            rotation: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            scale: {
+                x: 10,
+                y: 10,
+                z: 0
+            },
+            types: [
+                {
+                    id: 'path-start',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/sb-pathfinder/path_start.png'
+                },
+                {
+                    id: 'path-middle',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/sb-pathfinder/path_middle.png'
+                },
+                {
+                    id: 'path-end',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/sb-pathfinder/path_end.png'
+                }
+            ]
         },
     },
     ALIEN_OPTIONS: {
@@ -324,25 +389,77 @@ class Game {
     aliens = [];
     asteroids = [];
 
+    paths = [];
+    oldPaths = [];
+
     constructor() {
         this.reset();
     }
 
     tick() {
         this.manageShips();
-        this.spawnAliens();
-        this.spawnCollectibles();
+        // this.spawnAliens();
+        // this.spawnCollectibles();
 
         this.spawnActiveObjects();
-        
+
         this.manageEntities();
     }
 
     reset() {
+        this.resetPathObjects();
+        this.resetPaths();
+        this.setPaths();
         this.deleteEverything();
         this.spawnInactiveObjects();
         this.selectRandomTeams();
         this.resetShips();
+    }
+
+    resetPaths() {
+        this.paths = [];
+        for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+            let pathRow = [];
+            for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                pathRow.push(new Path(j, i, Path.NONE));
+            }
+            this.paths.push(pathRow);
+        }
+    }
+
+    resetPathObjects() {
+        if (this.paths.length > 0) {
+            for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+                for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                    this.paths[i][j].clear();
+                }
+            }
+        }
+    }
+
+    setPaths() {
+        let map = C.GAME_OPTIONS.MAP.split('\n');
+        for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+            for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                let char = map[i].charAt(j);
+                if (char == ' ') {
+                    this.paths[i][j] = new Path(j, i, Path.NONE);
+                }
+                else {
+                    this.paths[i][j] = new Path(j, i, Path.OBSTRUCTION);
+                }
+            }
+        }
+
+        if (C.GAME_OPTIONS.DEBUG) {
+            for (let i = 0; i < spawnArea.length; i++) {
+                let grid = Helper.deepCopy(C.OBJECTS.GRID);
+                grid.id = `${C.OBJECTS.GRID.id}-${i}`;
+                grid.position.x = spawnArea[i].x * 10;
+                grid.position.y = spawnArea[i].y * 10;
+                game.setObject(grid);
+            }
+        }
     }
 
     deleteEverything() {
@@ -359,7 +476,7 @@ class Game {
     }
 
     spawnInactiveObjects() {
-        
+
     }
 
     selectRandomTeams() {
@@ -382,6 +499,7 @@ class Game {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
             this.resetShip(ship);
+            this.hideShipUIs(ship);
         }
     }
 
@@ -419,7 +537,7 @@ class Game {
                     Helper.deleteFromArray(this.asteroids, asteroid);
                 }
             }
-    
+
             for (let alien of this.aliens) {
                 let found = false;
                 for (let gameAlien of game.aliens) {
@@ -432,7 +550,7 @@ class Game {
                     Helper.deleteFromArray(this.aliens, alien);
                 }
             }
-    
+
             for (let ship of this.ships) {
                 let found = false;
                 for (let gameShip of game.ships) {
@@ -463,8 +581,67 @@ class Game {
         }
     }
 
+    updatePaths() {
+        for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+            for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                let path = this.paths[i][j];
+                let oldPath = this.oldPaths[i][j];
+                if (oldPath.type != path.type) {
+                    if (oldPath.object != null) {
+                        oldPath.object.obj.position.z = -10000;
+                        oldPath.object.obj.scale.x *= 0.00001;
+                        oldPath.object.obj.scale.y *= 0.00001;
+                        oldPath.object.obj.scale.z *= 0.00001;
+                        game.setObject(oldPath.object.obj);
+                        game.removeObject(oldPath.object.obj.id);
+                    }
+                    if (path.type != Path.NONE && path.type != Path.OBSTRUCTION) {
+                        path.spawn();
+                    }
+                    else {
+                        path.object = null;
+                    }
+                }
+                else {
+                    let oldObj = oldPath.object;
+                    if (oldObj != null) {
+                        path.object = new Obj(
+                            oldObj.obj.id,
+                            oldObj.obj.type,
+                            oldObj.obj.position,
+                            oldObj.obj.rotation,    
+                            oldObj.obj.scale,
+                        );
+                    }
+                }
+            }
+        }
+        this.oldPaths = this.paths;
+    }
+
+    printPaths() {
+        let str = '';
+        for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+            for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                let s = `${this.paths[j][i].type}`;
+                if (this.paths[j][i].type != Path.NONE && this.paths[j][i].type != Path.OBSTRUCTION) s = '█';
+                str += s.length == 1 ? ` ${s} ` : `${s} `;
+            }
+            str += '\n';
+        }
+        console.log(str);
+    }
+
     manageShips() {
         if (game.step % C.GAME_OPTIONS.SHIP_MANAGER === 0) {
+            for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+                for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                    this.paths[i][j].previous = null;
+                }
+            }
+            this.oldPaths = Helper.deepCopy(this.paths);
+            this.resetPaths();
+            this.setPaths();
             for (let ship of this.ships) {
                 if (!ship.done) {
                     this.resetShip(ship, true);
@@ -472,9 +649,6 @@ class Game {
                 }
 
                 ship.sendUI(Helper.deepCopy(C.UIS.LIVES_BLOCKER));
-
-                let radarBackground = Helper.deepCopy(C.UIS.RADAR_BACKGROUND);
-                ship.sendUI(radarBackground);
 
                 let scoreboard = Helper.deepCopy(C.UIS.SCOREBOARD);
                 scoreboard.components[0].fill = this.teams[0].hex;
@@ -504,13 +678,13 @@ class Game {
                             color: '#ffffff',
                             align: 'left'
                         },
-                        {
-                            type: 'text',
-                            position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
-                            value: players1[i].score,
-                            color: '#ffffff',
-                            align: 'right'
-                        });
+                            {
+                                type: 'text',
+                                position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
+                                value: players1[i].score,
+                                color: '#ffffff',
+                                align: 'right'
+                            });
                     }
                     else {
                         break;
@@ -525,26 +699,88 @@ class Game {
                             color: '#ffffff',
                             align: 'left'
                         },
-                        {
-                            type: 'text',
-                            position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
-                            value: players2[i].score,
-                            color: '#ffffff',
-                            align: 'right'
-                        });
+                            {
+                                type: 'text',
+                                position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
+                                value: players2[i].score,
+                                color: '#ffffff',
+                                align: 'right'
+                            });
                     }
                     else {
                         break;
                     }
                 }
                 ship.sendUI(scoreboard);
+
+                Helper.dijkstra(this.paths,
+                    this.paths[
+                        Math.floor((Helper.clamp(-ship.ship.y, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ][
+                        Math.floor((Helper.clamp(ship.ship.x, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ],
+                    ship.team.team == 0 ?
+                    players2.length > 0 ? this.paths[
+                        Math.floor((Helper.clamp(-players2[0].ship.y, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ][
+                        Math.floor((Helper.clamp(players2[0].ship.x, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ] : this.paths[0][0] :
+                    players1.length > 0 ? 
+                    this.paths[
+                        Math.floor((Helper.clamp(-players1[0].ship.y, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ][
+                        Math.floor((Helper.clamp(players1[0].ship.x, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
+                    ] : this.paths[0][0]
+                );
+
                 ship.tick();
             }
+            for (let ship of this.ships) {
+                let different = false;
+                for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+                    for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                        let oldPath = this.oldPaths[i][j];
+                        let path = this.paths[i][j];
+                        if (oldPath.type != path.type) {
+                            different = true;
+                            break;
+                        }
+                    }
+                    if (different) {
+                        break;
+                    }
+                }
+                if (different) {
+                    let radarBackground = Helper.deepCopy(C.UIS.RADAR_BACKGROUND);
+                    for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
+                        for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
+                            let path = this.paths[i][j];
+                            if (path.type != Path.NONE && path.type != Path.OBSTRUCTION) {
+                                radarBackground.components.push({
+                                    type: 'box',
+                                    position: Helper.getRadarSpotPosition(
+                                        (path.x - C.GAME_OPTIONS.MAP_SIZE / 2 + 0.5) * 10,
+                                        (C.GAME_OPTIONS.MAP_SIZE / 2 - 0.5 - path.y) * 10,
+                                        10,
+                                        10
+                                    ),
+                                    fill: path.type == Path.START ? '#0000ff80' : path.type == Path.MIDDLE ? '#ffff0080' : '#00ff0080'
+                                });
+                            }
+                        }
+                    }
+                    ship.sendUI(radarBackground);
+                }
+            }
+            this.updatePaths();
+            this.printPaths();
         }
     }
 
     hideShipUIs(ship) {
-        
+        ship.hideUI(Helper.deepCopy(C.UIS.LIVES_BLOCKER));
+        ship.hideUI(Helper.deepCopy(C.UIS.SCOREBOARD));
+        ship.hideUI(Helper.deepCopy(C.UIS.RADAR_BACKGROUND));
     }
 
     spawnAliens() {
@@ -594,7 +830,7 @@ class Game {
     }
 
     spawnActiveObjects() {
-        
+
     }
 
     findShip(gameShip) {
@@ -634,12 +870,53 @@ class Game {
     onUIComponentClicked(gameShip, id) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-            
+
         }
     }
 
     onAlienDestroyed(gameAlien, gameShip) {
-        
+
+    }
+}
+
+class Path {
+    static OBSTRUCTION = -2;
+    static NONE = -1;
+    static START = 0;
+    static MIDDLE = 1;
+    static END = 2;
+
+    x = 0;
+    y = 0;
+    type = Path.START;
+
+    object = null;
+
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type;
+    }
+
+    spawn() {
+        let path = Helper.deepCopy(C.OBJECTS.PATH);
+        path.id = `path-${Helper.getRandomFloat(-1, 1)}`;
+        path.position.x = (this.x - C.GAME_OPTIONS.MAP_SIZE / 2 + 0.5) * 10;
+        path.position.y = (C.GAME_OPTIONS.MAP_SIZE / 2 - 0.5 - this.y) * 10;
+        this.object = new Obj(
+            path.id,
+            path.types[this.type],
+            path.position,
+            path.rotation,
+            path.scale
+        );
+        this.object.update()
+    }
+
+    clear() {
+        if (this.object != null) {
+            this.object.destroySelf();
+        }
     }
 }
 
@@ -658,7 +935,7 @@ class Message {
         this.ship = ship;
         this.text = text;
         this.baseColor = baseColor;
-        
+
         let message = Helper.deepCopy(C.UIS.MESSAGE);
         message.components[0].stroke = this.baseColor;
         message.components[0].fill = this.baseColor + '80';
@@ -740,7 +1017,8 @@ class Ship {
             }
         }
 
-        this.ship.set({ score: this.score });
+        // this.ship.set({ score: this.score });
+        this.score = this.ship.score;
     }
 
     sendMessage(text, baseColor) {
@@ -760,7 +1038,7 @@ class Ship {
     }
 
     getMaxCrystals() {
-        switch(this.getLevel()) {
+        switch (this.getLevel()) {
             case 1:
                 return 20;
             case 2:
@@ -856,26 +1134,6 @@ class Ship {
         if (game.ships.includes(this.ship)) {
             this.ship.set({ type: type });
         }
-        return this;
-    }
-
-    setRoundsWon(roundsWon) {
-        this.roundsWon = roundsWon;
-        return this;
-    }
-
-    setRoundsLost(roundsLost) {
-        this.roundsLost = roundsLost;
-        return this;
-    }
-
-    setMainBombShieldBarVisible(visible) {
-        this.mainBombShieldBarVisible = visible;
-        return this;
-    }
-
-    setChooseShipListVisible(visible) {
-        this.chooseShipListVisible = visible;
         return this;
     }
 
@@ -1127,7 +1385,7 @@ class UIComponent {
         };
         game.setUIComponent(this.uiComponent);
     }
-    
+
     setPosition(position) {
         this.uiComponent.position = position;
         return this;
@@ -1434,13 +1692,13 @@ class Helper {
     }
 
     static getRandomAngle() {
-        return Math.random() * 2  * Math.PI;
+        return Math.random() * 2 * Math.PI;
     }
 
     static getRandomArrayElement(array) {
         return array[Math.floor(Math.random() * array.length)];
     }
-    
+
     static formatTime(time) {
         let minutes = 0;
         let seconds = Math.floor(time / 60);
@@ -1448,7 +1706,7 @@ class Helper {
         seconds %= 60;
         return `${minutes}:${seconds < 10 ? 0 : ''}${seconds}`;
     }
-    
+
     static deepCopy(object) {
         return JSON.parse(JSON.stringify(object));
     }
@@ -1471,6 +1729,82 @@ class Helper {
             h * scaleSize
         ];
     }
+
+    static getDistanceTo(a, b) {
+        return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+    }
+
+    static dijkstra(grid, start, end) {
+        const numRows = grid.length;
+        const numCols = grid[0].length;
+
+        // Initialize distances and visited nodes
+        const distances = new Array(numRows).fill(null).map(() =>
+            new Array(numCols).fill(Infinity)
+        );
+        distances[start.y][start.x] = 0;
+        const visited = new Array(numRows).fill(null).map(() =>
+            new Array(numCols).fill(false)
+        );
+
+        // Priority queue to keep track of nodes to visit
+        const priorityQueue = [{ node: start, distance: 0 }];
+
+        while (priorityQueue.length > 0) {
+            // Get the node with the smallest distance
+            priorityQueue.sort((a, b) => a.distance - b.distance);
+            const { node, distance: currentDistance } = priorityQueue.shift();
+
+            // Mark the node as visited
+            visited[node.y][node.x] = true;
+
+            // If we reached the end node, reconstruct the path
+            if (node.x === end.x && node.y === end.y) {
+                const path = [];
+                let currentNode = end;
+
+                while (currentNode !== start) {
+                    path.unshift(currentNode);
+                    currentNode = currentNode.previous;
+                }
+
+                // Set the 'type' property for path elements
+                path.forEach((pathNode, index) => {
+                    pathNode.type = Path.MIDDLE;
+                });
+                start.type = Path.START;
+                end.type = Path.END;
+
+                return path;
+            }
+
+            // Explore neighbors
+            const neighbors = [
+                { x: node.x - 1, y: node.y },
+                { x: node.x + 1, y: node.y },
+                { x: node.x, y: node.y - 1 },
+                { x: node.x, y: node.y + 1 },
+            ];
+
+            for (const neighbor of neighbors) {
+                const { x, y } = neighbor;
+
+                if (x >= 0 && x < numCols && y >= 0 && y < numRows && !visited[y][x] && grid[y][x].type !== Path.OBSTRUCTION) {
+                    const neighborNode = grid[y][x];
+                    const tentativeDistance = currentDistance + Helper.getDistanceTo(node, neighborNode);
+
+                    if (tentativeDistance < distances[y][x]) {
+                        distances[y][x] = tentativeDistance;
+                        neighborNode.previous = node;
+                        priorityQueue.push({ node: neighborNode, distance: tentativeDistance });
+                    }
+                }
+            }
+        }
+
+        // If no path is found, return an empty array
+        return [];
+    }
 }
 
 this.options = {
@@ -1480,7 +1814,7 @@ this.options = {
     crystal_value: C.GAME_OPTIONS.CRYSTAL_VALUE,
 
     friendly_colors: C.GAME_OPTIONS.FRIENDLY_COLORS,
-    
+
     radar_zoom: C.GAME_OPTIONS.RADAR_ZOOM,
 
     speed_mod: C.GAME_OPTIONS.SPEED_MOD,
@@ -1499,7 +1833,7 @@ this.options = {
 
 let g = null;
 
-this.tick = function() {
+this.tick = function () {
     if (g != null) {
         g.tick();
     }
@@ -1508,17 +1842,17 @@ this.tick = function() {
     }
 }
 
-this.event = function(event) {
+this.event = function (event) {
     let gameShip = event.ship;
     if (gameShip != null && g != null) {
-        switch(event.name) {
+        switch (event.name) {
             case 'ship_spawned':
                 g.onShipSpawned(gameShip);
                 break;
             case 'ship_destroyed':
                 g.onShipDestroyed(gameShip);
                 break;
-            case'ui_component_clicked':
+            case 'ui_component_clicked':
                 g.onUIComponentClicked(gameShip, event.id);
                 break;
         }
@@ -1526,7 +1860,7 @@ this.event = function(event) {
 
     let gameAlien = event.alien;
     if (gameAlien != null && g != null) {
-        switch(event.name) {
+        switch (event.name) {
             case 'alien_destroyed':
                 g.onAlienDestroyed(gameAlien, event.killer);
                 break;
