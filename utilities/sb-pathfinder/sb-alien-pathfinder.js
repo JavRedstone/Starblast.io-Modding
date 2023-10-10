@@ -465,7 +465,7 @@ class Game {
             for (let i = 0; i < C.GAME_OPTIONS.MAP_SIZE; i++) {
                 for (let j = 0; j < C.GAME_OPTIONS.MAP_SIZE; j++) {
                     this.paths[i][j].clear();
-                }
+                }set
             }
         }
     }
@@ -698,8 +698,9 @@ class Game {
                             Math.floor((Helper.clamp(this.randomShips[i].ship.x, -C.GAME_OPTIONS.MAP_SIZE / 2 * 10, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 1) + C.GAME_OPTIONS.MAP_SIZE / 2 * 10) / 10)
                         ],
                     );
-                    if (ps.length > 1) {
-                        alien.setPosition(new Vector2(ps[1].x * 10 - C.GAME_OPTIONS.MAP_SIZE / 2 * 10 + 5, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 5 - ps[1].y * 10));
+                    if (ps.length > 0) {
+                        // start is not included
+                        alien.setPosition(new Vector2(ps[0].x * 10 - C.GAME_OPTIONS.MAP_SIZE / 2 * 10 + 5, C.GAME_OPTIONS.MAP_SIZE / 2 * 10 - 5 - ps[0].y * 10));
                     }
                 }
             }
