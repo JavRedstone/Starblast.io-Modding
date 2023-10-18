@@ -175,7 +175,29 @@ const C = {
         },
     },
     OBJECTS: {
-        
+        PLANE: {
+            id: 'plane',
+            position: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            rotation: {
+                x: 0,
+                y: 0,
+                z: 0
+            },
+            scale: {
+                x: 10,
+                y: 10,
+                z: 0
+            },
+            type: {
+                id: 'grid',
+                obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                emissive: ''
+            }
+        }
     },
     ALIEN_OPTIONS: {
         ALIENS: [
