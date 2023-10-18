@@ -190,14 +190,14 @@ const C = {
                 z: 0
             },
             scale: {
-                x: 10,
-                y: 10,
+                x: 0.1, // VERY BIG IMAGE LOL (but it's a plume so it's ok)
+                y: 0.1,
                 z: 0
             },
             type: {
                 id: 'grid',
                 obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-                emissive: ''
+                emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/plume-expansion/plume.png'
             }
         }
     },
@@ -448,6 +448,7 @@ class Game {
                 }
                 if (!found) {
                     ship.team.numShips--;
+                    ship.plume.destroySelf();
                     Helper.deleteFromArray(this.ships, ship);
                 }
             }
@@ -469,17 +470,12 @@ class Game {
     }
 
     manageShips() {
-        for (let plume of this.plumes) {
-            plume.destroySelf();
-        }
         if (game.step % C.GAME_OPTIONS.SHIP_MANAGER === 0) {
             for (let ship of this.ships) {
                 if (!ship.done) {
                     this.resetShip(ship, true);
                     ship.done = true;
                 }
-
-
 
                 ship.sendUI(Helper.deepCopy(C.UIS.LIVES_BLOCKER));
 
@@ -606,7 +602,31 @@ class Game {
     }
 
     spawnActiveObjects() {
-        
+        for (let ship of this.ships) {
+            ship.plume.destroySelf();
+            let acceleration = new Vector2(
+                ship.previousVelocity.x - ship.ship.vx,
+                ship.previousVelocity.y - ship.ship.vy
+            )
+
+            ship.previousVelocity = new Vector2(ship.ship.vx, ship.ship.vy);
+
+            let plume = Helper.deepCopy(C.OBJECTS.PLUME);
+            plume.position.x = ship.ship.x;
+            plume.position.y = ship.ship.y;
+            plume.rotation.z = ship.ship.r;
+            plume.scale.x = acceleration.magnitude() / 100;
+            plume.scale.y = acceleration.magnitude() / 100;
+            let plumeObj = new Obj(
+                plume.id + Math.random(),
+                plume.type,
+                plume.position,
+                plume.rotation,
+                plume.scale
+            );
+            plumeObj.update();
+            ship.plume = plumeObj;
+        }
     }
 
     findShip(gameShip) {
@@ -720,6 +740,8 @@ class Ship {
     message = null;
 
     done = false;
+
+    previousVelocity = new Vector2(0, 0);
 
     score = 0;
 
