@@ -190,8 +190,8 @@ const C = {
                 z: 0
             },
             scale: {
-                x: 0.1, // VERY BIG IMAGE LOL (but it's a plume so it's ok)
-                y: 0.1,
+                x: 10, // VERY BIG IMAGE LOL (but it's a plume so it's ok)
+                y: 10,
                 z: 0
             },
             type: {
@@ -326,8 +326,6 @@ class Game {
     aliens = [];
     asteroids = [];
 
-    plumes = [];
-
     constructor() {
         this.reset();
     }
@@ -448,7 +446,9 @@ class Game {
                 }
                 if (!found) {
                     ship.team.numShips--;
-                    ship.plume.destroySelf();
+                    if (ship.plume != null) {
+                        ship.plume.destroySelf();
+                    }
                     Helper.deleteFromArray(this.ships, ship);
                 }
             }
@@ -481,7 +481,7 @@ class Game {
 
                 let radarBackground = Helper.deepCopy(C.UIS.RADAR_BACKGROUND);
                 ship.sendUI(radarBackground);
-
+/*
                 let scoreboard = Helper.deepCopy(C.UIS.SCOREBOARD);
                 scoreboard.components[0].fill = this.teams[0].hex;
                 scoreboard.components[2].fill = this.teams[1].hex;
@@ -544,6 +544,7 @@ class Game {
                     }
                 }
                 ship.sendUI(scoreboard);
+                */
                 ship.tick();
             }
         }
@@ -603,29 +604,32 @@ class Game {
 
     spawnActiveObjects() {
         for (let ship of this.ships) {
-            ship.plume.destroySelf();
+            if (ship.plume != null) {
+                ship.plume.destroySelf();
+            }
             let acceleration = new Vector2(
                 ship.previousVelocity.x - ship.ship.vx,
                 ship.previousVelocity.y - ship.ship.vy
             )
 
             ship.previousVelocity = new Vector2(ship.ship.vx, ship.ship.vy);
-
-            let plume = Helper.deepCopy(C.OBJECTS.PLUME);
-            plume.position.x = ship.ship.x;
-            plume.position.y = ship.ship.y;
-            plume.rotation.z = ship.ship.r;
-            plume.scale.x = acceleration.magnitude() / 100;
-            plume.scale.y = acceleration.magnitude() / 100;
-            let plumeObj = new Obj(
-                plume.id + Math.random(),
-                plume.type,
-                plume.position,
-                plume.rotation,
-                plume.scale
-            );
-            plumeObj.update();
-            ship.plume = plumeObj;
+            if (acceleration.length() > 0.001) {
+                let predx = ship.ship.x + ship.ship.vx;
+                let predy = ship.ship.y + ship.ship.vy;
+                let plume = Helper.deepCopy(C.OBJECTS.PLUME);
+                plume.position.x = predx - 6 * Math.cos(ship.ship.r);
+                plume.position.y = predy - 6 * Math.sin(ship.ship.r);
+                plume.rotation.z = ship.ship.r + Math.PI / 2;
+                let plumeObj = new Obj(
+                    plume.id + Math.random(),
+                    plume.type,
+                    plume.position,
+                    plume.rotation,
+                    plume.scale
+                );
+                plumeObj.update();
+                ship.plume = plumeObj;
+            }
         }
     }
 
@@ -742,6 +746,7 @@ class Ship {
     done = false;
 
     previousVelocity = new Vector2(0, 0);
+    plume = null;
 
     score = 0;
 
