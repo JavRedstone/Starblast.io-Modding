@@ -825,6 +825,13 @@ class Ship {
         return this;
     }
 
+    setHue(hue) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ hue: hue });
+        }
+        return this;
+    }
+
     setScore(score) {
         this.score = score;
         if (game.ships.includes(this.ship)) {
