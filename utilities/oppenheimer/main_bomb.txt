@@ -1,8 +1,9 @@
 return model =
-  name: 'Naru-Class'
+  name: 'Gadget'
   level: 7
   model: 4
   size: 6.5
+  designer: 'Pulse'
   specs:
     shield:
       capacity: [525,525]

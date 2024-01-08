@@ -2,27 +2,27 @@ return model =
   name: 'XM-2'
   level: 6
   model: 8
-  size: 1.5
+  size: 1.8
   designer: 'Pulse'
   specs:
     shield:
-      capacity: [200,200]
-      reload: [24,24]
+      capacity: [300,300]
+      reload: [18,18]
     generator:
       capacity: [450,450]
       reload: [60,60]
     ship:
-      mass: 600
+      mass: 450
       speed: [120,120]
-      rotation: [45,45]
+      rotation: [30,30]
       acceleration: [150,150]
       dash:
         rate: 10
         burst_speed: [15,15]
         speed: [15,15]
-        acceleration: [100,100]
-        initial_energy: [435,435]
-        energy: [-540,-540]
+        acceleration: [150,150]
+        initial_energy: [15,15]
+        energy: [-225,-225]
   bodies:
     main:
       section_segments: 12

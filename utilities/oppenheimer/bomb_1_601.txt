@@ -2,68 +2,164 @@ return model =
   name: 'Tsar Bomba'
   level: 6
   model: 1
-  size: 8
+  size: 5
   designer: 'Aether'
   specs:
     shield:
       capacity: [500,600]
       reload: [15,20]
     generator:
-      capacity: [200,300]
-      reload: [200,300]
+      capacity: [300,300]
+      reload: [150,150]
     ship:
       mass: 500
-      speed: [75,100]
-      rotation: [100,150]
-      acceleration: [100,150]
-  bodies: main:
-    section_segments: 8
-    offset:
-      x: 0
-      y: -30
-      z: 0
-    position:
-      x: [0,0,0,0,0,0,0,0,0,0]
-      y: [0,3,12,42.5,42.5,47.5,47.5,60,65,60]
-      z: [0,0,0,0,0,0,0,0,0,0]
-    width: [0,6,12,13.5,12.75,12,10.5,9,6,0]
-    height: [0,6,12,13.5,12.75,12,10.5,9,6,0]
-    texture: [4,63,18,17,15.1,17,63,12,17]
-    propeller: 1
-    laser:
-      damage: [2,3]
-      rate: 1
-      type: 2
-      speed: [200,200]
-      recoil: 10
-      number: 100
-      error: 0
+      speed: [100,100]
+      rotation: [150,150]
+      acceleration: [150,150]
+  bodies: 
+    main:
+      section_segments: 8
+      offset:
+        x: 0
+        y: -20
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-35,-25,-20,-24,-30,-28,-20,-5,-5,40,40,47.5,60,70,60]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+      width: [0,4,5,10,12,15,18,22,12,12,22,21,20,14,0]
+      height: [0,4,5,10,12,15,18,22,12,12,22,21,20,14,0]
+      texture: [6,6,17,18,63,18,63,17,17,17,63,4,12,17]
+      propeller: 1
+      laser:
+        damage: [3,3]
+        rate: 0.5
+        type: 2
+        speed: [100,100]
+        recoil: 7
+        number: 100
+        error: 0
+    disc1:
+      section_segments: 8
+      offset:
+        x: 0
+        y: -20
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0]
+        y: [-3,-3,-1,0,1,3,3]
+        z: [0,0,0,0,0,0,0]
+      width: [0,22,22,20,22,22,0]
+      height: [0,22,22,20,22,22,0]
+      texture: [17,4,17,17,4,17]
+    disc2:
+      section_segments: 8
+      offset:
+        x: 0
+        y: -8
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0]
+        y: [-3,-3,-1,0,1,3,3]
+        z: [0,0,0,0,0,0,0]
+      width: [0,22,22,20,22,22,0]
+      height: [0,22,22,20,22,22,0]
+      texture: [17,4,17,17,4,17]
+    disc3:
+      section_segments: 8
+      offset:
+        x: 0
+        y: 3
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0]
+        y: [-3,-3,-1,0,1,3,3]
+        z: [0,0,0,0,0,0,0]
+      width: [0,22,22,20,22,22,0]
+      height: [0,22,22,20,22,22,0]
+      texture: [17,4,17,17,4,17]
+    disc4:
+      section_segments: 8
+      offset:
+        x: 0
+        y: 15
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0]
+        y: [-3,-3,-1,0,1,3,3]
+        z: [0,0,0,0,0,0,0]
+      width: [0,22,22,20,22,22,0]
+      height: [0,22,22,20,22,22,0]
+      texture: [17,4,17,17,4,17]
+    midfilv:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: -0.001
+        y: -5
+        z: 0
+      position:
+        x: [0,0,0,0]
+        y: [-2.5,-2.5,2.5,2.5]
+        z: [0,0,0,0]
+      width: [0,40,40,0]
+      height: [0,25,25,0]
+      texture: [17,63,17,17]
+      angle:90
+     midfilv2:
+      section_segments: [40,50,130,140,220,230,310,320,400]
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0,0,0]
+        y: [-2.5,-2.5,2.5,2.5]
+        z: [0,0,0,0]
+      width: [0,25,25,0]
+      height: [0,40,40,0]
+      texture: [17,63,17,17]
+      angle:180
+      vertical: 1
+    detail12:
+      section_segments: [0,60,120,180]
+      offset:
+        x: -7
+        y: 20
+        z: 0
+      position:
+        x: [0,0,0,0,0,0]
+        y: [-50,-50,-10,10,10,10]
+        z: [0,0,0,0,2,2]
+      width: [0,12,12,12,0,0]
+      height: [0,12,12,12,0,0]
+      texture: [4]
+      vertical: false
   wings:
     fin1:
       doubleside: true
       offset:
-        x: 0
-        y: 20
-        z: 0
-      length: [ 21 ]
-      width: [15,9]
-      angle: [ -45 ]
-      position: [0,9]
-      texture: 63
+        x: 10
+        y: 30
+        z: 10
+      length: [15,10]
+      width: [18,15,9]
+      angle: [ 45,45 ]
+      position: [0,5,15]
+      texture: [18,63]
       bump:
         position: 0
-        size: 15
+        size: 25
     fin2:
       doubleside: true
       offset:
-        x: 0
-        y: 20
-        z: 0
-      length: [ 21 ]
-      width: [15,9]
-      angle: [ 45 ]
-      position: [0,9]
-      texture: 63
+        x: 10
+        y: 30
+        z: -10
+      length: [15,10]
+      width: [18,15,9]
+      angle: [ -45,-45 ]
+      position: [0,5,15]
+      texture: [18,63]
       bump:
         position: 0
-        size: 15
+        size: 25

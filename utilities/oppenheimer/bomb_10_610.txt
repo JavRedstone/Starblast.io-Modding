@@ -1,0 +1,548 @@
+Array::add = (mod) -> @map (val) -> val + mod
+Array::mult = (mod) -> @map (val) -> val * mod
+Array::div = (mod) -> @map (val) -> val / mod
+Array::step = (step) -> i for i in @ by step
+Array::refill = (val, len) -> val for i in (
+  if len? then [0...len]
+  else if @length == 1 then [0...@[0]]
+  else @
+)
+for key of Array::
+  Object.defineProperty Array::, key, enumerable: false
+turret = (n, xpos, ypos, zpos, size, angle, dmg, rt, spd, nmbr) ->
+  model.bodies['quadTurret'+n] =
+    section_segments: [45,135,225,315]
+    offset:
+      x: -xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [5,5,5,0,0,0,0,5,5,5].mult(size)
+      y: [-16,-16,-16,-12,-5,5,12,16,16,16].mult(size)
+      z: [0,0,0,0,0,0,0,0,0,0].mult(size)
+    width: [0,3 ,5,15,15,15,15,5,3,0].mult(size)
+    height: [0,6,8,7,6,6,7,8,6,0].mult(size)
+    texture: [63,4,63,4,1,4,63,4,63]
+    vertical: false
+    angle: 90-angle
+  model.bodies['gunBarrel1'+n] =
+    section_segments: 8
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0,0,0,0,0,0].add(-9*size)
+      y: [-50,-50,-33,-33,-25,-25,0,0].add(10).mult(size)
+      z: [0,0,0,0,0,0,0,0]
+    width: [0,2,2,2,3,3,3,0].mult(size)
+    height: [0,2,2,2,3,3,3,0].mult(size)
+    texture: [17,4,4,2,4,4,4]
+    angle: angle
+    laser:
+      damage: dmg
+      rate: rt
+      speed: spd
+      number: nmbr
+  model.bodies['gunBarrel2'+n] =
+    section_segments: 8
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0,0,0,0,0,0]
+      y: [-50,-50,-33,-33,-25,-25,0,0].add(10).mult(size)
+      z: [0,0,0,0,0,0,0,0]
+    width: [0,2,2,2,3,3,3,0].mult(size)
+    height: [0,2,2,2,3,3,3,0].mult(size)
+    texture: [17,4,4,2,4,4,4]
+    angle: angle
+    laser:
+      damage: dmg
+      rate: rt
+      speed: spd
+      number: nmbr
+  model.bodies['gunBarrel3'+n] =
+    section_segments: 8
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0,0,0,0,0,0].add(9*size)
+      y: [-50,-50,-33,-33,-25,-25,0,0].add(10).mult(size)
+      z: [0,0,0,0,0,0,0,0]
+    width: [0,2,2,2,3,3,3,0].mult(size)
+    height: [0,2,2,2,3,3,3,0].mult(size)
+    texture: [17,4,4,2,4,4,4]
+    angle: angle
+    laser:
+      damage: dmg
+      rate: rt
+      speed: spd
+      number: nmbr
+detail = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['detail'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0]
+      y: [-5,0,0].mult(size)
+      z: [0,0,0]
+    width: [0,7,0].mult(size)
+    height: [2,2,0].mult(size)
+    texture: [4]
+    angle: angle
+    vertical:true
+detailfff = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['asdfdetail'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0]
+      y: [-5,0,0].mult(size)
+      z: [0,0,0]
+    width: [0,7,0].mult(size)
+    height: [2,2,0].mult(size)
+    texture: [4]
+    angle: angle
+    vertical:true
+edetail = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['edetail'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0]
+      y: [-5,0,0].mult(size)
+      z: [0,0,0]
+    width: [0,7,0].mult(size)
+    height: [2,2,0].mult(size)
+    texture: [63]
+    angle: angle
+fdetail = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['fdetail'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0]
+      y: [-5,0,0].mult(size)
+      z: [0,0,0]
+    height: [0,7,0].mult(size)
+    width: [2,2,0].mult(size)
+    texture: [63]
+square = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['square'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0,0]
+      y: [-5,-5,5,5].mult(size)
+      z: [0,0,0,0]
+    width: [0,7.5,7.5,0].mult(size)
+    height: [0,7.5,7.5,0].mult(size)
+    texture: [4]
+    vertical:true
+    angle: angle
+squareasas = (n, xpos, ypos, zpos, size, angle) ->
+  model.bodies['fsfsfsquare'+n] = 
+    section_segments: [45,135,225,315]
+    offset:
+      x: xpos
+      y: ypos
+      z: zpos
+    position:
+      x: [0,0,0,0]
+      y: [-5,-5,5,5].mult(size)
+      z: [0,0,0,0]
+    width: [0,7.5,7.5,0].mult(size)
+    height: [0,7.5,7.5,0].mult(size)
+    texture: [4]
+    vertical:true
+    angle: angle
+munition = (n,xpos,ypos,zpos,size,angle) ->
+  model.bodies['submunition'+n] =
+      section_segments: 8
+      offset:
+        x: xpos
+        y: ypos
+        z: zpos
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-75,-70,-50,-40,-20,-0,50,90,85,100,95].mult(0.25*size)
+        z: [0,0,0,0,0,0,0,0,0,0,0,0]
+      width: [0,20,30,35,40,45,50,45,25,20,0,0,0].mult(0.25*size)
+      height: [0,20,30,35,40,45,50,45,25,20,0,0,0].mult(0.25*size)
+      texture: [2,2,4,63,4,2,4,17,63,17]
+      angle:angle+180
+      vertical:true
+carry = (n,xpos,ypos,zpos,size) ->
+  model.bodies['carry'+n] =
+      section_segments: 8
+      offset:
+        x: xpos
+        y: ypos
+        z: zpos
+      position:
+        x: [0,0,0,0]
+        y: [-75,-75,75,75].mult(0.15*size)
+        z: [0,0,0,0]
+      width: [0,80,80,0].mult(0.5*size)
+      height: [0,80,80,0].mult(0.5*size)
+      texture: [4,63,4]
+      #(n, xpos, ypos, zpos, size, angle)
+  squareasas(n,xpos+13*size,zpos+32*size,-ypos,1,360/16)
+  squareasas(n+8,xpos+32*size,zpos+12*size,-ypos,1,360/5)
+  squareasas(n+16,xpos+32*size,zpos-12*size,-ypos,1,45+360/5)
+  squareasas(n+24,xpos+13*size,zpos-32*size,-ypos,1,45+360/16)
+  detailfff(n,xpos*size+13*size,zpos*size+32*size,-ypos,4,360/16)
+  detailfff(n+8,xpos*size+32*size,zpos*size+12*size,-ypos,4,360/5)
+  detailfff(n+16,xpos*size+32*size,zpos*size-12*size,-ypos,4,45+360/5)
+  detailfff(n+24,xpos*size+13*size,zpos*size-32*size,-ypos,4,45+360/16)
+
+model =
+  name: 'Homing Missile'
+  level: 6
+  model: 10
+  size: 1,
+  designer: 'Stealth'
+  specs:
+    shield:
+      capacity: [100,120]
+      reload: [10,12]
+    generator:
+      capacity: [80,140] 
+      reload: [35,50]
+    ship:
+      mass: 400
+      speed: [150,150]
+      rotation: [150,150]
+      acceleration: [100,100]
+  bodies:
+    side_propulsors:
+      section_segments: [45,135,225,255,285,315]
+      offset:
+        x: 55
+        y: -35
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-10,-10,-15,-15,0,10,20,25,30,40,70,60].mult(2)
+        z: [0,0,0,0,0,0,0,0,0,0,0,0]
+      width: [0,10,10,15,15,15,15,15,15,15,15,0].mult(1.2).mult(1.2)
+      height: [0,10,10,15,15,15,15,15,15,15,15,0].mult(2.75).mult(1.2)
+      texture: [4,4,63,63,4,4,4,63,4,4,4]
+    
+    propulsorsa:
+      section_segments: [45,135,225,260,280,315]
+      offset:
+        x: 55
+        y: 5
+        z: -15
+      position:
+        x: [0,0,0,0,0]
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+    propulsorsb:
+      section_segments: [45,135,225,260,280,315]
+      offset:
+        x: 55
+        y: 5
+        z: 15
+      position:
+        x: [0,0,0,0,0]
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+    
+    propulsorsc:
+      section_segments: [45,135,225,260,280,315]
+      offset:
+        x: -55
+        y: 25
+        z: -15
+      position:
+        x: [0,0,0,0,0]
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180
+      #propeller: true
+    propulsorsd:
+      section_segments: [45,135,225,260,280,315]
+      offset:
+        x: -55
+        y: 25
+        z: 15
+      position:
+        x: [0,0,0,0,0]
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180
+      
+    propulsorse:
+      section_segments: [15,45,135,225,315,345]
+      offset:
+        x: 0
+        y: 5
+        z: 55
+      position:
+        x: [0,0,0,0,0].add(15)
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+    propulsorsf:
+      section_segments: [15,45,135,225,315,345]
+      offset:
+        x: 0
+        y: 5
+        z: 55
+      position:
+        x: [0,0,0,0,0].add(-15)
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+      
+     propulsorsg:
+      section_segments: [15,45,135,225,315,345]
+      offset:
+        x: 0
+        y: 25
+        z: 55
+      position:
+        x: [0,0,0,0,0].add(15)
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180
+      #propeller: true
+    propulsorsh:
+      section_segments: [15,45,135,225,315,345]
+      offset:
+        x: 0
+        y: 25
+        z: 55
+      position:
+        x: [0,0,0,0,0].add(-15)
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180 
+      
+      
+    propulsorsi:
+      section_segments: [45,135,165,195,225,315]
+      offset:
+        x: 0
+        y: 5
+        z: -55
+      position:
+        x: [0,0,0,0,0].add(15)
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+    propulsorsj:
+      section_segments: [45,135,165,195,225,315]
+      offset:
+        x: 0
+        y: 5
+        z: -55
+      position:
+        x: [0,0,0,0,0].add(-15)
+        y: [90,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [63,63,63,17]
+      propeller: true
+    
+    propulsorsk:
+      section_segments: [45,135,165,195,225,315]
+      offset:
+        x: 0
+        y: 25
+        z: -55
+      position:
+        x: [0,0,0,0,0].add(15)
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180
+      #propeller: true
+    propulsorsl:
+      section_segments: [45,135,165,195,225,315]
+      offset:
+        x: 0
+        y: 25
+        z: -55
+      position:
+        x: [0,0,0,0,0].add(-15)
+        y: [50,100,100,95,95]
+        z: [0,0,0,0,0]
+      width: [7,8,5,5,0].mult(2)
+      height: [7,8,5,5,0].mult(2)
+      texture: [4,4,4,17]
+      angle:180 
+      
+    top_propulsor:
+      section_segments: [15,45,135,225,315,345]
+      offset:
+        x: 0
+        y: -35
+        z: 55
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-10,-10,-15,-15,0,10,20,25,30,40,70,60].mult(2)
+        z: [0,0,0,0,0,0,0,0,0,0,0,0]
+      height: [0,10,10,15,15,15,15,15,15,15,15,0].mult(1.2).mult(1.2)
+      width: [0,10,10,15,15,15,15,15,15,15,15,0].mult(2.75).mult(1.2)
+      texture: [4,4,63,63,4,4,4,63,4,4,4]  
+    bottom_propulsor:
+      section_segments: [45,135,165,195,225,315]
+      offset:
+        x: 0
+        y: -35
+        z: -55
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-10,-10,-15,-15,0,10,20,25,30,40,70,60].mult(2)
+        z: [0,0,0,0,0,0,0,0,0,0,0,0]
+      height: [0,10,10,15,15,15,15,15,15,15,15,0].mult(1.2).mult(1.2)
+      width: [0,10,10,15,15,15,15,15,15,15,15,0].mult(2.75).mult(1.2)
+      texture: [4,4,63,63,4,4,4,63,4,4,4]
+    core:
+      section_segments: 8
+      offset:
+        x:0
+        y:-458+70
+        z:0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0]
+        y: [-18,-16,-12,-6,0,6,12,13,8]
+        z: [0,0,0,0,0,0,0,0,0,0]
+      width:[0,8,14,17,19,17,14,8,0].mult(1)
+      height:[0,8,14,17,19,17,14,8,0].mult(1)
+      texture:[4,4,4,4,4,63,63,17]
+      angle:180
+    main:
+      section_segments: 8
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-70,-70,-50,-40,-20,-0,50,90,130,140,130]
+        z: [0,0,0,0,0,0,0,0,0,0]
+      width: [0,50,55,55,50,50,50,50,40,30,10,0,0]
+      height: [0,50,55,55,50,50,50,50,40,30,10,0,0]
+      texture: [3,4,10,63,3,4,3,10,63,17]
+      propeller:true
+    
+    head:
+      section_segments: 8
+      offset:
+        x: 0
+        y: -320
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [-75,-70,-50,-40,-20,-0,50,90,90,330,330]
+        z: [0,0,0,0,0,0,0,0,0,0]
+      width: [0,20,30,35,40,45,30,30,30,30,30,20,20]
+      height: [0,20,30,35,40,45,30,30,30,30,30,20,20]
+      texture: [3,4,10,63,3,4,4,10,4,4]
+  wings:
+    fin:
+      offset:
+        x: 10
+        y: 40
+        z: 10
+      length: [100]
+      width: [100,30]
+      angle: [45]
+      position: [0,-50,0,50]
+      texture: [63]
+      doubleside:true
+      bump:
+        position: 10
+        size: 20
+    fin2:
+      offset:
+        x: 10
+        y: 40
+        z: -10
+      length: [100]
+      width: [100,30]
+      angle: [-45]
+      position: [0,-50,0,50]
+      texture: [63]
+      doubleside:true
+      bump:
+        position: 10
+        size: 20
+for i in [0...5]
+  munition(1+i*5,0,40,80+40*i,1,0)
+  munition(2+i*5,0,-40,80+40*i,1,180)
+  munition(3+i*5,40,0,80+40*i,1,90)
+  munition(4+i*5,28.3,28.3,80+40*i,1,45)
+  munition(5+i*5,28.3,-28.3,80+40*i,1,135)
+  carry(i,0,-100-40*i,0,1)
+carry(30,0,-40,0,1.75)
+carry(31,0,76,0,1.7)
+carry(32,0,-305,0,1.1)
+edetail(1, 0, 95, 69, 5, 0)
+edetail(2, 0, 95, -69, 5, 0)
+fdetail(3, 69, 95, 0, 5, 0)
+edetail(4, 0, 65, 69, 5, 0)
+edetail(5, 0, 65, -69, 5, 0)
+fdetail(6, 69, 65, 0, 5, 0)  
+edetail(7, 0, 0, 69, 5, 0)
+edetail(8, 0, 0, -69, 5, 0)
+fdetail(9, 69, 0, 0, 5, 0)
+edetail(10, 0, 0, 69, 5, 0)
+edetail(11, 0, 0, -69, 5, 0)
+fdetail(12, 69, 0, 0, 5, 0)
+return model;
