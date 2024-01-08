@@ -503,7 +503,7 @@ const C = {
         },
         MESSAGE: {
             id: 'message',
-            position: [20, 45, 60, 10],
+            position: [30, 70, 40, 5],
             visible: true,
             components: [
                 {
@@ -689,7 +689,7 @@ const C = {
                 obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/oppenheimer_shockwave.png'
             },
-            position: { x: 0, y: 0, z: 0 },
+            position: { x: 0, y: 0, z: -10 },
             rotation: { x: 0, y: Math.PI, z: Math.PI },
             scale: { x: 1, y: 1, z: 1 }
         },
@@ -707,9 +707,9 @@ const C = {
         LASER_SPEED: 1,
 
         MIN_BASE_SHIELD: 6000,
-        MAX_SHIELD_PER_PLAYER: 1000,
+        MAX_SHIELD_PER_PLAYER: 2000,
         SHIELD_REGEN: 0,
-        INDIVIDUAL_SHIELD: 3000,
+        INDIVIDUAL_SHIELD_DIVISOR: 5,
 
         SCORE: 1
     },
@@ -737,9 +737,9 @@ const C = {
         BOUND_Y: 17 * 10
     },
     ROUND_OPTIONS: {
-        MIN_PLAYERS: 2,
-        STARTING_POSITION_1: { x: 0, y: 15 * 10 },
-        STARTING_POSITION_2: { x: 0, y: -15 * 10 },
+        MIN_PLAYERS: 1,
+        STARTING_POSITION_1: { x: 0, y: 12 * 10 },
+        STARTING_POSITION_2: { x: 0, y: -12 * 10 },
         STARTING_VELOCITY: { x: 0, y: 0 },
 
         ROUND_RATE: 60 * 60 * 5,
@@ -759,14 +759,10 @@ const C = {
         ROUND_WAIT: 60 * 30,
 
         CHOOSE_SHIP_TIME: 60 * 6,
-        // CHOOSE_SHIP_ATTACKERS: [602, 604, 606, 607, 610],
-        CHOOSE_SHIP_ATTACKERS: [602, 604, 606],
-        // CHOOSE_SHIP_DEFENDERS: [601, 603, 605, 608, 609],
-        CHOOSE_SHIP_DEFENDERS: [601, 603, 605, 609],
-        // CHOOSE_SHIP_ATTACKERS_NAMES: ['Little Boy', 'B41 Nuclear Bomb', 'r-7 Semyorka', 'XM-1', 'Homing Missile'],
-        CHOOSE_SHIP_ATTACKERS_NAMES: ['Little Boy', 'B41 Nuclear Bomb', 'r-7 Semyorka'],
-        // CHOOSE_SHIP_DEFENDERS_NAMES: ['Tsar Bomba', 'Fat Man', 'Castle Bravo', 'XM-2', 'Tomahawk']
-        CHOOSE_SHIP_DEFENDERS_NAMES: ['Tsar Bomba', 'Fat Man', 'Castle Bravo', 'Tomahawk']
+        CHOOSE_SHIP_ATTACKERS: [602, 604, 606, 607, 608],
+        CHOOSE_SHIP_DEFENDERS: [601, 603, 605, 610, 609],
+        CHOOSE_SHIP_ATTACKERS_NAMES: ['Little Boy', 'B41 Nuclear Bomb', 'r-7 Semyorka', 'XM-1', 'XM-2'],
+        CHOOSE_SHIP_DEFENDERS_NAMES: ['Tsar Bomba', 'Fat Man', 'Castle Bravo', 'Homing Missile', 'Tomahawk']
     },
     BLAST_OPTIONS: {
         ORIGIN: {
@@ -775,8 +771,8 @@ const C = {
             CLOUD: { x: 0, y: 0 }
         },
         AMOUNT: {
-            IMPLOSION: 200,
-            SHOCKWAVE: 175,
+            IMPLOSION: 150,
+            SHOCKWAVE: 150,
             CLOUD: 50
         },
         SPEED: {
@@ -900,7 +896,7 @@ const C = {
                 WEAPON_DROPS: [21, 12, 12]
             }
         ],
-        MAX_AMOUNT: 20,
+        MAX_AMOUNT: 10,
         SPAWN_RATE: 60
     },
     COLLECTIBLE_OPTIONS: {
@@ -1197,7 +1193,7 @@ class Game {
                         .setRate(C.MAIN_BOMB_OPTIONS.LASER_RATE)
                         .setDamage(C.MAIN_BOMB_OPTIONS.LASER_DAMAGE)
                         .setLaserSpeed(C.MAIN_BOMB_OPTIONS.LASER_SPEED)
-                        .setShield(C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD)
+                        .setShield(Math.round(this.mainBombMaxShield / C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD_DIVISOR))
                         .setRegen(C.MAIN_BOMB_OPTIONS.SHIELD_REGEN)
                     this.mainBombReady = true;
                 }
@@ -1372,6 +1368,12 @@ class Game {
             for (let alien of this.aliens) {
                 let found = false;
                 for (let gameAlien of game.aliens) {
+                    if (this.mainBomb != null && gameAlien.code == 19 && gameAlien.id != -1 && gameAlien.id != this.mainBomb.alien.id) {
+                        found == true;
+                        this.mainBomb = null;
+                        this.mainBombReady = false;
+                        break;
+                    }
                     if (alien.alien == gameAlien) {
                         found = true;
                         break;
@@ -1957,7 +1959,7 @@ class Game {
             this.mainBombReady = false;
             let ship = this.findShip(gameShip);
             if (ship != null && !ship.team.isDefending) {
-                this.mainBombShield -= C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD;
+                this.mainBombShield -= Math.round(this.mainBombMaxShield / C.MAIN_BOMB_OPTIONS.INDIVIDUAL_SHIELD_DIVISOR);
                 ship.setScore(ship.score + C.MAIN_BOMB_OPTIONS.SCORE);
             }
             this.spawnNewMainBomb();
@@ -2056,7 +2058,6 @@ class Blast {
     }
 
     spawnShockwave() {
-        echo("spawn")
         let shockwave = Helper.deepCopy(C.OBJECTS.SHOCKWAVE);
         shockwave.id = C.OBJECTS.SHOCKWAVE.id + '_' + Math.random();
         shockwave.type.id = C.OBJECTS.SHOCKWAVE.type.id + '_' + Math.random();
