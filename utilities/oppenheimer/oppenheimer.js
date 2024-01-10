@@ -761,7 +761,7 @@ const C = {
         BOUND_Y: 17 * 10
     },
     ROUND_OPTIONS: {
-        MIN_PLAYERS: 2,
+        MIN_PLAYERS: 1,
         STARTING_POSITION_1: { x: 0, y: 12 * 10 },
         STARTING_POSITION_2: { x: 0, y: -12 * 10 },
         STARTING_VELOCITY: { x: 0, y: 0 },
@@ -2049,8 +2049,8 @@ class Message {
 }
 
 class Ability {
-    activateTime = 0;
     intervalTime = 0;
+    activated = false;
     
     ship = null;
     uiComponent = null;
@@ -2067,11 +2067,10 @@ class Ability {
     }
 
     activate() {
-        this.activateTime = game.step;
         let abilityComponent = Helper.deepCopy(this.uiComponent);
         abilityComponent.components[1].value = `${this.abilityName} [${abilityComponent.shortcut.toUpperCase()}]`;
         this.ship.sendUI(abilityComponent);
-        this.ability.start();
+        this.activated = true;
     }
 
     deactivate() {
@@ -2081,24 +2080,28 @@ class Ability {
         abilityComponent.components[0].fill = '#ff000080';
         this.ship.sendUI(abilityComponent);
         this.ability.reset();
+        this.activated = false;
     }
 
     tick() {
         if (game.step % C.ROUND_OPTIONS.SHIP_UPDATE == 0) {
-            if (game.step - this.activateTime >= this.intervalTime) {
+            if (game.step - this.ability.runTime >= this.intervalTime) {
                 this.activate();
             }
             else {
                 this.deactivate();
             }
         }
-        if (ability.running) {
-            ability.tick();
+        if (this.activated) {
+            if (ability.running) {
+                ability.tick();
+            }
         }
     }
 }
 
 class ShipShockwave {
+    runTime = 0;
     running = false;
 
     ship = null;
@@ -2109,6 +2112,7 @@ class ShipShockwave {
     }
 
     start() {
+        this.ability.runTime = game.step;
         this.running = true;
         let shockwave = Helper.deepCopy(C.OBJECTS.SHOCKWAVE);
         shockwave.id = C.OBJECTS.SHOCKWAVE.id + '_' + Math.random();
