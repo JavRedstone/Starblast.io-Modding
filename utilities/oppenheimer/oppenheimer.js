@@ -791,9 +791,9 @@ const C = {
     SHIP_OPTIONS: {
         ABILITIES: {
             SHOCKWAVE: {
-                INTERVAL: 60 * 60,
+                INTERVAL: 60 * 10,
                 GROWTH: 5,
-                MAX_SIZE: 10 * 10,
+                MAX_SIZE: 15 * 10,
                 REPULSION_FORCE: 5
             },
         }
@@ -1806,9 +1806,10 @@ class Game {
                     }
                 }
                 ship.sendUI(scoreboard);
-                
-                ship.tick();
             }
+        }
+        for (let ship of this.ships) {
+            ship.tick();
         }
     }
 
@@ -1990,7 +1991,9 @@ class Game {
             if (id.includes('ship_ability_')) {
                 if (id.includes('ship_shockwave')) {
                     let ability = ship.getAbility('ship_shockwave');
-                    ability.activate();
+                    if (ability.activated) {
+                        ability.ability.start();
+                    }
                 }
             }
         }
@@ -2075,27 +2078,22 @@ class Ability {
 
     deactivate() {
         let abilityComponent = Helper.deepCopy(this.uiComponent);
-        abilityComponent.components[1].value = `${this.abilityName} - ${Helper.formatTime(this.intervalTime - (game.step - this.activateTime))}`;
+        abilityComponent.components[1].value = `${this.abilityName} - ${Helper.formatTime(this.intervalTime - (game.step - this.ability.runTime))}`;
         abilityComponent.components[0].stroke = '#ff0000';
         abilityComponent.components[0].fill = '#ff000080';
         this.ship.sendUI(abilityComponent);
-        this.ability.reset();
         this.activated = false;
     }
 
     tick() {
-        if (game.step % C.ROUND_OPTIONS.SHIP_UPDATE == 0) {
-            if (game.step - this.ability.runTime >= this.intervalTime) {
-                this.activate();
-            }
-            else {
-                this.deactivate();
-            }
+        if (game.step - this.ability.runTime >= this.intervalTime) {
+            this.activate();
         }
-        if (this.activated) {
-            if (ability.running) {
-                ability.tick();
-            }
+        else {
+            this.deactivate();
+        }
+        if (this.ability.running) {
+            this.ability.tick();
         }
     }
 }
@@ -2112,7 +2110,7 @@ class ShipShockwave {
     }
 
     start() {
-        this.ability.runTime = game.step;
+        this.runTime = game.step;
         this.running = true;
         let shockwave = Helper.deepCopy(C.OBJECTS.SHOCKWAVE);
         shockwave.id = C.OBJECTS.SHOCKWAVE.id + '_' + Math.random();
@@ -2123,14 +2121,15 @@ class ShipShockwave {
             
             shockwave.type,
 
-            new Vector3(0, 0, shockwave.position.z),
+            new Vector3(this.ship.ship.x, this.ship.ship.y, shockwave.position.z),
             new Vector3(shockwave.rotation.x, shockwave.rotation.y, shockwave.rotation.z),
             new Vector3(shockwave.scale.x, shockwave.scale.y, shockwave.scale.z)
         );
         this.shockwaveObj = obj;
 
+        console.log("a")
         for (let gameShip of game.ships) {
-            if (new Vector2(gameShip.x, gameShip.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y)) <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
+            if (gameShip.id != this.ship.id && new Vector2(gameShip.x, gameShip.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y)) <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
                 let normalized = new Vector2(ship.ship.x - gameShip.x, ship.ship.y - gameShip.y).normalize();
                 let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
                 gameShip.set({
@@ -2139,23 +2138,40 @@ class ShipShockwave {
                 })
             }
         }
+        console.log("b")
+        for (let gameAlien of game.aliens) {
+            if (new Vector2(gameAlien.x, gameAlien.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y)) <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
+                let normalized = new Vector2(ship.ship.x - gameAlien.x, ship.ship.y - gameAliens.y).normalize();
+                let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
+                gameAlien.set({
+                    vx: gameAlien.vx + repulsion.x,
+                    vy: gameAlien.vy + repulsion.y
+                })
+            }
+        }
     }
 
     reset() {
         this.running = false;
-        this.shockwaveObj.destroySelf();
+        if (this.shockwaveObj) {
+            this.shockwaveObj.destroySelf();
+        }
         this.shockwaveObj = null;
     }
 
     tick() {
-        if (this.running) {
+        if (this.shockwaveObj) {
             if (this.shockwaveObj.obj.scale.x >= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
                 this.shockwaveObj.destroySelf();
                 this.running = false;
+                this.reset();
             }
             else {
+                this.shockwaveObj.setPosition(
+                    new Vector3(this.ship.ship.x, this.ship.ship.y, C.OBJECTS.SHOCKWAVE.position.z)
+                );
                 this.shockwaveObj.setScale(
-                    new Vector3(shockwave.obj.scale.x + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, shockwave.obj.scale.y + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, shockwave.obj.scale.z)
+                    new Vector3(this.shockwaveObj.obj.scale.x + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, this.shockwaveObj.obj.scale.y + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, this.shockwaveObj.obj.scale.z)
                 );
                 this.shockwaveObj.update();
             }
@@ -2333,6 +2349,8 @@ class Ship {
     roundsLost = 0;
 
     score = 0;
+
+    abilities = [];
 
     constructor(ship) {
         this.ship = ship;
