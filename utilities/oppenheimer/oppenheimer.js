@@ -702,7 +702,7 @@ const C = {
                 obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/oppenheimer_small_bomb_circle.png'
             },
-            position: { x: 0, y: 0, z: 0 },
+            position: { x: 0, y: 0, z: -10 },
             rotation: { x: 0, y: Math.PI, z: Math.PI },
             scale: { x: 20, y: 20, z: 20 }
         },
@@ -713,7 +713,7 @@ const C = {
                 obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                 emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/oppenheimer/oppenheimer_shockwave.png'
             },
-            position: { x: 0, y: 0, z: -10 },
+            position: { x: 0, y: 0, z: 0 },
             rotation: { x: 0, y: Math.PI, z: Math.PI },
             scale: { x: 1, y: 1, z: 1 }
         },
@@ -791,9 +791,10 @@ const C = {
     SHIP_OPTIONS: {
         ABILITIES: {
             SHOCKWAVE: {
-                INTERVAL: 60 * 10,
+                INTERVAL: 60 * 60,
+                // INTERVAL: 60 * 10,
                 GROWTH: 5,
-                MAX_SIZE: 15 * 10,
+                MAX_SIZE: 10 * 10,
                 REPULSION_FORCE: 5
             },
         }
@@ -1808,8 +1809,10 @@ class Game {
                 ship.sendUI(scoreboard);
             }
         }
-        for (let ship of this.ships) {
-            ship.tick();
+        if (!this.waitingForPlayers && !this.waitingForRound) {
+            for (let ship of this.ships) {
+                ship.tick();
+            }
         }
     }
 
@@ -1825,6 +1828,7 @@ class Game {
         ship.hideUI(Helper.deepCopy(C.UIS.MAIN_BOMB_SHIELD_BAR_TOGGLE));
         ship.hideUI(Helper.deepCopy(C.UIS.MAIN_BOMB_SHIELD_BAR));
         ship.hideUI(Helper.deepCopy(C.UIS.RADAR_BACKGROUND));
+        ship.hideUI(Helper.deepCopy(C.UIS.SHIP_SHOCKWAVE))
     }
 
     spawnAliens() {
@@ -2099,7 +2103,7 @@ class Ability {
 }
 
 class ShipShockwave {
-    runTime = 0;
+    runTime = game.step;
     running = false;
 
     ship = null;
@@ -2126,29 +2130,6 @@ class ShipShockwave {
             new Vector3(shockwave.scale.x, shockwave.scale.y, shockwave.scale.z)
         );
         this.shockwaveObj = obj;
-
-        console.log("a")
-        for (let gameShip of game.ships) {
-            if (gameShip.id != this.ship.id && new Vector2(gameShip.x, gameShip.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y)) <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
-                let normalized = new Vector2(ship.ship.x - gameShip.x, ship.ship.y - gameShip.y).normalize();
-                let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
-                gameShip.set({
-                    vx: gameShip.vx + repulsion.x,
-                    vy: gameShip.vy + repulsion.y
-                })
-            }
-        }
-        console.log("b")
-        for (let gameAlien of game.aliens) {
-            if (new Vector2(gameAlien.x, gameAlien.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y)) <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
-                let normalized = new Vector2(ship.ship.x - gameAlien.x, ship.ship.y - gameAliens.y).normalize();
-                let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
-                gameAlien.set({
-                    vx: gameAlien.vx + repulsion.x,
-                    vy: gameAlien.vy + repulsion.y
-                })
-            }
-        }
     }
 
     reset() {
@@ -2174,6 +2155,41 @@ class ShipShockwave {
                     new Vector3(this.shockwaveObj.obj.scale.x + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, this.shockwaveObj.obj.scale.y + C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.GROWTH, this.shockwaveObj.obj.scale.z)
                 );
                 this.shockwaveObj.update();
+                for (let gameShip of game.ships) {
+                    let distance = new Vector2(gameShip.x, gameShip.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y));
+                    if (gameShip.id != this.ship.id && distance <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
+                        let normalized = new Vector2(gameShip.x - this.ship.ship.x, gameShip.y - this.ship.ship.y).normalize();
+                        let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
+                        gameShip.set({
+                            vx: gameShip.vx + repulsion.x,
+                            vy: gameShip.vy + repulsion.y
+                        })
+                    }
+                }
+                for (let gameAlien of game.aliens) {
+                    if (gameAlien.code != 19) {
+                        let distance = new Vector2(gameAlien.x, gameAlien.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y));
+                        if (distance <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
+                            let normalized = new Vector2(gameAlien.x - this.ship.ship.x, gameAlien.y - this.ship.ship.y).normalize();
+                            let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
+                            gameAlien.set({
+                                vx: gameAlien.vx + repulsion.x,
+                                vy: gameAlien.vy + repulsion.y
+                            })
+                        }
+                    }
+                }
+                for (let gameAsteroid of game.asteroids) {
+                    let distance = new Vector2(gameAsteroid.x, gameAsteroid.y).getDistanceTo(new Vector2(this.ship.ship.x, this.ship.ship.y));
+                    if (distance <= C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.MAX_SIZE) {
+                        let normalized = new Vector2(gameAsteroid.x - this.ship.ship.x, gameAsteroid.y - this.ship.ship.y).normalize();
+                        let repulsion = normalized.multiply(C.SHIP_OPTIONS.ABILITIES.SHOCKWAVE.REPULSION_FORCE * (1 / distance));
+                        gameAsteroid.set({
+                            vx: gameAsteroid.vx + repulsion.x,
+                            vy: gameAsteroid.vy + repulsion.y
+                        })
+                    }
+                }
             }
         }
     }
