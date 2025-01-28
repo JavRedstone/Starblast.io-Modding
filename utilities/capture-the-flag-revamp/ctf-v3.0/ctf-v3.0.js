@@ -13,6 +13,8 @@ class Game {
 
     aliens = [];
     asteroids = [];
+    
+    waiting = false;
 
     currScore1 = 0;
     currScore2 = 0;
@@ -28,13 +30,15 @@ class Game {
             ROOT_MODE: '',
             MAP_SIZE: 60,
             MAP: null,
+            ASTEROIDS_STRENGTH: 1e6,
+            CRYSTAL_DROP: 0,
             CRYSTAL_VALUE: 0,
     
             FRIENDLY_COLORS: 2,
     
             RADAR_ZOOM: 1,
     
-            SPEED_MOD: 1.4,
+            SPEED_MOD: 1.2,
             FRICTION_RATIO: 1,
     
             WEAPONS_STORE: false,
@@ -44,23 +48,29 @@ class Game {
             RESET_TREE: false,
             CHOOSE_SHIP: null,
             SHIPS: [],
+            MAX_PLAYERS: 20,
     
             VOCABULARY: [
-                { text: 'Heal', icon: '\u0038', key: 'H' },
-                { text: 'Me', icon: '\u004f', key: 'E' },
-                { text: 'Wait', icon: '\u0048', key: 'T' },
-                { text: 'Yes', icon: '\u004c', key: 'Y' },
-                { text: 'No', icon: '\u004d', key: 'N' },
-                { text: 'Sorry', icon: '\u00a1', key: 'S' },
-                { text: 'Attack', icon: '\u0049', key: 'A' },
-                { text: 'Follow Me', icon: '\u0050', key: 'F' },
-                { text: 'Good Game', icon: '\u00a3', key: 'G' },
-                { text: 'Bruh', icon: '\u{1F480}', key: 'I' },
-                { text: 'Hmm?', icon: '\u004b', key: 'Q' },
-                { text: 'No Problem', icon: '\u0047', key: 'P' },
-                { text: 'Defend', icon: '\u0025', key: 'D' },
-                { text: 'Thanks', icon: '\u0041', key: 'X' },
-                { text: '', icon: '>:D', key: 'L' }
+                { text: "Yes", icon: "\u004c", key: "Y" },
+                { text: "No", icon: "\u004d", key: "N" },
+                { text: "Defend", icon: "\u0025", key: "D" },
+                { text: "Kill", icon: "\u007f", key: "K" },
+                { text: "Sorry", icon: "\u00a1", key: "S" },
+                { text: "Thanks", icon: "\u0041", key: "X" },
+                { text: "You", icon: "\u004e", key: "O" },
+                { text: "Me", icon: "\u004f", key: "E" },
+                { text: "No Problem", icon: "\u0047", key: "P" },
+                { text: "Attack", icon: "\u0049", key: "A" },
+                { text: "Help", icon: "\u004a", key: "H" },
+                { text: "Hmmm?", icon: "\u004b", key: "Q" },
+                { text: "GoodGame", icon: "\u00a3", key: "G" },
+                { text: "Wait", icon: "\u0048", key: "T" },
+                { text: "Follow", icon: "\u0050", key: "F" },
+                { text: "Love", icon: "\u0024", key: "L" },
+                { text: "Base", icon: "\u0034", key: "B" },
+                { text: "Flag", icon: "🏳️", key: "I" },
+                { text: "Bruh", icon: "˙ ͜ʟ˙", key: "M" },
+                { text: "WTF", icon: "ಠ_ಠ", key: "W" }
             ],
         },
         TICKS: {
@@ -70,6 +80,7 @@ class Game {
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 30            
         },
+        WAITING_MIN: 2,
     }
 
     static setShipGroups() {
@@ -86,6 +97,8 @@ class Game {
     }
 
     tick() {
+        this.manageGameState();
+
         this.manageShips();
         this.spawnAliens();
         this.spawnCollectibles();
@@ -119,15 +132,18 @@ class Game {
 
     setMap() {
         let randMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
+        if (this.waiting) {
+            randMap = GameMap.C.WAITING_MAP
+        }
         this.map = new GameMap(randMap.name, randMap.author, randMap.map, randMap.flags, randMap.spawns, randMap.tiers);
         this.map.spawn();
     }
 
-    setShipGroup() {
+    setShipGroup(select = true) {
         for (let shipGroup of Game.shipGroups) {
             if (this.map.tier == shipGroup.tier) {
                 this.shipGroup = shipGroup;
-                this.shipGroup.chooseShips();
+                this.shipGroup.chooseShips(select);
             }
         }
     }
@@ -156,7 +172,7 @@ class Game {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
             this.resetShip(ship);
-            this.hideShipUIs(ship);
+            ship.hideAllUIs();
         }
     }
 
@@ -174,10 +190,33 @@ class Game {
             ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
         }
 
-        ship.setCrystals(ship.getMaxCrystals());
+        ship.setCrystals(ship.getRoundCrystals());
         ship.setShield(999999);
         ship.setStats(99999999);
         ship.setVelocity(new Vector2(0, 0));
+        ship.setCollider(true);
+        ship.setIdle(false);
+
+        if (this.waiting) {
+            ship.setPosition(new Vector2(0, 0));
+        }
+    }
+
+    manageGameState() {
+        if (this.ships.length < Game.C.WAITING_MIN) {
+            if (!this.waiting) {
+                this.waiting = true;
+                this.setMap();
+                this.setShipGroup();
+            }
+        } else {
+            if (this.waiting) {
+                this.waiting = false;
+                this.resetShips();
+                this.setMap();
+                this.setShipGroup();
+            }
+        }
     }
 
     manageEntities() {
@@ -244,84 +283,88 @@ class Game {
                 if (!ship.done) {
                     this.resetShip(ship, true);
                     ship.done = true;
+
+                    ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
+                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, Ship.C.TIMES.LOGO_TIME);
                 }
 
-                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.LIVES_BLOCKER));
+                if (this.waiting) {
+                    ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
+                    ship.sendUI(UIComponent.C.UIS.WAITING);
+                    ship.hideUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
-                let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
-                ship.sendUI(radarBackground);
+                    ship.setCrystals(0);
+                } else {
+                    let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
+                    ship.sendUI(radarBackground);
 
-                let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
-                scoreboard.components[0].fill = this.teams[0].hex + '80';
-                scoreboard.components[2].fill = this.teams[1].hex + '80';
-                scoreboard.components[1].value = this.teams[0].name;
-                scoreboard.components[3].value = this.teams[1].name;
-                let players1 = [];
-                let players2 = [];
-                for (let ship of this.ships) {
-                    if (ship.team != null) {
-                        if (ship.team.team == 0) {
-                            players1.push(ship);
-                        }
-                        else if (ship.team.team == 1) {
-                            players2.push(ship);
+                    let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
+                    scoreboard.components[0].fill = this.teams[0].hex + 'BF';
+                    scoreboard.components[2].fill = this.teams[1].hex + 'BF';
+                    scoreboard.components[1].value = this.teams[0].name;
+                    scoreboard.components[3].value = this.teams[1].name;
+                    let players1 = [];
+                    let players2 = [];
+                    for (let ship of this.ships) {
+                        if (ship.team != null) {
+                            if (ship.team.team == 0) {
+                                players1.push(ship);
+                            }
+                            else if (ship.team.team == 1) {
+                                players2.push(ship);
+                            }
                         }
                     }
-                }
-                players1.sort((a, b) => b.score - a.score);
-                players2.sort((a, b) => b.score - a.score);
-                for (let i = 0; i < 5; i++) {
-                    if (players1[i]) {
-                        scoreboard.components.push({
-                            type: 'player',
-                            position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
-                            id: players1[i].ship.id,
-                            color: '#ffffff',
-                            align: 'left'
-                        },
-                            {
-                                type: 'text',
+                    players1.sort((a, b) => b.score - a.score);
+                    players2.sort((a, b) => b.score - a.score);
+                    for (let i = 0; i < 5; i++) {
+                        if (players1[i]) {
+                            scoreboard.components.push({
+                                type: 'player',
                                 position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
-                                value: players1[i].score,
+                                id: players1[i].ship.id,
                                 color: '#ffffff',
-                                align: 'right'
-                            });
+                                align: 'left'
+                            },
+                                {
+                                    type: 'text',
+                                    position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
+                                    value: players1[i].score,
+                                    color: '#ffffff',
+                                    align: 'right'
+                                });
+                        }
+                        else {
+                            break;
+                        }
                     }
-                    else {
-                        break;
-                    }
-                }
-                for (let i = 0; i < 5; i++) {
-                    if (players2[i]) {
-                        scoreboard.components.push({
-                            type: 'player',
-                            position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
-                            id: players2[i].ship.id,
-                            color: '#ffffff',
-                            align: 'left'
-                        },
-                            {
-                                type: 'text',
+                    for (let i = 0; i < 5; i++) {
+                        if (players2[i]) {
+                            scoreboard.components.push({
+                                type: 'player',
                                 position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
-                                value: players2[i].score,
+                                id: players2[i].ship.id,
                                 color: '#ffffff',
-                                align: 'right'
-                            });
+                                align: 'left'
+                            },
+                                {
+                                    type: 'text',
+                                    position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
+                                    value: players2[i].score,
+                                    color: '#ffffff',
+                                    align: 'right'
+                                });
+                        }
+                        else {
+                            break;
+                        }
                     }
-                    else {
-                        break;
-                    }
+                    ship.sendUI(scoreboard);
                 }
-                ship.sendUI(scoreboard);
+
                 ship.tick();
             }
         }
-    }
-
-    hideShipUIs(ship) {
-        ship.hideUI(Helper.deepCopy(UIComponent.C.UIS.LIVES_BLOCKER));
-        ship.hideUI(Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD));
-        ship.hideUI(Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND));
     }
 
     spawnAliens() {
@@ -331,8 +374,13 @@ class Game {
         ) {
             let pos = Helper.getRandomMapCoordinate();
 
-            let as = Helper.deepCopy(Alien.C.TYPES);
-            as.splice(7, 1);
+            let as = [];
+            for (let i = 0; i < Alien.C.TYPES.length; i++) {
+                let type = Alien.C.TYPES[i];
+                if (Alien.C.ALLOWED.includes(type.CODE)) {
+                    as.push(Helper.deepCopy(type));
+                }
+            }
             let alienOption = Helper.getRandomArrayElement(as);
             let level = Helper.getRandomArrayElement(alienOption.LEVELS);
 
@@ -360,12 +408,19 @@ class Game {
         ) {
             for (let i = 0; i < Collectible.C.MAX_AMOUNT; i++) {
                 let pos = Helper.getRandomMapCoordinate();
-                let collectibleOption = Helper.getRandomArrayElement(Collectible.C.TYPES);
+                let cs = [];
+                for (let j = 0; j < Collectible.C.TYPES.length; j++) {
+                    let type = Collectible.C.TYPES[j];
+                    if (Collectible.C.ALLOWED.includes(type.CODE)) {
+                        cs.push(Helper.deepCopy(type));
+                    }
+                }
+                let collectibleOption = Helper.getRandomArrayElement(cs);
                 new Collectible(
                     pos,
                     collectibleOption.NAME,
                     collectibleOption.CODE,
-                )
+                );
             }
         }
     }
@@ -398,7 +453,7 @@ class Game {
         }
         else { // on respawn
             let ship = this.findShip(gameShip);
-            ship.setCrystals(ship.getMaxCrystals());
+            ship.setCrystals(ship.getRoundCrystals());
             ship.setShield(999999);
             ship.setStats(99999999);
         }
@@ -420,6 +475,1084 @@ class Game {
     }
 }
 
+class Team {
+    name = '';
+    team = 0;
+    color = '';
+    hex = 0;
+    hue = 0;
+
+    score = 0;
+    totalScore = 0;
+
+    numShips = 0;
+
+    static C = {
+        TEAMS: [
+            [
+                {
+                    TEAM: 0,
+                    COLOR: 'Red',
+                    HEX: '#ff0000',
+                    NAME: 'Anarchist Concord Vega',
+                    HUE: 0
+                },
+                {
+                    TEAM: 1,
+                    COLOR: 'Blue',
+                    HEX: '#0000ff',
+                    NAME: 'Andromeda Union',
+                    HUE: 240
+                }
+            ],
+            [
+                {
+                    TEAM: 0,
+                    COLOR: 'Yellow',
+                    HEX: '#ffff00',
+                    NAME: 'Solaris Dominion',
+                    HUE: 60
+                },
+                {
+                    TEAM: 1,
+                    COLOR: 'Purple',
+                    HEX: '#ff00ff',
+                    NAME: 'Galactic Empire',
+                    HUE: 300
+                }
+            ],
+            [
+                {
+                    TEAM: 0,
+                    COLOR: 'Green',
+                    HEX: '#00ff00',
+                    NAME: 'Rebel Alliance',
+                    HUE: 120
+                },
+                {
+                    TEAM: 1,
+                    COLOR: 'Orange',
+                    HEX: '#ff8000',
+                    NAME: 'Sovereign Trappist Colonies',
+                    HUE: 30
+                }
+            ]
+        ]
+    }
+
+    constructor(name, team, color, hex, hue) {
+        this.name = name;
+        this.team = team;
+        this.color = color;
+        this.hex = hex;
+        this.hue = hue;
+    }
+
+    setScore(score) {
+        this.score = score;
+    }
+}
+
+class Ship {
+    team = null;
+    ship = null;
+
+    allUIs = [];
+    timedUIs = [];
+
+    done = false;
+
+    flag = null;
+
+    score = 0;
+
+    static C = {
+        TIMES: {
+            LOGO_TIME: 480
+        }
+    }
+
+    constructor(ship) {
+        this.ship = ship;
+    }
+
+    sendUI(ui, hideMode = false) {
+        if (this.ship != null) {
+            this.ship.setUIComponent(Helper.deepCopy(ui));
+
+            if (!hideMode) {
+                for (let u of this.allUIs) {
+                    if (u.id == ui.id) {
+                        this.allUIs.splice(this.allUIs.indexOf(u), 1);
+                    }
+                }
+                this.allUIs.push(ui);
+            }
+        }
+    }
+
+    hideUI(ui) {
+        let cUI = Helper.deepCopy(ui);
+
+        cUI.position = [0, 0, 0, 0];
+        cUI.visible = false;
+        cUI.clickable = false;
+        cUI.components = [];
+
+        for (let u of this.allUIs) {
+            if (u.id == cUI.id) {
+                this.allUIs.splice(this.allUIs.indexOf(u), 1);
+            }
+        }
+
+        this.sendUI(cUI, true);
+    }
+
+    sendTimedUI(ui, time) {
+        this.timedUIs.push(new TimedUI(this, ui, time));
+    }
+
+    hideAllUIs() {
+        for (let ui of this.allUIs) {
+            this.hideUI(ui);
+        }
+        for (let uiGeneric in UIComponent.C.UIS) {
+            this.hideUI(UIComponent.C.UIS[uiGeneric]);
+        }
+    }
+
+    tick() {
+        let removeTimedUIs = [];
+        for (let timedUI of this.timedUIs) {
+            if (timedUI.running) {
+                timedUI.tick();
+            } else {
+                removeTimedUIs.push(timedUI);
+            }
+        }
+        for (let timedUI of removeTimedUIs) {
+            this.timedUIs.splice(this.timedUIs.indexOf(timedUI), 1);
+        }
+
+        this.ship.set({ score: this.score });
+    }
+
+    sendMessage(text, baseColor) {
+        this.message = new Message(this, text, baseColor);
+    }
+
+    sendChooseShip() {
+        this.chooseShipVisible = true;
+    }
+
+    getLevel() {
+        return Math.trunc(this.ship.type / 100);
+    }
+
+    getModel() {
+        return this.ship.type % 100;
+    }
+
+    getMaxCrystals() {
+        switch (this.getLevel()) {
+            case 1:
+                return 20;
+            case 2:
+                return 80;
+            case 3:
+                return 180;
+            case 4:
+                return 360;
+            case 5:
+                return 500;
+            case 6:
+                return 720;
+            case 7:
+                return 980;
+            default:
+                return 0;
+        }
+    }
+
+    getRoundCrystals() {
+        let level = this.getLevel();
+        if (level == 1) {
+            return 220;
+        }
+        else if (level == 2) {
+            return 420;
+        }
+        return ((Math.pow((level || 0), 2)) * 20) / 2;
+    }
+
+    setPosition(position) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ x: position.x, y: position.y });
+        }
+        return this;
+    }
+
+    setVelocity(velocity) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ vx: velocity.x, vy: velocity.y });
+        }
+        return this;
+    }
+
+    setCrystals(crystals) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ crystals: crystals });
+        }
+        return this;
+    }
+
+    setShield(shield) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ shield: shield });
+        }
+        return this;
+    }
+
+    setStats(stats) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ stats: stats });
+        }
+        return this;
+    }
+
+    setInvulnerable(invulnerable) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ invulnerable: invulnerable });
+        }
+        return this;
+    }
+
+    setIdle(idle) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ idle: idle });
+        }
+        return this;
+    }
+
+    setCollider(collider) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ collider: collider });
+        }
+        return this;
+    }
+
+    setTeam(team) {
+        this.team = team;
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ team: team.team, hue: team.hue });
+        }
+        return this;
+    }
+
+    setHue(hue) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ hue: hue });
+        }
+        return this;
+    }
+
+    setScore(score) {
+        this.score = score;
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ score: score });
+        }
+        return this;
+    }
+
+    setType(type) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ type: type });
+        }
+        return this;
+    }
+
+    destroySelf() {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ kill: true });
+        }
+        return this;
+    }
+}
+
+class Alien {
+    name = '';
+
+    alien = null;
+
+    static C = {
+        TYPES: [
+            {
+                NAME: 'Chicken',
+                CODE: 10,
+                LEVELS: [0, 1, 2],
+                POINTS: [10, 20, 50],
+                CRYSTAL_DROPS: [10, 20, 30],
+                WEAPON_DROPS: [10, 20, 11]
+            },
+            {
+                NAME: 'Crab',
+                CODE: 11,
+                LEVELS: [0, 1, 2],
+                POINTS: [30, 60, 120],
+                CRYSTAL_DROPS: [20, 30, 40],
+                WEAPON_DROPS: [10, 20, 11]
+            },
+            {
+                NAME: 'Caterpillar',
+                CODE: 13,
+                LEVELS: [0],
+                POINTS: [50],
+                CRYSTAL_DROPS: [10],
+                WEAPON_DROPS: [11]
+            },
+            {
+                NAME: 'Candlestick',
+                CODE: 14,
+                LEVELS: [0, 1, 2],
+                POINTS: [80, 100, 120],
+                CRYSTAL_DROPS: [20, 30, 40],
+                WEAPON_DROPS: [10, 11, 12]
+            },
+            {
+                NAME: 'Piranha',
+                CODE: 16,
+                LEVELS: [0, 1, 2],
+                POINTS: [40, 75, 120],
+                CRYSTAL_DROPS: [30, 40, 50],
+                WEAPON_DROPS: [11, 21, 12]
+            },
+            {
+                NAME: 'Pointu',
+                CODE: 17,
+                LEVELS: [0, 1, 2],
+                POINTS: [80, 100, 150],
+                CRYSTAL_DROPS: [20, 30, 40],
+                WEAPON_DROPS: [11, 21, 12]
+            },
+            {
+                NAME: 'Fork',
+                CODE: 18,
+                LEVELS: [0, 1, 2],
+                POINTS: [100, 200, 300],
+                CRYSTAL_DROPS: [20, 30, 40],
+                WEAPON_DROPS: [10, 11, 12]
+            },
+            {
+                NAME: 'Saucer',
+                CODE: 19,
+                LEVELS: [0, 1, 2],
+                POINTS: [1000, 2500, 4000],
+                CRYSTAL_DROPS: [100, 200, 300],
+                WEAPON_DROPS: [21, 12, 12]
+            }
+        ],
+        ALLOWED: [],
+        MAX_AMOUNT: 0,
+        SPAWN_RATE: 60
+    }
+
+    constructor(
+        position, velocity,
+        name, code, level,
+        points, crystalDrop, weaponDrop
+    ) {
+        this.name = name;
+
+        this.alien = game.addAlien({
+            x: position.x, y: position.y, vx: velocity.x, vy: velocity.y,
+            code: code, level: level,
+            points: points, crystal_drop: crystalDrop, weapon_drop: weaponDrop,
+        });
+    }
+
+    setPosition(position) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ x: position.x, y: position.y });
+        }
+        return this;
+    }
+
+    setVelocity(velocity) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ vx: velocity.x, vy: velocity.y });
+        }
+        return this;
+    }
+
+    setShield(shield) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ shield: shield });
+        }
+        return this;
+    }
+
+    setRegen(regen) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ regen: regen });
+        }
+        return this;
+    }
+
+    setDamage(damage) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ damage: damage });
+        }
+        return this;
+    }
+
+    setLaserSpeed(laserSpeed) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ laser_speed: laserSpeed });
+        }
+        return this;
+    }
+
+    setRate(rate) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ rate: rate });
+        }
+        return this;
+    }
+
+    destroySelf() {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.set({ kill: true });
+        }
+        return this;
+    }
+}
+
+class Collectible {
+    name = '';
+
+    static C = {
+        TYPES: [
+            {
+                NAME: '4 rockets pack',
+                CODE: 10,
+            },
+            {
+                NAME: '2 missiles pack',
+                CODE: 11
+            },
+            {
+                NAME: '1 torpedo',
+                CODE: 12
+            },
+            {
+                NAME: '8 light mines pack',
+                CODE: 20
+            },
+            {
+                NAME: '4 heavy mines pack',
+                CODE: 21
+            },
+            {
+                NAME: 'Mining pod',
+                CODE: 40
+            },
+            {
+                NAME: 'Attack pod',
+                CODE: 41
+            },
+            {
+                NAME: 'Defence pod',
+                CODE: 42
+            },
+            {
+                NAME: 'Energy refill',
+                CODE: 90
+            },
+            {
+                NAME: 'Shield refill',
+                CODE: 91
+            }
+        ],
+        ALLOWED: [10, 11, 12, 20, 21],
+        MAX_AMOUNT: 30,
+        SPAWN_RATE: 1200
+    }
+
+    constructor(
+        position,
+        name,
+        code
+    ) {
+        this.name = name;
+
+        game.addCollectible({
+            x: position.x, y: position.y,
+            code: code
+        });
+    }
+}
+
+class Asteroid {
+    asteroid = null;
+
+    constructor(position, velocity, size) {
+        this.asteroid = game.addAsteroid({
+            x: position.x, y: position.y, vx: velocity.x, vy: velocity.y,
+            size: size
+        });
+    }
+
+    setPosition(position) {
+        if (game.asteroids.includes(this.asteroid)) {
+            this.asteroid.set({ x: position.x, y: position.y });
+        }
+        return this;
+    }
+
+    setVelocity(velocity) {
+        if (game.asteroids.includes(this.asteroid)) {
+            this.asteroid.set({ vx: velocity.x, vy: velocity.y });
+        }
+        return this;
+    }
+
+    setSize(size) {
+        if (game.asteroids.includes(this.asteroid)) {
+            this.asteroid.set({ size: size });
+        }
+        return this;
+    }
+
+    destroySelf() {
+        if (game.asteroids.includes(this.asteroid)) {
+            this.asteroid.set({ kill: true });
+        }
+        return this;
+    }
+
+    destroySelfNoRemains() {
+        if (game.asteroids.includes(this.asteroid)) {
+            this.asteroid.set({ size: 1, kill: true });
+        }
+        return this;
+    }
+}
+
+class Obj {
+    obj = null;
+
+    static C = {
+        TYPES: {
+            PLANE: {
+                id: 'plane',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 10,
+                    y: 10,
+                    z: 0
+                },
+                type: {
+                    id: 'grid',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: ''
+                }
+            },
+            FLAG: {
+                id: 'flagstand',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -4
+                },
+                rotation: {
+                    x: Math.PI / 2,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 0.8,
+                    z: 1
+                },
+                type: {
+                    id: "flag",
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flag.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    emissiveColor: '#ffffff',
+                    transparent: false,
+                }
+            },
+            FLAGSTAND: {
+                id: 'flagstand',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 60,
+                    y: 60,
+                    z: 30
+                },
+                type: {
+                    id: `flagStand-${roundNum}-${i}`,
+                    obj: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flagstand.obj",
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    emissiveColor: '#ffffff',
+                    transparent: false
+                }
+            }
+        }
+    }
+
+    constructor(
+        id,
+        type,
+        position, rotation, scale
+    ) {
+        this.obj = {
+            id: id,
+            type: type,
+            position: position, rotation: rotation, scale: scale
+        };
+    }
+
+    update() {
+        game.setObject(this.obj);
+    }
+
+    setPosition(position) {
+        this.obj.position = position;
+        return this;
+    }
+
+    setRotation(rotation) {
+        this.object.rotation = rotation;
+        return this;
+    }
+
+    setScale(scale) {
+        this.obj.scale = scale;
+        return this;
+    }
+
+    destroySelf() {
+        this.obj.position.z = -10000;
+        this.obj.scale.x *= 0.00001;
+        this.obj.scale.y *= 0.00001;
+        this.obj.scale.z *= 0.00001;
+        this.update();
+        game.removeObject(this.obj.id);
+    }
+}
+
+class ObjectType {
+    objectType = null;
+
+    constructor(
+        id,
+        obj,
+        diffuse, emissive, specular, bump,
+        diffuseColor, emissiveColor,
+        transparent,
+        bumpScale,
+        physics
+    ) {
+        this.objectType = {
+            id: id,
+            obj: obj,
+            diffuse: diffuse, emissive: emissive, specular: specular, bump: bump,
+            diffuseColor: diffuseColor, emissiveColor: emissiveColor,
+            transparent: transparent,
+            bumpScale: bumpScale,
+            physics: physics
+        };
+    }
+}
+
+class ObjectPhysics {
+    objectPhysics = null;
+
+    constructor(
+        mass,
+        shape
+    ) {
+        this.objectPhysics = {
+            mass: mass,
+            shape: shape
+        };
+    }
+}
+
+class TimedUI {
+    startTime = 0;
+    running = false;
+
+    ship = null;
+    ui = null;
+
+    static C = {
+        DEFAULT_TIME: 300
+    }
+
+    constructor(ship, ui, time = TimedUI.C.DEFAULT_TIME) {
+        this.ship = ship;
+        this.ui = ui;
+        this.time = time;
+        this.startTime = game.step;
+
+        this.running = true;
+
+        this.ship.sendUI(this.ui);
+    }
+
+    tick() {
+        if (this.running) {
+            if (game.step - this.startTime >= this.time) {
+                this.ship.hideUI(this.ui);
+                this.running = false;
+            }
+        }
+    }
+}
+
+class UIComponent {
+    uiComponent = null;
+
+    static C = {
+        UIS: {
+            SCOREBOARD: {
+                id: 'scoreboard',
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100 / 12],
+                        fill: '#ffffff'
+                    },
+                    {
+                        type: 'text',
+                        position: [0, 0, 100, 100 / 12],
+                        color: '#ffffff',
+                        value: 'Team Name'
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 50, 100, 100 / 12],
+                        fill: '#ffffff'
+                    },
+                    {
+                        type: 'text',
+                        position: [0, 50, 100, 100 / 12],
+                        color: '#ffffff',
+                        value: 'Team Name'
+                    }
+                ]
+            },
+            RADAR_BACKGROUND: {
+                id: 'radar_background',
+                visible: true,
+                components: [
+    
+                ]
+            },
+            LIVES_BLOCKER: {
+                id: "lives_blocker",
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(187),
+                position: [65, 0, 10, 10],
+                components: []
+            },
+            MESSAGE: {
+                id: 'message',
+                position: [20, 45, 60, 10],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        stroke: '#ff0000',
+                        fill: '#ff000080',
+                        width: 2
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 0, 90, 100],
+                        value: '',
+                        color: '#ffffff'
+                    }
+                ]
+            },
+            LOGO: {
+                id: 'logo',
+                position: [0, 10, 100, 20],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 5, 90, 35],
+                        value: '🏴CTF🏳️',
+                        color: '#ffffff'
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 40, 90, 25],
+                        value: 'Capture the Flag',
+                        color: '#ffffff'
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 65, 90, 15],
+                        value: 'Version 3.0 by JavRedstone',
+                        color: '#00ff00'
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 80, 90, 15],
+                        value: 'Feat. Robonuko, 45rfew, and Bhpsngum',
+                        color: '#ffffff'
+                    }
+                ]
+            },
+            WAITING_SCOREBOARD: {
+                id: "scoreboard",
+                visible: true,
+                components: [
+                    {
+                        type: "text",
+                        position: [5, 0, 90, 10],
+                        value: "Waiting for more players...",
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            WAITING: {
+                id: "waiting",
+                position: [0, 95, 100, 5],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: "text",
+                        position: [10, 10, 80, 80],
+                        value: "Waiting for more players...",
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            CHOOSE_SHIP: {
+                clickable: true,
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "rgba(23, 32, 42, 0.5)",
+                        stroke: "#ffffff",
+                        width: 3
+                    },
+                    {
+                        type: "text",
+                        position: [10, 0, 80, 70],
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "text",
+                        position: [10, 60, 80, 10],
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "box",
+                        position: [0, 0, 10, 10],
+                        fill: "#ffffff"
+                    },
+                    {
+                        type: "box",
+                        position: [90, 90, 10, 10],
+                        fill: "#ffffff"
+                    },
+                ]
+            },
+            CHOOSE_SHIP_COUNTDOWN: {
+                id: "chooseShipCountdown",
+                position: [25, 75, 50, 10],
+                visible: true,
+                components: [
+                    {
+                        type: "text",
+                        position: [0, 0, 100, 100],
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            CHOOSE_SHIP_SELECTION: {
+                id: "chooseShipSelection",
+                position: [40, 85, 20, 5],
+                visible: true,
+                components: [
+                    {
+                        type: "text",
+                        position: [0, 0, 100, 100],
+                        color: "#ffffff"
+                    }
+                ]
+            },
+        }
+    }
+
+    constructor(
+        id,
+        position,
+        visible,
+        clickable, shortcut,
+        components
+    ) {
+        this.uiComponent = {
+            id: id,
+            position: position,
+            visible: visible,
+            clickable: clickable, shortcut: shortcut,
+            components: components
+        };
+        game.setUIComponent(this.uiComponent);
+    }
+
+    setPosition(position) {
+        this.uiComponent.position = position;
+        return this;
+    }
+
+    setVisible(visible) {
+        this.uiComponent.visible = visible;
+        return this;
+    }
+
+    setClickable(clickable) {
+        this.uiComponent.clickable = clickable;
+        return this;
+    }
+
+    setShortcut(shortcut) {
+        this.uiComponent.shortcut = shortcut;
+        return this;
+    }
+
+    setComponents(components) {
+        this.uiComponent.components = components;
+        return this;
+    }
+
+    addComponent(component) {
+        this.uiComponent.components.push(component);
+        return this;
+    }
+
+    removeComponent(component) {
+        Helper.deleteFromArray(this.uiComponent.components, component);
+        return this;
+    }
+
+    destroySelf() {
+        this.uiComponent.visible = false;
+        this.uiComponent.position = [0, 0, 0, 0];
+        game.setUIComponent(this.uiComponent);
+    }
+}
+
+class UISubComponent {
+    uiSubComponent = null;
+
+    constructor(
+        type,
+        id, // player id for badge
+        position,
+        value,
+        color,
+        fill,
+        width,
+        stroke,
+        align
+    ) {
+        this.uiSubComponent = {
+            type: type,
+            id: id,
+            position: position,
+            value: value,
+            color: color,
+            fill: fill,
+            width: width,
+            stroke: stroke,
+            align: align
+        };
+    }
+
+    setId(id) {
+        this.uiSubComponent.id = id;
+        return this;
+    }
+
+    setPosition(position) {
+        this.uiSubComponent.position = position;
+        return this;
+    }
+
+    setValue(value) {
+        this.uiSubComponent.value = value;
+        return this;
+    }
+
+    setColor(color) {
+        this.uiSubComponent.color = color;
+        return this;
+    }
+
+    setFill(fill) {
+        this.uiSubComponent.fill = fill;
+        return this;
+    }
+
+    setWidth(width) {
+        this.uiSubComponent.width = width;
+        return this;
+    }
+
+    setStroke(stroke) {
+        this.uiSubComponent.stroke = stroke;
+        return this;
+    }
+
+    setAlign(align) {
+        this.uiSubComponent.align = align;
+        return this;
+    }
+}
+
 class GameMap {
     name = '';
     author = '';
@@ -431,6 +1564,73 @@ class GameMap {
     tier = 0;
 
     static C = {
+        WAITING_MAP: {
+            name: 'Tunnels',
+            author: 'SChickenMan',
+            map: '   99999999999999    99999999999999   9999999999999999999   \n'+
+            '    9999999999999    99999999999999   999999999999999999    \n'+
+            '      99999999999     9999999999999   99999999999999999     \n'+
+            '       999999          99999999999    999999999999999       \n'+
+            '9                      99999999999     9999999999999       9\n'+
+            '999                     99999999999    999999999999       99\n'+
+            '9999            9999    99999999999    99999999999      9999\n'+
+            '99999     9999999999     9999999999    9999999999      99999\n'+
+            '999999     9999999999     999999999    9999999999     999999\n'+
+            '9999999    9999999999      99999999    9999999999    9999999\n'+
+            '9999999     9999999999      9999999     999999999     999999\n'+
+            '99999999    99999999999      9999999    999999999      99999\n'+
+            '99999999    9999999999        999999     999999999     99999\n'+
+            '9999999     999999999           99999     999999999     9999\n'+
+            '999999      99999999     9        999     9999999999    9999\n'+
+            '99999      99999999      99         99    9999999999    9999\n'+
+            '9999      999999999     99999                  999999    999\n'+
+            '  99     999999999     99999999                  9999       \n'+
+            '        999999999     999999999999                99        \n'+
+            '       9999999999     999999999999999999                    \n'+
+            '         99999       999999999999999999     99              \n'+
+            '999                 999999999999999999      999        99999\n'+
+            '9999                999999999999999999     99999      999999\n'+
+            '99999                999999999999999      99999999    999999\n'+
+            '99999        9999    99999999999999      999999999     99999\n'+
+            '99999    99999999    99999999999999      9999999999     9999\n'+
+            '9999    9999999999    99999999999      9999999999999    9999\n'+
+            '9999    9999999999    9999999999      99999999999999    9999\n'+
+            '9999    9999999999     99999       999999999999999999   9999\n'+
+            '999    999999999999    9999       999999999999999999    9999\n'+
+            '999    999999999999      99      9999999999999999999    9999\n'+
+            '999    99999999999              99999999999999999999    9999\n'+
+            '999    9999999999              99999999999999999999    99999\n'+
+            '999    999999999               99999999999999999999    99999\n'+
+            '9999   999999999     9999999    9999999999999999999    99999\n'+
+            '9999   99999999     99999999     9999999999999999     999999\n'+
+            '9999    9999999    9999999999     99999999999999      999999\n'+
+            '9999     999999    9999999999      99999999999      99999999\n'+
+            '99999     99999   999999999999      999999999       99999999\n'+
+            '99999     99999   9999999999         9999999        99999999\n'+
+            '999999     999    999999999           99999         99999999\n'+
+            '9999999     99    9999999       9       9       9    9999999\n'+
+            '9999999      9   9999999       999             99    9999999\n'+
+            '99999999         999999       99999           999     999999\n'+
+            '9999999          9999        99999999       999999    999999\n'+
+            '999999           999          99999999999999999999     99999\n'+
+            '999999           9             99999999999999999999    99999\n'+
+            '999999    9999          99      9999999999999999999    99999\n'+
+            '999999   99999         9999       999999999999999999   99999\n'+
+            '999999   99999       9999999       99999999999999999   99999\n'+
+            '999999   999999     9999999999      9999999999999999   99999\n'+
+            '99999    999999    999999999999     999999999999999    99999\n'+
+            '99999    9999999   9999999999999            999999     99999\n'+
+            '9999     9999999    9999999999999                      99999\n'+
+            '999     999999999   9999999999999                        999\n'+
+            '99      999999999   9999999999999     999                 99\n'+
+            '9      9999999999   99999999999999   9999999999999999      9\n'+
+            '      99999999999   99999999999999   99999999999999999      \n'+
+            '     999999999999   99999999999999    99999999999999999     \n'+
+            '    9999999999999   999999999999999   999999999999999999    ',
+            flags: [],
+            spawns: [],
+            tiers: [1]
+        },
         MAPS: [
             {
                 name: "Triangles",
@@ -2418,11 +3618,20 @@ class GameMap {
         this.name = name;
         this.author = author;
         this.map = map;
-        this.flags = flags;
-        this.spawns = spawns;
+        this.flags = [];
+        if (flags) {
+            for (let i = 0; i < flags.length; i++) {
+                this.flags.push(new Vector2(flags[i].x, flags[i].y));
+            }
+        }
+        this.spawns = [];
+        if (spawns) {
+            for (let i = 0; i < spawns.length; i++) {
+                this.spawns.push(new Vector2(spawns[i].x, spawns[i].y));
+            }
+        }
         this.tiers = tiers;
-
-        if (this.tiers.length == 0) {
+        if (!tiers || this.tiers.length == 0) {
             this.tiers = [1, 2, 3, 4, 5, 6];
         }
         this.tier = Helper.getRandomArrayElement(this.tiers);
@@ -2430,8 +3639,12 @@ class GameMap {
 
     spawn() {
         this.spawnMap();
-        this.spawnFlags();
-        this.spawnSpawns();
+        if (this.flags.length > 0) {
+            this.spawnFlags();
+        }
+        if (this.spawns.length > 0) {
+            this.spawnSpawns();
+        }
     }
 
     spawnMap() {
@@ -2570,18 +3783,22 @@ class ShipGroup {
 
     constructor(tier, ships) {
         this.tier = tier;
-        this.normalShips = Helper.deepCopy(ships);
-        this.ships = Helper.deepCopy(ships);
 
-        this.generateFlagShips();
+        this.processShips(ships);
     }
 
-    generateFlagShips() {
-        for (let ship of this.normalShips) {
+    processShips(ships) {
+        for (let ship of ships) {
             let jship = JSON.parse(ship);
+
+            jship.next = [];
+            jship.typespec.next = [];
+
+            this.normalShips.push(JSON.stringify(jship));
+
             jship.bodies.flag = ShipGroup.C.FLAG.FLAG_OBJ;
             jship.bodies.flagpole = ShipGroup.C.FLAG.FLAGPOLE_OBJ;
-            jship.model += this.normalShips.length;
+            jship.model += ships.length;
 
             jship.typespec.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
             jship.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
@@ -2590,872 +3807,22 @@ class ShipGroup {
 
             let flagShip = JSON.stringify(jship);
             this.flagShips.push(flagShip);
-            this.ships.push(flagShip);
         }
+
+        this.ships.push(...Helper.deepCopy(this.normalShips));
+        this.ships.push(...Helper.deepCopy(this.flagShips));
     }
     
-    chooseShips() {
-        this.chosenShips = Helper.getRandomArraySubset(this.normalShips, ShipGroup.C.NUM_SHIPS);
+    chooseShips(select = true) {
+        if (select) {
+            this.chosenShips = Helper.getRandomArraySubset(this.normalShips, ShipGroup.C.NUM_SHIPS);
+        }
+        this.chosenShips = Helper.deepCopy(this.normalShips);
         for (let ship of this.chosenShips) {
             let jship = JSON.parse(ship);
             this.chosenNames.push(jship.name);
             this.chosenTypes.push(jship.level * 100 + jship.model);
         }
-    }
-}
-
-class Message {
-    startTime = 0;
-    running = false;
-
-    ship = null;
-    text = '';
-    baseColor = 0;
-
-    static C = {
-        MESSAGE_TIME: 120
-    }
-
-    constructor(ship, text, baseColor) {
-        this.startTime = game.step;
-        this.running = true;
-
-        this.ship = ship;
-        this.text = text;
-        this.baseColor = baseColor;
-
-        let message = Helper.deepCopy(UIComponent.C.UIS.MESSAGE);
-        message.components[0].stroke = this.baseColor;
-        message.components[0].fill = this.baseColor + '80';
-        message.components[1].value = this.text;
-        this.ship.sendUI(message);
-    }
-
-    tick() {
-        if (this.running) {
-            if (game.step - this.startTime >= Message.C.MESSAGE_TIME) {
-                this.ship.hideUI(Helper.deepCopy(UIComponent.C.UIS.MESSAGE));
-                this.running = false;
-            }
-        }
-    }
-}
-
-class Team {
-    name = '';
-    team = 0;
-    color = '';
-    hex = 0;
-    hue = 0;
-
-    score = 0;
-    totalScore = 0;
-
-    numShips = 0;
-
-    static C = {
-        TEAMS: [
-            [
-                {
-                    TEAM: 0,
-                    COLOR: 'Red',
-                    HEX: '#ff0000',
-                    NAME: 'Anarchist Concord Vega',
-                    HUE: 0
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Blue',
-                    HEX: '#0000ff',
-                    NAME: 'Andromeda Union',
-                    HUE: 240
-                }
-            ],
-            [
-                {
-                    TEAM: 0,
-                    COLOR: 'Yellow',
-                    HEX: '#ffff00',
-                    NAME: 'Solaris Dominion',
-                    HUE: 60
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Purple',
-                    HEX: '#ff00ff',
-                    NAME: 'Galactic Empire',
-                    HUE: 300
-                }
-            ],
-            [
-                {
-                    TEAM: 0,
-                    COLOR: 'Green',
-                    HEX: '#00ff00',
-                    NAME: 'Rebel Alliance',
-                    HUE: 120
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Orange',
-                    HEX: '#ff8000',
-                    NAME: 'Sovereign Trappist Colonies',
-                    HUE: 30
-                }
-            ]
-        ]
-    }
-
-    constructor(name, team, color, hex, hue) {
-        this.name = name;
-        this.team = team;
-        this.color = color;
-        this.hex = hex;
-        this.hue = hue;
-    }
-
-    setScore(score) {
-        this.score = score;
-    }
-}
-
-class Ship {
-    team = null;
-    ship = null;
-
-    message = null;
-
-    done = false;
-
-    score = 0;
-
-    constructor(ship) {
-        this.ship = ship;
-    }
-
-    sendUI(ui) {
-        if (this.ship != null) {
-            this.ship.setUIComponent(ui);
-        }
-    }
-
-    hideUI(ui) {
-        ui.position = [0, 0, 0, 0];
-        ui.visible = false;
-        ui.clickable = false;
-        ui.components = [];
-
-        this.sendUI(ui);
-    }
-
-    tick() {
-        if (this.message != null) {
-            if (this.message.running) {
-                this.message.tick();
-            }
-            else {
-                this.message = null;
-            }
-        }
-
-        this.ship.set({ score: this.score });
-    }
-
-    sendMessage(text, baseColor) {
-        this.message = new Message(this, text, baseColor);
-    }
-
-    sendChooseShip() {
-        this.chooseShipVisible = true;
-    }
-
-    getLevel() {
-        return Math.trunc(this.ship.type / 100);
-    }
-
-    getModel() {
-        return this.ship.type % 100;
-    }
-
-    getMaxCrystals() {
-        switch (this.getLevel()) {
-            case 1:
-                return 20;
-            case 2:
-                return 80;
-            case 3:
-                return 180;
-            case 4:
-                return 360;
-            case 5:
-                return 500;
-            case 6:
-                return 720;
-            case 7:
-                return 980;
-            default:
-                return 0;
-        }
-    }
-
-    setPosition(position) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ x: position.x, y: position.y });
-        }
-        return this;
-    }
-
-    setVelocity(velocity) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ vx: velocity.x, vy: velocity.y });
-        }
-        return this;
-    }
-
-    setCrystals(crystals) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ crystals: crystals });
-        }
-        return this;
-    }
-
-    setShield(shield) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ shield: shield });
-        }
-        return this;
-    }
-
-    setStats(stats) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ stats: stats });
-        }
-        return this;
-    }
-
-    setInvulnerable(invulnerable) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ invulnerable: invulnerable });
-        }
-        return this;
-    }
-
-    setIdle(idle) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ idle: idle });
-        }
-        return this;
-    }
-
-    setCollider(collider) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ collider: collider });
-        }
-        return this;
-    }
-
-    setTeam(team) {
-        this.team = team;
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ team: team.team, hue: team.hue });
-        }
-        return this;
-    }
-
-    setHue(hue) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ hue: hue });
-        }
-        return this;
-    }
-
-    setScore(score) {
-        this.score = score;
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ score: score });
-        }
-        return this;
-    }
-
-    setType(type) {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ type: type });
-        }
-        return this;
-    }
-
-    destroySelf() {
-        if (game.ships.includes(this.ship)) {
-            this.ship.set({ kill: true });
-        }
-        return this;
-    }
-}
-
-class Alien {
-    name = '';
-
-    alien = null;
-
-    static C = {
-        TYPES: [
-            {
-                NAME: 'Chicken',
-                CODE: 10,
-                LEVELS: [0, 1, 2],
-                POINTS: [10, 20, 50],
-                CRYSTAL_DROPS: [10, 20, 30],
-                WEAPON_DROPS: [10, 20, 11]
-            },
-            {
-                NAME: 'Crab',
-                CODE: 11,
-                LEVELS: [0, 1, 2],
-                POINTS: [30, 60, 120],
-                CRYSTAL_DROPS: [20, 30, 40],
-                WEAPON_DROPS: [10, 20, 11]
-            },
-            {
-                NAME: 'Caterpillar',
-                CODE: 13,
-                LEVELS: [0],
-                POINTS: [50],
-                CRYSTAL_DROPS: [10],
-                WEAPON_DROPS: [11]
-            },
-            {
-                NAME: 'Candlestick',
-                CODE: 14,
-                LEVELS: [0, 1, 2],
-                POINTS: [80, 100, 120],
-                CRYSTAL_DROPS: [20, 30, 40],
-                WEAPON_DROPS: [10, 11, 12]
-            },
-            {
-                NAME: 'Piranha',
-                CODE: 16,
-                LEVELS: [0, 1, 2],
-                POINTS: [40, 75, 120],
-                CRYSTAL_DROPS: [30, 40, 50],
-                WEAPON_DROPS: [11, 21, 12]
-            },
-            {
-                NAME: 'Pointu',
-                CODE: 17,
-                LEVELS: [0, 1, 2],
-                POINTS: [80, 100, 150],
-                CRYSTAL_DROPS: [20, 30, 40],
-                WEAPON_DROPS: [11, 21, 12]
-            },
-            {
-                NAME: 'Fork',
-                CODE: 18,
-                LEVELS: [0, 1, 2],
-                POINTS: [100, 200, 300],
-                CRYSTAL_DROPS: [20, 30, 40],
-                WEAPON_DROPS: [10, 11, 12]
-            },
-            {
-                NAME: 'Saucer',
-                CODE: 19,
-                LEVELS: [0, 1, 2],
-                POINTS: [1000, 2500, 4000],
-                CRYSTAL_DROPS: [100, 200, 300],
-                WEAPON_DROPS: [21, 12, 12]
-            }
-        ],
-        MAX_AMOUNT: 5,
-        SPAWN_RATE: 60
-    }
-
-    constructor(
-        position, velocity,
-        name, code, level,
-        points, crystalDrop, weaponDrop
-    ) {
-        this.name = name;
-
-        this.alien = game.addAlien({
-            x: position.x, y: position.y, vx: velocity.x, vy: velocity.y,
-            code: code, level: level,
-            points: points, crystal_drop: crystalDrop, weapon_drop: weaponDrop,
-        });
-    }
-
-    setPosition(position) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ x: position.x, y: position.y });
-        }
-        return this;
-    }
-
-    setVelocity(velocity) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ vx: velocity.x, vy: velocity.y });
-        }
-        return this;
-    }
-
-    setShield(shield) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ shield: shield });
-        }
-        return this;
-    }
-
-    setRegen(regen) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ regen: regen });
-        }
-        return this;
-    }
-
-    setDamage(damage) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ damage: damage });
-        }
-        return this;
-    }
-
-    setLaserSpeed(laserSpeed) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ laser_speed: laserSpeed });
-        }
-        return this;
-    }
-
-    setRate(rate) {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ rate: rate });
-        }
-        return this;
-    }
-
-    destroySelf() {
-        if (game.aliens.includes(this.alien)) {
-            this.alien.set({ kill: true });
-        }
-        return this;
-    }
-}
-
-class Collectible {
-    name = '';
-
-    static C = {
-        TYPES: [
-            {
-                NAME: '4 rockets pack',
-                CODE: 10,
-            },
-            {
-                NAME: '2 missiles pack',
-                CODE: 11
-            },
-            {
-                NAME: '1 torpedo',
-                CODE: 12
-            },
-            {
-                NAME: '8 light mines pack',
-                CODE: 20
-            },
-            {
-                NAME: '4 heavy mines pack',
-                CODE: 21
-            },
-            {
-                NAME: 'Mining pod',
-                CODE: 40
-            },
-            {
-                NAME: 'Attack pod',
-                CODE: 41
-            },
-            {
-                NAME: 'Defence pod',
-                CODE: 42
-            },
-            {
-                NAME: 'Energy refill',
-                CODE: 90
-            },
-            {
-                NAME: 'Shield refill',
-                CODE: 91
-            }
-        ],
-        MAX_AMOUNT: 30,
-        SPAWN_RATE: 1200
-    }
-
-    constructor(
-        position,
-        name,
-        code
-    ) {
-        this.name = name;
-
-        game.addCollectible({
-            x: position.x, y: position.y,
-            code: code
-        });
-    }
-}
-
-class Asteroid {
-    asteroid = null;
-
-    constructor(position, velocity, size) {
-        this.asteroid = game.addAsteroid({
-            x: position.x, y: position.y, vx: velocity.x, vy: velocity.y,
-            size: size
-        });
-    }
-
-    setPosition(position) {
-        if (game.asteroids.includes(this.asteroid)) {
-            this.asteroid.set({ x: position.x, y: position.y });
-        }
-        return this;
-    }
-
-    setVelocity(velocity) {
-        if (game.asteroids.includes(this.asteroid)) {
-            this.asteroid.set({ vx: velocity.x, vy: velocity.y });
-        }
-        return this;
-    }
-
-    setSize(size) {
-        if (game.asteroids.includes(this.asteroid)) {
-            this.asteroid.set({ size: size });
-        }
-        return this;
-    }
-
-    destroySelf() {
-        if (game.asteroids.includes(this.asteroid)) {
-            this.asteroid.set({ kill: true });
-        }
-        return this;
-    }
-
-    destroySelfNoRemains() {
-        if (game.asteroids.includes(this.asteroid)) {
-            this.asteroid.set({ size: 1, kill: true });
-        }
-        return this;
-    }
-}
-
-class Obj {
-    obj = null;
-
-    static C = {
-        TYPES: {
-            PLANE: {
-                id: 'plane',
-                position: {
-                    x: 0,
-                    y: 0,
-                    z: 0
-                },
-                rotation: {
-                    x: 0,
-                    y: 0,
-                    z: 0
-                },
-                scale: {
-                    x: 10,
-                    y: 10,
-                    z: 0
-                },
-                type: {
-                    id: 'grid',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-                    emissive: ''
-                }
-            }
-        }
-    }
-
-    constructor(
-        id,
-        type,
-        position, rotation, scale
-    ) {
-        this.obj = {
-            id: id,
-            type: type,
-            position: position, rotation: rotation, scale: scale
-        };
-    }
-
-    update() {
-        game.setObject(this.obj);
-    }
-
-    setPosition(position) {
-        this.obj.position = position;
-        return this;
-    }
-
-    setRotation(rotation) {
-        this.object.rotation = rotation;
-        return this;
-    }
-
-    setScale(scale) {
-        this.obj.scale = scale;
-        return this;
-    }
-
-    destroySelf() {
-        this.obj.position.z = -10000;
-        this.obj.scale.x *= 0.00001;
-        this.obj.scale.y *= 0.00001;
-        this.obj.scale.z *= 0.00001;
-        this.update();
-        game.removeObject(this.obj.id);
-    }
-}
-
-class ObjectType {
-    objectType = null;
-
-    constructor(
-        id,
-        obj,
-        diffuse, emissive, specular, bump,
-        diffuseColor, emissiveColor,
-        transparent,
-        bumpScale,
-        physics
-    ) {
-        this.objectType = {
-            id: id,
-            obj: obj,
-            diffuse: diffuse, emissive: emissive, specular: specular, bump: bump,
-            diffuseColor: diffuseColor, emissiveColor: emissiveColor,
-            transparent: transparent,
-            bumpScale: bumpScale,
-            physics: physics
-        };
-    }
-}
-
-class ObjectPhysics {
-    objectPhysics = null;
-
-    constructor(
-        mass,
-        shape
-    ) {
-        this.objectPhysics = {
-            mass: mass,
-            shape: shape
-        };
-    }
-}
-
-class UIComponent {
-    uiComponent = null;
-
-    static C = {
-        UIS: {
-            SCOREBOARD: {
-                id: 'scoreboard',
-                visible: true,
-                components: [
-                    {
-                        type: 'box',
-                        position: [0, 0, 100, 100 / 12],
-                        stroke: '#ffffff',
-                        fill: '#ffffff'
-                    },
-                    {
-                        type: 'text',
-                        position: [0, 0, 100, 100 / 12],
-                        color: '#ffffff',
-                        value: 'Team Name'
-                    },
-                    {
-                        type: 'box',
-                        position: [0, 50, 100, 100 / 12],
-                        stroke: '#ffffff',
-                        fill: '#ffffff'
-                    },
-                    {
-                        type: 'text',
-                        position: [0, 50, 100, 100 / 12],
-                        color: '#ffffff',
-                        value: 'Team Name'
-                    }
-                ]
-            },
-            RADAR_BACKGROUND: {
-                id: 'radar_background',
-                visible: true,
-                components: [
-    
-                ]
-            },
-            LIVES_BLOCKER: {
-                id: "lives_blocker",
-                visible: true,
-                clickable: true,
-                shortcut: String.fromCharCode(187),
-                position: [65, 0, 10, 10],
-                components: []
-            },
-            MESSAGE: {
-                id: 'message',
-                position: [20, 45, 60, 10],
-                visible: true,
-                components: [
-                    {
-                        type: 'box',
-                        position: [0, 0, 100, 100],
-                        stroke: '#ff0000',
-                        fill: '#ff000080',
-                        width: 2
-                    },
-                    {
-                        type: 'text',
-                        position: [5, 0, 90, 100],
-                        value: '',
-                        color: '#ffffff'
-                    }
-                ]
-            },
-        }
-    }
-
-    constructor(
-        id,
-        position,
-        visible,
-        clickable, shortcut,
-        components
-    ) {
-        this.uiComponent = {
-            id: id,
-            position: position,
-            visible: visible,
-            clickable: clickable, shortcut: shortcut,
-            components: components
-        };
-        game.setUIComponent(this.uiComponent);
-    }
-
-    setPosition(position) {
-        this.uiComponent.position = position;
-        return this;
-    }
-
-    setVisible(visible) {
-        this.uiComponent.visible = visible;
-        return this;
-    }
-
-    setClickable(clickable) {
-        this.uiComponent.clickable = clickable;
-        return this;
-    }
-
-    setShortcut(shortcut) {
-        this.uiComponent.shortcut = shortcut;
-        return this;
-    }
-
-    setComponents(components) {
-        this.uiComponent.components = components;
-        return this;
-    }
-
-    addComponent(component) {
-        this.uiComponent.components.push(component);
-        return this;
-    }
-
-    removeComponent(component) {
-        Helper.deleteFromArray(this.uiComponent.components, component);
-        return this;
-    }
-
-    destroySelf() {
-        this.uiComponent.visible = false;
-        this.uiComponent.position = [0, 0, 0, 0];
-        game.setUIComponent(this.uiComponent);
-    }
-}
-
-class UISubComponent {
-    uiSubComponent = null;
-
-    constructor(
-        type,
-        id, // player id for badge
-        position,
-        value,
-        color,
-        fill,
-        width,
-        stroke,
-        align
-    ) {
-        this.uiSubComponent = {
-            type: type,
-            id: id,
-            position: position,
-            value: value,
-            color: color,
-            fill: fill,
-            width: width,
-            stroke: stroke,
-            align: align
-        };
-    }
-
-    setId(id) {
-        this.uiSubComponent.id = id;
-        return this;
-    }
-
-    setPosition(position) {
-        this.uiSubComponent.position = position;
-        return this;
-    }
-
-    setValue(value) {
-        this.uiSubComponent.value = value;
-        return this;
-    }
-
-    setColor(color) {
-        this.uiSubComponent.color = color;
-        return this;
-    }
-
-    setFill(fill) {
-        this.uiSubComponent.fill = fill;
-        return this;
-    }
-
-    setWidth(width) {
-        this.uiSubComponent.width = width;
-        return this;
-    }
-
-    setStroke(stroke) {
-        this.uiSubComponent.stroke = stroke;
-        return this;
-    }
-
-    setAlign(align) {
-        this.uiSubComponent.align = align;
-        return this;
     }
 }
 
@@ -3703,11 +4070,12 @@ class Helper {
 }
 
 Game.setShipGroups();
-console.log(Game.C.OPTIONS.SHIPS)
 this.options = {
     root_mode: Game.C.OPTIONS.ROOT_MODE,
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
+    asteroids_strength: Game.C.OPTIONS.ASTEROIDS_STRENGTH,
+    crystal_drop: Game.C.OPTIONS.CRYSTAL_DROP,
     crystal_value: Game.C.OPTIONS.CRYSTAL_VALUE,
 
     friendly_colors: Game.C.OPTIONS.FRIENDLY_COLORS,
@@ -3724,6 +4092,7 @@ this.options = {
     reset_tree: Game.C.OPTIONS.RESET_TREE,
     choose_ship: Game.C.OPTIONS.CHOOSE_SHIP,
     ships: Game.C.OPTIONS.SHIPS,
+    max_players: Game.C.OPTIONS.MAX_PLAYERS,
 
     vocabulary: Game.C.OPTIONS.VOCABULARY
 }
