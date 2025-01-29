@@ -13,17 +13,15 @@ class Game {
 
     aliens = [];
     asteroids = [];
+
+    flags = [];
+    flagStands = [];
     
     waiting = false;
 
-    currScore1 = 0;
-    currScore2 = 0;
-
-    totalScore1 = 0;
-    totalScore2 = 0;
-
-    flagHolder1 = null;
-    flagHolder2 = null;
+    roundScores = [0, 0];
+    totalScores = [0, 0];
+    flagHolders = [null, null];
 
     static C = {
         OPTIONS: {
@@ -78,9 +76,10 @@ class Game {
             MILLISECONDS_PER_TICK: 1000 / 60,
     
             ENTITY_MANAGER: 60,
-            SHIP_MANAGER: 30            
+            SHIP_MANAGER: 30
         },
-        WAITING_MIN: 2,
+        MIN_PLAYERS: 1,
+        DISTANCE_TO_FLAG: 8,
     }
 
     static setShipGroups() {
@@ -110,10 +109,11 @@ class Game {
 
     reset() {
         this.deleteEverything();
+        this.selectRandomTeams();
         this.setMap();
         this.setShipGroup();
+        this.spawnFlags();
         this.spawnInactiveObjects();
-        this.selectRandomTeams();
         this.resetShips();
     }
 
@@ -136,7 +136,6 @@ class Game {
             randMap = GameMap.C.WAITING_MAP
         }
         this.map = new GameMap(randMap.name, randMap.author, randMap.map, randMap.flags, randMap.spawns, randMap.tiers);
-        this.map.spawn();
     }
 
     setShipGroup(select = true) {
@@ -145,6 +144,42 @@ class Game {
                 this.shipGroup = shipGroup;
                 this.shipGroup.chooseShips(select);
             }
+        }
+    }
+
+    spawnFlags() {
+        for (let flag of this.flags) {
+            flag.destroySelf();
+        }
+        this.flags = [];
+        for (let flagStand of this.flagStands) {
+            flagStand.destroySelf();
+        }
+        this.flagStands = [];
+        for (let i = 0; i < this.map.flags.length; i++) {
+            let flagPos = this.map.flags[i];
+            let flag = new Obj(
+                Obj.C.OBJS.FLAG.id,
+                Obj.C.OBJS.FLAG.type,
+                new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAG.position.z),
+                new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
+                new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
+                this.teams[i].hex,
+                true
+            );
+            flag.update();
+            let flagStand = new Obj(
+                Obj.C.OBJS.FLAGSTAND.id,
+                Obj.C.OBJS.FLAGSTAND.type,
+                new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
+                new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
+                new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
+                this.teams[i].hex,
+                true
+            );
+            flagStand.update();
+            this.flags.push(flag);
+            this.flagStands.push(flagStand);
         }
     }
 
@@ -190,20 +225,22 @@ class Game {
             ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
         }
 
-        ship.setCrystals(ship.getRoundCrystals());
-        ship.setShield(999999);
-        ship.setStats(99999999);
+        ship.fillUp();
         ship.setVelocity(new Vector2(0, 0));
         ship.setCollider(true);
         ship.setIdle(false);
 
         if (this.waiting) {
             ship.setPosition(new Vector2(0, 0));
+        } else {
+            if (this.map) {
+                ship.setPosition(this.map.spawns[ship.team.team])
+            }
         }
     }
 
     manageGameState() {
-        if (this.ships.length < Game.C.WAITING_MIN) {
+        if (this.ships.length < Game.C.MIN_PLAYERS) {
             if (!this.waiting) {
                 this.waiting = true;
                 this.setMap();
@@ -212,9 +249,10 @@ class Game {
         } else {
             if (this.waiting) {
                 this.waiting = false;
-                this.resetShips();
-                this.setMap();
-                this.setShipGroup();
+                this.reset();
+                for (let ship of this.ships) {
+                    this.sendChooseShip(ship);
+                }
             }
         }
     }
@@ -286,6 +324,10 @@ class Game {
 
                     ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
                     ship.sendTimedUI(UIComponent.C.UIS.LOGO, Ship.C.TIMES.LOGO_TIME);
+
+                    if (!this.waiting) {
+                        this.sendChooseShip(ship);
+                    }
                 }
 
                 if (this.waiting) {
@@ -295,6 +337,29 @@ class Game {
 
                     ship.setCrystals(0);
                 } else {
+                    for (let i = 0; i < this.map.flags.length; i++) {
+                        let flagPos = this.map.flags[i];
+                        let d = flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y));
+                        if (d < Game.C.DISTANCE_TO_FLAG) {
+                            if (ship.hasFlag && this.teams[i].team == ship.team.team) {
+                                ship.hasFlag = false;
+                                ship.setType(ship.ship.type - this.shipGroup.normalShips.length);
+                                ship.setMaxStats();
+                                ship.setHue(ship.team.hue);
+                                this.flagHolders[i] = null;
+
+                                this.roundScores[ship.team.team]++;
+                            }
+                            if (this.flagHolders[i] == null && !ship.hasFlag && this.teams[i].team != ship.team.team) {
+                                ship.hasFlag = true;
+                                ship.setType(ship.ship.type + this.shipGroup.normalShips.length);
+                                ship.setMaxStats();
+                                ship.setHue(ship.team.flagged);
+                                this.flagHolders[i + 1 % 2] = ship.ship.id;
+                            }
+                        }
+                    }
+
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
                     ship.sendUI(radarBackground);
 
@@ -302,7 +367,13 @@ class Game {
                     scoreboard.components[0].fill = this.teams[0].hex + 'BF';
                     scoreboard.components[2].fill = this.teams[1].hex + 'BF';
                     scoreboard.components[1].value = this.teams[0].name;
+                    if (this.teams[0].color == 'Yellow') {
+                        scoreboard.components[1].color = '#000000';
+                    }
                     scoreboard.components[3].value = this.teams[1].name;
+                    if (this.teams[1].color == 'Yellow') {
+                        scoreboard.components[3].color = '#000000';
+                    }
                     let players1 = [];
                     let players2 = [];
                     for (let ship of this.ships) {
@@ -360,6 +431,28 @@ class Game {
                         }
                     }
                     ship.sendUI(scoreboard);
+
+                    console.log(ship.allUIS)
+                    if (!ship.hasUI(UIComponent.C.UIS.LOGO)) {
+                        let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
+                        if (this.roundScores[0] == this.roundScores[1]) {
+                            roundScore.components[0].value = 'TIE';
+                            roundScore.components[0].color = '#ffffff';
+                        }
+                        else if (this.roundScores[0] > this.roundScores[1]) {
+                            roundScore.components[0].value = this.teams[0].color.toUpperCase();
+                            roundScore.components[0].color = this.teams[0].hex;
+                        }
+                        else {
+                            roundScore.components[0].value = this.teams[1].color.toUpperCase();
+                            roundScore.components[0].color = this.teams[1].hex;
+                        }
+                        roundScore.components[1].value = this.roundScores[0];
+                        roundScore.components[1].color = this.teams[0].hex;
+                        roundScore.components[3].value = this.roundScores[1];
+                        roundScore.components[3].color = this.teams[1].hex;
+                        ship.sendUI(roundScore);
+                    }
                 }
 
                 ship.tick();
@@ -429,6 +522,17 @@ class Game {
 
     }
 
+    sendChooseShip(ship) {
+        for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+            let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
+            chooseShip.id += '-' + i;
+            chooseShip.position[0] = 22.5 + 20 * i;
+            chooseShip.components[1].value = this.shipGroup.chosenNames[i];
+            chooseShip.components[2].value = this.shipGroup.chosenTypes[i];
+            ship.sendUI(chooseShip);
+        }
+    }
+
     findShip(gameShip) {
         for (let ship of this.ships) {
             if (ship.ship == gameShip || ship.ship.id == gameShip.id) {
@@ -453,9 +557,10 @@ class Game {
         }
         else { // on respawn
             let ship = this.findShip(gameShip);
-            ship.setCrystals(ship.getRoundCrystals());
-            ship.setShield(999999);
-            ship.setStats(99999999);
+            ship.fillUp();
+            if (this.waiting) {
+                ship.setPosition(new Vector2(0, 0));
+            }
         }
     }
 
@@ -481,6 +586,7 @@ class Team {
     color = '';
     hex = 0;
     hue = 0;
+    flagged = 0;
 
     score = 0;
     totalScore = 0;
@@ -495,14 +601,16 @@ class Team {
                     COLOR: 'Red',
                     HEX: '#ff0000',
                     NAME: 'Anarchist Concord Vega',
-                    HUE: 0
+                    HUE: 0,
+                    FLAGGED: 40
                 },
                 {
                     TEAM: 1,
                     COLOR: 'Blue',
                     HEX: '#0000ff',
                     NAME: 'Andromeda Union',
-                    HUE: 240
+                    HUE: 240,
+                    FLAGGED: 180
                 }
             ],
             [
@@ -511,14 +619,16 @@ class Team {
                     COLOR: 'Yellow',
                     HEX: '#ffff00',
                     NAME: 'Solaris Dominion',
-                    HUE: 60
+                    HUE: 60,
+                    FLAGGED: 100
                 },
                 {
                     TEAM: 1,
                     COLOR: 'Purple',
                     HEX: '#ff00ff',
                     NAME: 'Galactic Empire',
-                    HUE: 300
+                    HUE: 300,
+                    FLAGGED: 260
                 }
             ],
             [
@@ -527,25 +637,28 @@ class Team {
                     COLOR: 'Green',
                     HEX: '#00ff00',
                     NAME: 'Rebel Alliance',
-                    HUE: 120
+                    HUE: 120,
+                    FLAGGED: 80
                 },
                 {
                     TEAM: 1,
                     COLOR: 'Orange',
                     HEX: '#ff8000',
                     NAME: 'Sovereign Trappist Colonies',
-                    HUE: 30
+                    HUE: 30,
+                    FLAGGED: 0
                 }
             ]
         ]
     }
 
-    constructor(name, team, color, hex, hue) {
+    constructor(name, team, color, hex, hue, flagged) {
         this.name = name;
         this.team = team;
         this.color = color;
         this.hex = hex;
         this.hue = hue;
+        this.flagged = flagged;
     }
 
     setScore(score) {
@@ -562,7 +675,7 @@ class Ship {
 
     done = false;
 
-    flag = null;
+    hasFlag = false;
 
     score = 0;
 
@@ -581,10 +694,14 @@ class Ship {
             this.ship.setUIComponent(Helper.deepCopy(ui));
 
             if (!hideMode) {
+                let removedUIs = [];
                 for (let u of this.allUIs) {
                     if (u.id == ui.id) {
-                        this.allUIs.splice(this.allUIs.indexOf(u), 1);
+                        removedUIs.push(u);
                     }
+                }
+                for (let u of removedUIs) {
+                    this.allUIs.splice(this.allUIs.indexOf(u), 1);
                 }
                 this.allUIs.push(ui);
             }
@@ -599,10 +716,14 @@ class Ship {
         cUI.clickable = false;
         cUI.components = [];
 
+        let removedUIs = [];
         for (let u of this.allUIs) {
             if (u.id == cUI.id) {
-                this.allUIs.splice(this.allUIs.indexOf(u), 1);
+                removedUIs.push(u);
             }
+        }
+        for (let u of removedUIs) {
+            this.allUIs.splice(this.allUIs.indexOf(u), 1);
         }
 
         this.sendUI(cUI, true);
@@ -619,6 +740,17 @@ class Ship {
         for (let uiGeneric in UIComponent.C.UIS) {
             this.hideUI(UIComponent.C.UIS[uiGeneric]);
         }
+        this.allUIs = [];
+        this.timedUIs = [];
+    }
+
+    hasUI(ui) {
+        for (let u of this.allUIs) {
+            if (u.id == ui.id) {
+                return true;
+            }
+        }
+        return false;
     }
 
     tick() {
@@ -639,10 +771,6 @@ class Ship {
 
     sendMessage(text, baseColor) {
         this.message = new Message(this, text, baseColor);
-    }
-
-    sendChooseShip() {
-        this.chooseShipVisible = true;
     }
 
     getLevel() {
@@ -769,6 +897,27 @@ class Ship {
             this.ship.set({ type: type });
         }
         return this;
+    }
+
+    fillUp() {
+        if (game.ships.includes(this.ship)) {
+            this.setCrystals(this.getRoundCrystals());
+            this.setMaxShield();
+            this.setMaxStats();
+        }
+        return this;
+    }
+
+    setMaxShield() {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ shield: 999999 });
+        }
+    }
+
+    setMaxStats() {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ stats: 99999999 });
+        }
     }
 
     destroySelf() {
@@ -1042,7 +1191,7 @@ class Obj {
     obj = null;
 
     static C = {
-        TYPES: {
+        OBJS: {
             PLANE: {
                 id: 'plane',
                 position: {
@@ -1110,7 +1259,7 @@ class Obj {
                     z: 30
                 },
                 type: {
-                    id: `flagStand-${roundNum}-${i}`,
+                    id: 'flagstand',
                     obj: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flagstand.obj",
                     diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
@@ -1124,13 +1273,36 @@ class Obj {
     constructor(
         id,
         type,
-        position, rotation, scale
+        position, rotation, scale,
+        color = "#ffffff",
+        randomizeID = false
     ) {
         this.obj = {
             id: id,
-            type: type,
-            position: position, rotation: rotation, scale: scale
+            type: Helper.deepCopy(type),
+            position: {
+                x: position.x,
+                y: position.y,
+                z: position.z
+            },
+            rotation: {
+                x: rotation.x,
+                y: rotation.y,
+                z: rotation.z
+            },
+            scale: {
+                x: scale.x,
+                y: scale.y,
+                z: scale.z
+            }
         };
+
+        if (randomizeID) {
+            this.obj.id += '-' + Helper.getRandomString(10);
+            this.obj.type.id += '-' + Helper.getRandomString(10);
+
+            this.obj.type.emissiveColor = color;
+        }
     }
 
     update() {
@@ -1153,10 +1325,10 @@ class Obj {
     }
 
     destroySelf() {
-        this.obj.position.z = -10000;
-        this.obj.scale.x *= 0.00001;
-        this.obj.scale.y *= 0.00001;
-        this.obj.scale.z *= 0.00001;
+        this.obj.position.z = -1e5;
+        this.obj.scale.x *= 1e-5;
+        this.obj.scale.y *= 1e-5;
+        this.obj.scale.z *= 1e-5;
         this.update();
         game.removeObject(this.obj.id);
     }
@@ -1302,7 +1474,7 @@ class UIComponent {
             },
             LOGO: {
                 id: 'logo',
-                position: [0, 10, 100, 20],
+                position: [0, 5, 100, 20],
                 visible: true,
                 components: [
                     {
@@ -1312,25 +1484,25 @@ class UIComponent {
                     },
                     {
                         type: 'text',
-                        position: [5, 5, 90, 35],
+                        position: [10, 10, 80, 25],
                         value: '🏴CTF🏳️',
                         color: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [5, 40, 90, 25],
+                        position: [10, 37.5, 80, 20],
                         value: 'Capture the Flag',
                         color: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [5, 65, 90, 15],
+                        position: [10, 60, 80, 15],
                         value: 'Version 3.0 by JavRedstone',
                         color: '#00ff00'
                     },
                     {
                         type: 'text',
-                        position: [5, 80, 90, 15],
+                        position: [10, 77.5, 80, 12.5],
                         value: 'Feat. Robonuko, 45rfew, and Bhpsngum',
                         color: '#ffffff'
                     }
@@ -1367,13 +1539,15 @@ class UIComponent {
                 ]
             },
             CHOOSE_SHIP: {
+                id: "choose_ship",
+                position: [0, 30, 15, 40],
                 clickable: true,
                 visible: true,
                 components: [
                     {
                         type: "box",
                         position: [0, 0, 100, 100],
-                        fill: "rgba(23, 32, 42, 0.5)",
+                        fill: "#00000080",
                         stroke: "#ffffff",
                         width: 3
                     },
@@ -1399,27 +1573,57 @@ class UIComponent {
                     },
                 ]
             },
-            CHOOSE_SHIP_COUNTDOWN: {
-                id: "chooseShipCountdown",
-                position: [25, 75, 50, 10],
+            ROUND_SCORES: {
+                id: "round_scores",
+                position: [42.5, 5, 15, 12],
                 visible: true,
                 components: [
                     {
                         type: "text",
-                        position: [0, 0, 100, 100],
+                        position: [0, 15, 100, 30]
+                    },
+                    {
+                        type: "text",
+                        position: [5, 0, 25, 100],
+                    },
+                    {
+                        type: "text",
+                        position: [25, 0, 50, 100],
+                        value: "-",
                         color: "#ffffff"
+                    },
+                    {
+                        type: "text",
+                        position: [70, 0, 25, 100],
                     }
                 ]
             },
-            CHOOSE_SHIP_SELECTION: {
-                id: "chooseShipSelection",
-                position: [40, 85, 20, 5],
+            TOTAL_SCORES: {
+                id: "total_scores",
+                position: [45, 17, 10, 8],
                 visible: true,
                 components: [
                     {
                         type: "text",
-                        position: [0, 0, 100, 100],
-                        color: "#ffffff"
+                        position: [0, 0, 100, 25],
+                        value: "Total",
+                        color: "#cde"
+                    },
+                    {
+                        type: "text",
+                        position: [0, 0, 25, 100],
+                        color: "#cde"
+                    },
+                    {
+                        type: "text",
+                        position: [25, 0, 50, 100],
+                        value: "-",
+                        color: "#cde"
+                    },
+                    {
+                        type: "text",
+                        position: [75, 0, 25, 100],
+                        color: "#cde"
                     }
                 ]
             },
@@ -3635,28 +3839,7 @@ class GameMap {
             this.tiers = [1, 2, 3, 4, 5, 6];
         }
         this.tier = Helper.getRandomArrayElement(this.tiers);
-    }
-
-    spawn() {
-        this.spawnMap();
-        if (this.flags.length > 0) {
-            this.spawnFlags();
-        }
-        if (this.spawns.length > 0) {
-            this.spawnSpawns();
-        }
-    }
-
-    spawnMap() {
         game.setCustomMap(this.map);
-    }
-
-    spawnFlags() {
-
-    }
-
-    spawnSpawns() {
-
     }
 }
 
@@ -3995,6 +4178,15 @@ class Helper {
 
     static getRandomFloat(min, max) {
         return Math.random() * (max - min) + min;
+    }
+
+    static getRandomString(length) {
+        let result = '';
+        const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        for (let i = 0; i < length; i++) {
+            result += characters.charAt(Math.floor(Math.random() * characters.length));
+        }
+        return result;
     }
 
     static getRandomRectCoordinate(min, max) {
