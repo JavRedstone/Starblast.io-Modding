@@ -36,7 +36,7 @@ class Game {
     
             RADAR_ZOOM: 1,
     
-            SPEED_MOD: 1.2,
+            SPEED_MOD: 30,
             FRICTION_RATIO: 1,
     
             WEAPONS_STORE: false,
@@ -78,12 +78,12 @@ class Game {
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 30
         },
-        MIN_PLAYERS: 1,
+        MIN_PLAYERS: 2,
         DISTANCE_TO_FLAG: 8,
     }
 
     static setShipGroups() {
-        Game.C.OPTIONS.SHIPS = [];
+        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1.2,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1.2,"model":1,"code":121,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
         for (let group of ShipGroup.C.GROUPS) {
             let shipGroup = new ShipGroup(group.TIER, group.SHIPS);
             Game.shipGroups.push(shipGroup);
@@ -197,7 +197,8 @@ class Game {
                     teamOption.TEAM,
                     teamOption.COLOR,
                     teamOption.HEX,
-                    teamOption.HUE
+                    teamOption.HUE,
+                    teamOption.FLAGGED
                 )
             );
         }
@@ -224,6 +225,8 @@ class Game {
 
             ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
         }
+
+        ship.chosenType = 0;
 
         ship.fillUp();
         ship.setVelocity(new Vector2(0, 0));
@@ -332,18 +335,27 @@ class Game {
 
                 if (this.waiting) {
                     ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
-                    ship.sendUI(UIComponent.C.UIS.WAITING);
+                    let waitingPlayers = Helper.deepCopy(UIComponent.C.UIS.WAITING);
+                    waitingPlayers.components[1].value += " (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
+                    ship.sendUI(waitingPlayers);
                     ship.hideUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
                     ship.setCrystals(0);
                 } else {
+                    if (ship.chosenType == 0) {
+                        ship.setPosition(this.map.spawns[ship.team.team]);
+                        ship.setVelocity(new Vector2(0, 0));
+                        ship.setType(121);
+                        ship.setCollider(false);
+                    }
+
                     for (let i = 0; i < this.map.flags.length; i++) {
                         let flagPos = this.map.flags[i];
                         let d = flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y));
                         if (d < Game.C.DISTANCE_TO_FLAG) {
                             if (ship.hasFlag && this.teams[i].team == ship.team.team) {
                                 ship.hasFlag = false;
-                                ship.setType(ship.ship.type - this.shipGroup.normalShips.length);
+                                ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                                 ship.setMaxStats();
                                 ship.setHue(ship.team.hue);
                                 this.flagHolders[i] = null;
@@ -352,7 +364,7 @@ class Game {
                             }
                             if (this.flagHolders[i] == null && !ship.hasFlag && this.teams[i].team != ship.team.team) {
                                 ship.hasFlag = true;
-                                ship.setType(ship.ship.type + this.shipGroup.normalShips.length);
+                                ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
                                 ship.setMaxStats();
                                 ship.setHue(ship.team.flagged);
                                 this.flagHolders[i + 1 % 2] = ship.ship.id;
@@ -432,7 +444,6 @@ class Game {
                     }
                     ship.sendUI(scoreboard);
 
-                    console.log(ship.allUIS)
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO)) {
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
                         if (this.roundScores[0] == this.roundScores[1]) {
@@ -571,7 +582,13 @@ class Game {
     onUIComponentClicked(gameShip, id) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-
+            if (id.includes(UIComponent.C.UIS.CHOOSE_SHIP.id)) {
+                ship.chosenType = this.shipGroup.chosenTypes[parseInt(id.split('-')[1])];
+                ship.setType(ship.chosenType);
+                ship.fillUp();
+                ship.setCollider(true);
+                ship.hideUIIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
+            }
         }
     }
 
@@ -675,6 +692,8 @@ class Ship {
 
     done = false;
 
+    chosenType = 0;
+
     hasFlag = false;
 
     score = 0;
@@ -727,6 +746,19 @@ class Ship {
         }
 
         this.sendUI(cUI, true);
+    }
+
+    hideUIIncludingID(ui) {
+        let uiID = ui.id;
+        let removedUIs = [];
+        for (let u of this.allUIs) {
+            if (u.id.includes(uiID)) {
+                removedUIs.push(u);
+            }
+        }
+        for (let u of removedUIs) {
+            this.hideUI(u);
+        }
     }
 
     sendTimedUI(ui, time) {
@@ -1580,7 +1612,7 @@ class UIComponent {
                 components: [
                     {
                         type: "text",
-                        position: [0, 15, 100, 30]
+                        position: [0, 10, 100, 20]
                     },
                     {
                         type: "text",
