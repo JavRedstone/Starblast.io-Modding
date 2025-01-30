@@ -18,8 +18,9 @@ class Game {
 
     flags = [];
     flagStands = [];
-    
-    waiting = false;
+
+    waiting = true;
+    waitTimer = -1;
 
     roundTime = -1;
     betweenTime = -1;
@@ -36,23 +37,23 @@ class Game {
             ASTEROIDS_STRENGTH: 1e6,
             CRYSTAL_DROP: 0,
             CRYSTAL_VALUE: 0,
-    
+
             FRIENDLY_COLORS: 2,
-    
+
             RADAR_ZOOM: 1,
-    
+
             SPEED_MOD: 30,
             FRICTION_RATIO: 1,
-    
+
             WEAPONS_STORE: false,
             PROJECTILE_SPEED: 1,
-    
+
             STARTING_SHIP: 800,
             RESET_TREE: false,
             CHOOSE_SHIP: null,
             SHIPS: [],
             MAX_PLAYERS: 20,
-    
+
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
                 { text: "No", icon: "\u004d", key: "N" },
@@ -79,13 +80,15 @@ class Game {
         TICKS: {
             TICKS_PER_SECOND: 60,
             MILLISECONDS_PER_TICK: 1000 / 60,
-    
+
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 30,
 
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
-            ROUND: 28800,
+
+            WAIT: 1800,
+            ROUND: 1800, // 28800
             BETWEEN: 540
         },
         IS_TESTING: true,
@@ -140,23 +143,35 @@ class Game {
         for (let ship of game.ships) {
             ship.emptyWeapons();
         }
+        this.deleteFlags();
         game.removeObject();
+    }
+
+    deleteFlags() {
+        for (let flag of this.flags) {
+            flag.destroySelf();
+        }
+        this.flags = [];
+        for (let flagStand of this.flagStands) {
+            flagStand.destroySelf();
+        }
+        this.flagStands = [];
     }
 
     resetContainers() {
         this.flagHolders = [null, null];
         this.flagDespawns = [-1, -1];
-        this.roundTime = -1;
+        this.roundTime = game.step;
         this.betweenTime = -1;
     }
 
     setMap() {
         let randMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        if (this.waiting) {
-            randMap = GameMap.C.WAITING_MAP
-        }
         if (Game.C.IS_TESTING) {
             randMap = GameMap.C.TEST_MAP;
+        }
+        if (this.waiting) {
+            randMap = GameMap.C.WAITING_MAP
         }
         this.map = new GameMap(randMap.name, randMap.author, randMap.map, randMap.flags, randMap.spawns, randMap.tiers);
     }
@@ -171,38 +186,33 @@ class Game {
     }
 
     spawnFlags() {
-        for (let flag of this.flags) {
-            flag.destroySelf();
-        }
-        this.flags = [];
-        for (let flagStand of this.flagStands) {
-            flagStand.destroySelf();
-        }
-        this.flagStands = [];
+        this.deleteFlags();
         for (let i = 0; i < this.map.flags.length; i++) {
             let flagPos = this.map.flags[i];
             let flag = new Obj(
-                Obj.C.OBJS.FLAG.id + '-' + i,
+                Obj.C.OBJS.FLAG.id,
                 Obj.C.OBJS.FLAG.type,
                 new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAG.position.z),
                 new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
                 new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
                 this.teams[i].hex,
+                true,
+                true
             );
             flag.update();
             let flagStand = new Obj(
-                Obj.C.OBJS.FLAGSTAND.id + '-' + i,
+                Obj.C.OBJS.FLAGSTAND.id,
                 Obj.C.OBJS.FLAGSTAND.type,
                 new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
                 new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
                 new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
                 this.teams[i].hex,
+                true,
+                true
             );
             flagStand.update();
             this.flags.push(flag);
             this.flagStands.push(flagStand);
-
-            console.log(flag)
         }
     }
 
@@ -265,14 +275,34 @@ class Game {
         }
     }
 
+    getWinningTeam() {
+        let team0 = this.teams[0];
+        let team1 = this.teams[1];
+        if (team0.score > team1.score) {
+            return team0;
+        }
+        else if (team1.score > team0.score) {
+            return team1;
+        }
+        else {
+            return null;
+        }
+    }
+
     manageGameState() {
         if (this.ships.length < Game.C.MIN_PLAYERS) {
-            if (!this.waiting) {
+            if (!this.waiting || this.waitTimer != -1) {
                 this.waiting = true;
+                this.waitTimer = -1;
                 this.reset();
+            }
+        } else if (this.waiting && this.waitTimer == -1 || game.step - this.waitTimer < Game.C.TICKS.WAIT) {
+            if (this.waitTimer == -1) {
+                this.waitTimer = game.step;
             }
         } else {
             if (this.waiting) {
+                this.waitTimer = -1;
                 this.waiting = false;
                 this.newRound();
             }
@@ -283,27 +313,24 @@ class Game {
                     this.betweenTime = game.step;
                 }
             }
-            
-            if (this.betweenTime == -1 && this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX) {
-                this.betweenTime = game.step;
-            }
 
             if (this.betweenTime != -1) {
                 if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
                     this.betweenTime = -1;
-                    if (this.teams[0].score >= this.teams[1].score) {
-                        this.totalScores[this.teams[0].team]++;
+                    let winningTeam = this.getWinningTeam();
+                    if (winningTeam != null) {
+                        this.totalScores[winningTeam.team]++;
                     }
-                    else {
-                        this.totalScores[this.teams[1].team]++;
-                    }
-    
+
                     this.teams[0].setScore(0);
                     this.teams[1].setScore(0);
                     this.newRound();
                 }
             }
 
+            if (this.betweenTime == -1 && (this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX)) {
+                this.betweenTime = game.step;
+            }
 
             for (let i = 0; i < this.flagDespawns.length; i++) {
                 if (this.flagDespawns[i] != -1) {
@@ -413,9 +440,13 @@ class Game {
                     ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                     bottomMessage.components[1].value = "Waiting for more players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
+                    if (this.waitTimer != -1) {
+                        bottomMessage.components[1].value = "Game starts in: " + Helper.formatTime(Game.C.TICKS.WAIT - (game.step - this.waitTimer));
+                    }
                     ship.sendUI(bottomMessage);
                     ship.hideUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
+                    ship.setInvulnerable(Ship.C.TIMES.INVULNERABLE);
                     ship.fillUp();
                 } else {
                     if (ship.chosenType == 0) {
@@ -437,11 +468,23 @@ class Game {
                             ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                             ship.setMaxStats();
                             ship.setHue(ship.team.hue);
-                            ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             this.flagHolders[ship.team.team] = null;
 
                             this.flags[opp].show();
                         }
+
+                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+
+                        let winningTeam = this.getWinningTeam();
+                        if (winningTeam != null) {
+                            bottomMessage.components[1].value = "The " + winningTeam.color.toLowerCase() + "team won!";
+                            bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#00ff0080' : '#ff000080';
+                        } else if (this.teams[0].score > 0 || this.teams[1].score > 0) {
+                            bottomMessage.components[1].value = "Tie! No team won.";
+                            bottomMessage.components[0].fill = '#0000ff80';
+                        }
+                        bottomMessage.components[1].value += " Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
+                        ship.sendUI(bottomMessage);
                     } else {
                         ship.setCollider(true);
                         if (ship.hasFlag) {
@@ -463,8 +506,10 @@ class Game {
                                         ship.setHue(ship.team.flagged);
 
                                         this.flagHolders[opp] = ship;
-        
+
                                         this.flags[i].hide();
+
+                                        this.sendNotifications(ship, `${ship.ship.name} has stolen `)
                                     }
                                     if (!flagPos.equals(this.map.flags[i]) && this.teams[i].team == ship.team.team) {
                                         this.flags[i].reset();
@@ -478,15 +523,25 @@ class Game {
                                         ship.setHue(ship.team.hue);
                                         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                         this.flagHolders[i] = null;
-        
+
                                         ship.team.setScore(ship.team.score + 1);
-        
+
                                         this.flags[opp].show();
                                     }
-                                    
+
                                 }
                             }
                         }
+
+                        let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
+                        let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
+                        timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
+                        if (timeLeft <= UIComponent.C.TICKS.WARNING) {
+                            timer.components[0].fill = '#8B000080';
+                            timer.components[0].stroke = '#FFBBBB';
+                            timer.components[1].color = '#FFBBBB';
+                        }
+                        ship.sendUI(timer);
                     }
 
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
@@ -521,14 +576,14 @@ class Game {
                         if (players1[i]) {
                             scoreboard.components.push({
                                 type: 'player',
-                                position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
+                                position: [0, (i + 1) * 100 / 12, 90, 100 / 12],
                                 id: players1[i].ship.id,
                                 color: '#ffffff',
                                 align: 'left'
                             },
                                 {
                                     type: 'text',
-                                    position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
+                                    position: [90, (i + 1) * 100 / 12, 10, 100 / 12],
                                     value: players1[i].score,
                                     color: '#ffffff',
                                     align: 'right'
@@ -542,18 +597,18 @@ class Game {
                         if (players2[i]) {
                             scoreboard.components.push({
                                 type: 'player',
-                                position: [0, 50 + (i + 1) * 100 / 12, 50, 100 / 12],
+                                position: [0, 50 + (i + 1) * 100 / 12, 90, 100 / 12],
                                 id: players2[i].ship.id,
                                 color: '#ffffff',
                                 align: 'left'
                             },
-                            {
-                                type: 'text',
-                                position: [50, 50 + (i + 1) * 100 / 12, 40, 100 / 12],
-                                value: players2[i].score,
-                                color: '#ffffff',
-                                align: 'right'
-                            });
+                                {
+                                    type: 'text',
+                                    position: [90, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
+                                    value: players2[i].score,
+                                    color: '#ffffff',
+                                    align: 'right'
+                                });
                         }
                         else {
                             break;
@@ -563,17 +618,14 @@ class Game {
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
-                        if (this.teams[0].score == this.teams[1].score) {
+                        let winningTeam = this.getWinningTeam();
+                        if (winningTeam == null) {
                             roundScore.components[0].value = 'TIE';
                             roundScore.components[0].color = '#ffffff';
                         }
-                        else if (this.teams[0].score > this.teams[1].score) {
-                            roundScore.components[0].value = this.teams[0].color.toUpperCase();
-                            roundScore.components[0].color = this.teams[0].hex;
-                        }
                         else {
-                            roundScore.components[0].value = this.teams[1].color.toUpperCase();
-                            roundScore.components[0].color = this.teams[1].hex;
+                            roundScore.components[0].value = winningTeam.color.toUpperCase();
+                            roundScore.components[0].color = winningTeam.hex;
                         }
                         roundScore.components[1].value = this.teams[0].score;
                         roundScore.components[1].color = this.teams[0].hex;
@@ -880,6 +932,8 @@ class Ship {
     }
 
     sendUI(ui, hideMode = false) {
+        // TODO: CONVERT HEX CODES TO HSL
+
         if (this.ship != null) {
             this.ship.setUIComponent(Helper.deepCopy(ui));
 
@@ -1672,7 +1726,7 @@ class UIComponent {
                 id: 'radar_background',
                 visible: true,
                 components: [
-    
+
                 ]
             },
             LIVES_BLOCKER: {
@@ -1683,7 +1737,7 @@ class UIComponent {
                 position: [65, 0, 10, 10],
                 components: []
             },
-            timer: {
+            TIMER: {
                 id: "timer",
                 position: [3, 30, 15, 5],
                 visible: true,
@@ -1691,12 +1745,14 @@ class UIComponent {
                     {
                         type: "box",
                         position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                        stroke: "#ffffff",
                         width: 2
                     },
                     {
                         type: "text",
                         position: [5, 0, 90, 100],
-                        color: "#cde"
+                        color: "#ffffff"
                     }
                 ]
             },
@@ -1711,28 +1767,55 @@ class UIComponent {
                         fill: '#00000080',
                     },
                     {
-                        type: 'text',
-                        position: [10, 10, 80, 25],
-                        value: '🏴CTF🏳️',
-                        color: '#ffffff'
+                        type: "box",
+                        position: [44.5, 5, 3, 35],
+                        fill: "#FFB4BB"
                     },
                     {
-                        type: 'text',
-                        position: [10, 37.5, 80, 20],
-                        value: 'Capture the Flag',
-                        color: '#ffffff'
+                        type: "box",
+                        position: [48.5, 5, 3, 35], 
+                        fill: "#FFFFB9"
                     },
                     {
-                        type: 'text',
-                        position: [10, 60, 80, 15],
-                        value: 'Version 3.0 by JavRedstone',
-                        color: '#00ff00'
+                        type: "box",
+                        position: [52.5, 5, 3, 35],
+                        fill: "#BAE1FF"
                     },
                     {
-                        type: 'text',
-                        position: [10, 77.5, 80, 12.5],
-                        value: 'KEST Ship Tree by Kleinem',
-                        color: '#ffffff'
+                        type: "text",
+                        position: [44.5, 5, 3, 35],
+                        value: "C",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [48.5, 5, 3, 35],
+                        value: "T",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [52.5, 5, 3, 35],
+                        value: "F",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 42.5, 40, 17.5],
+                        value: "⚐ Capture The Flag ⚐",
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 62.5, 40, 15],
+                        value: "Version 3.0 by JavRedstone",
+                        color: "#00ff00"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 80, 40, 15],
+                        value: "KEST Ship Tree by Kleinem",
+                        color: "#ffffff"
                     }
                 ]
             },
@@ -1761,6 +1844,30 @@ class UIComponent {
                     {
                         type: "text",
                         position: [10, 10, 80, 80],
+                        value: '',
+                        color: '#ffffff'
+                    }
+                ]
+            },
+            LEFT_MESSAGE: {
+                id: "left_message",
+                position: [10, 75, 15, 15],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: "text",
+                        position: [10, 10, 80, 40],
+                        value: '',
+                        color: '#ffffff'
+                    },
+                    {
+                        type: "text",
+                        position: [10, 50, 80, 40],
                         value: '',
                         color: '#ffffff'
                     }
@@ -1855,6 +1962,9 @@ class UIComponent {
                     }
                 ]
             },
+        },
+        TICKS: {
+            WARNING: 600
         }
     }
 
@@ -1999,146 +2109,146 @@ class GameMap {
         WAITING_MAP: {
             name: 'Tunnels',
             author: 'SChickenMan',
-            map: '   99999999999999    99999999999999   9999999999999999999   \n'+
-            '    9999999999999    99999999999999   999999999999999999    \n'+
-            '      99999999999     9999999999999   99999999999999999     \n'+
-            '       999999          99999999999    999999999999999       \n'+
-            '9                      99999999999     9999999999999       9\n'+
-            '999                     99999999999    999999999999       99\n'+
-            '9999            9999    99999999999    99999999999      9999\n'+
-            '99999     9999999999     9999999999    9999999999      99999\n'+
-            '999999     9999999999     999999999    9999999999     999999\n'+
-            '9999999    9999999999      99999999    9999999999    9999999\n'+
-            '9999999     9999999999      9999999     999999999     999999\n'+
-            '99999999    99999999999      9999999    999999999      99999\n'+
-            '99999999    9999999999        999999     999999999     99999\n'+
-            '9999999     999999999           99999     999999999     9999\n'+
-            '999999      99999999     9        999     9999999999    9999\n'+
-            '99999      99999999      99         99    9999999999    9999\n'+
-            '9999      999999999     99999                  999999    999\n'+
-            '  99     999999999     99999999                  9999       \n'+
-            '        999999999     999999999999                99        \n'+
-            '       9999999999     999999999999999999                    \n'+
-            '         99999       999999999999999999     99              \n'+
-            '999                 999999999999999999      999        99999\n'+
-            '9999                999999999999999999     99999      999999\n'+
-            '99999                999999999999999      99999999    999999\n'+
-            '99999        9999    99999999999999      999999999     99999\n'+
-            '99999    99999999    99999999999999      9999999999     9999\n'+
-            '9999    9999999999    99999999999      9999999999999    9999\n'+
-            '9999    9999999999    9999999999      99999999999999    9999\n'+
-            '9999    9999999999     99999       999999999999999999   9999\n'+
-            '999    999999999999    9999       999999999999999999    9999\n'+
-            '999    999999999999      99      9999999999999999999    9999\n'+
-            '999    99999999999              99999999999999999999    9999\n'+
-            '999    9999999999              99999999999999999999    99999\n'+
-            '999    999999999               99999999999999999999    99999\n'+
-            '9999   999999999     9999999    9999999999999999999    99999\n'+
-            '9999   99999999     99999999     9999999999999999     999999\n'+
-            '9999    9999999    9999999999     99999999999999      999999\n'+
-            '9999     999999    9999999999      99999999999      99999999\n'+
-            '99999     99999   999999999999      999999999       99999999\n'+
-            '99999     99999   9999999999         9999999        99999999\n'+
-            '999999     999    999999999           99999         99999999\n'+
-            '9999999     99    9999999       9       9       9    9999999\n'+
-            '9999999      9   9999999       999             99    9999999\n'+
-            '99999999         999999       99999           999     999999\n'+
-            '9999999          9999        99999999       999999    999999\n'+
-            '999999           999          99999999999999999999     99999\n'+
-            '999999           9             99999999999999999999    99999\n'+
-            '999999    9999          99      9999999999999999999    99999\n'+
-            '999999   99999         9999       999999999999999999   99999\n'+
-            '999999   99999       9999999       99999999999999999   99999\n'+
-            '999999   999999     9999999999      9999999999999999   99999\n'+
-            '99999    999999    999999999999     999999999999999    99999\n'+
-            '99999    9999999   9999999999999            999999     99999\n'+
-            '9999     9999999    9999999999999                      99999\n'+
-            '999     999999999   9999999999999                        999\n'+
-            '99      999999999   9999999999999     999                 99\n'+
-            '9      9999999999   99999999999999   9999999999999999      9\n'+
-            '      99999999999   99999999999999   99999999999999999      \n'+
-            '     999999999999   99999999999999    99999999999999999     \n'+
-            '    9999999999999   999999999999999   999999999999999999    ',
+            map: '   99999999999999    99999999999999   9999999999999999999   \n' +
+                '    9999999999999    99999999999999   999999999999999999    \n' +
+                '      99999999999     9999999999999   99999999999999999     \n' +
+                '       999999          99999999999    999999999999999       \n' +
+                '9                      99999999999     9999999999999       9\n' +
+                '999                     99999999999    999999999999       99\n' +
+                '9999            9999    99999999999    99999999999      9999\n' +
+                '99999     9999999999     9999999999    9999999999      99999\n' +
+                '999999     9999999999     999999999    9999999999     999999\n' +
+                '9999999    9999999999      99999999    9999999999    9999999\n' +
+                '9999999     9999999999      9999999     999999999     999999\n' +
+                '99999999    99999999999      9999999    999999999      99999\n' +
+                '99999999    9999999999        999999     999999999     99999\n' +
+                '9999999     999999999           99999     999999999     9999\n' +
+                '999999      99999999     9        999     9999999999    9999\n' +
+                '99999      99999999      99         99    9999999999    9999\n' +
+                '9999      999999999     99999                  999999    999\n' +
+                '  99     999999999     99999999                  9999       \n' +
+                '        999999999     999999999999                99        \n' +
+                '       9999999999     999999999999999999                    \n' +
+                '         99999       999999999999999999     99              \n' +
+                '999                 999999999999999999      999        99999\n' +
+                '9999                999999999999999999     99999      999999\n' +
+                '99999                999999999999999      99999999    999999\n' +
+                '99999        9999    99999999999999      999999999     99999\n' +
+                '99999    99999999    99999999999999      9999999999     9999\n' +
+                '9999    9999999999    99999999999      9999999999999    9999\n' +
+                '9999    9999999999    9999999999      99999999999999    9999\n' +
+                '9999    9999999999     99999       999999999999999999   9999\n' +
+                '999    999999999999    9999       999999999999999999    9999\n' +
+                '999    999999999999      99      9999999999999999999    9999\n' +
+                '999    99999999999              99999999999999999999    9999\n' +
+                '999    9999999999              99999999999999999999    99999\n' +
+                '999    999999999               99999999999999999999    99999\n' +
+                '9999   999999999     9999999    9999999999999999999    99999\n' +
+                '9999   99999999     99999999     9999999999999999     999999\n' +
+                '9999    9999999    9999999999     99999999999999      999999\n' +
+                '9999     999999    9999999999      99999999999      99999999\n' +
+                '99999     99999   999999999999      999999999       99999999\n' +
+                '99999     99999   9999999999         9999999        99999999\n' +
+                '999999     999    999999999           99999         99999999\n' +
+                '9999999     99    9999999       9       9       9    9999999\n' +
+                '9999999      9   9999999       999             99    9999999\n' +
+                '99999999         999999       99999           999     999999\n' +
+                '9999999          9999        99999999       999999    999999\n' +
+                '999999           999          99999999999999999999     99999\n' +
+                '999999           9             99999999999999999999    99999\n' +
+                '999999    9999          99      9999999999999999999    99999\n' +
+                '999999   99999         9999       999999999999999999   99999\n' +
+                '999999   99999       9999999       99999999999999999   99999\n' +
+                '999999   999999     9999999999      9999999999999999   99999\n' +
+                '99999    999999    999999999999     999999999999999    99999\n' +
+                '99999    9999999   9999999999999            999999     99999\n' +
+                '9999     9999999    9999999999999                      99999\n' +
+                '999     999999999   9999999999999                        999\n' +
+                '99      999999999   9999999999999     999                 99\n' +
+                '9      9999999999   99999999999999   9999999999999999      9\n' +
+                '      99999999999   99999999999999   99999999999999999      \n' +
+                '     999999999999   99999999999999    99999999999999999     \n' +
+                '    9999999999999   999999999999999   999999999999999999    ',
             flags: [],
             spawns: [],
-            tiers: [5]
+            tiers: [6]
         },
         TEST_MAP: {
             name: "Testing",
             author: "JavRedstone",
-            map: "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "9999999999999999999999999  9    9  9999999999999999999999999\n"+
-              "9999999999999999999999999  9    9  9999999999999999999999999\n"+
-              "9999999999999999999999999  9    9  9999999999999999999999999\n"+
-              "9999999999999999999999999  9    9  9999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "9999999999999999999999999          9999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999\n"+
-              "999999999999999999999999999999999999999999999999999999999999",
+            map: "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "9999999999999999999999999  9    9  9999999999999999999999999\n" +
+                "9999999999999999999999999  9    9  9999999999999999999999999\n" +
+                "9999999999999999999999999  9    9  9999999999999999999999999\n" +
+                "9999999999999999999999999  9    9  9999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "9999999999999999999999999          9999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999\n" +
+                "999999999999999999999999999999999999999999999999999999999999",
             flags: [{
-              x: -15,
-              y: 0
+                x: -15,
+                y: 0
             }, {
-              x: 15,
-              y: 0
+                x: 15,
+                y: 0
             }],
             spawns: [{
-              x: -45,
-              y: 0
+                x: -45,
+                y: 0
             }, {
-              x: 45,
-              y: 0
+                x: 45,
+                y: 0
             }],
             tiers: []
         },
@@ -4320,7 +4430,7 @@ class ShipGroup {
         this.ships.push(...Helper.deepCopy(this.normalShips));
         this.ships.push(...Helper.deepCopy(this.flagShips));
     }
-    
+
     chooseShips(select = true) {
         if (select) {
             this.chosenShips = Helper.getRandomArraySubset(this.normalShips, ShipGroup.C.NUM_SHIPS);
