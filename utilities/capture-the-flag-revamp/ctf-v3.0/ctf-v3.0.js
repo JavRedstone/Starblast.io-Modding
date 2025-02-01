@@ -23,6 +23,7 @@ class Game {
     waitTimer = -1;
 
     roundTime = -1;
+    timesUp = false;
     betweenTime = -1;
     totalScores = [0, 0];
 
@@ -162,6 +163,7 @@ class Game {
         this.flagHolders = [null, null];
         this.flagDespawns = [-1, -1];
         this.roundTime = game.step;
+        this.timesUp = false;
         this.betweenTime = -1;
     }
 
@@ -311,6 +313,7 @@ class Game {
                 if (game.step - this.roundTime > Game.C.TICKS.ROUND) {
                     this.roundTime = -1;
                     this.betweenTime = game.step;
+                    this.timesUp = true;
                 }
             }
 
@@ -427,7 +430,7 @@ class Game {
                     this.resetShip(ship);
                     ship.done = true;
 
-                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, Ship.C.TIMES.LOGO_TIME);
+                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
 
                     if (!this.waiting) {
                         this.sendChooseShip(ship);
@@ -446,7 +449,7 @@ class Game {
                     ship.sendUI(bottomMessage);
                     ship.hideUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
-                    ship.setInvulnerable(Ship.C.TIMES.INVULNERABLE);
+                    ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
                     ship.fillUp();
                 } else {
                     if (ship.chosenType == 0) {
@@ -459,7 +462,7 @@ class Game {
 
                     if (this.betweenTime != -1) {
                         ship.setCollider(false);
-                        ship.setInvulnerable(Ship.C.TIMES.INVULNERABLE);
+                        ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
 
                         if (ship.hasFlag) {
                             let opp = (ship.team.team + 1) % 2;
@@ -476,14 +479,16 @@ class Game {
                         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
                         let winningTeam = this.getWinningTeam();
-                        if (winningTeam != null) {
-                            bottomMessage.components[1].value = "The " + winningTeam.color.toLowerCase() + "team won!";
-                            bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#00ff0080' : '#ff000080';
-                        } else if (this.teams[0].score > 0 || this.teams[1].score > 0) {
-                            bottomMessage.components[1].value = "Tie! No team won.";
-                            bottomMessage.components[0].fill = '#0000ff80';
+                        if (this.timesUp) {
+                            bottomMessage.components[1].value = "Time's up! ";
                         }
-                        bottomMessage.components[1].value += " Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
+                        if (winningTeam != null) {
+                            bottomMessage.components[1].value += "The " + winningTeam.color.toUpperCase() + " team won! ";
+                            bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#008B0080' : '#8B000080';
+                        } else {
+                            bottomMessage.components[1].value += "It's a tie and no team won. ";
+                        }
+                        bottomMessage.components[1].value +=  "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
                         ship.sendUI(bottomMessage);
                     } else {
                         ship.setCollider(true);
@@ -509,10 +514,12 @@ class Game {
 
                                         this.flags[i].hide();
 
-                                        this.sendNotifications(ship, `${ship.ship.name} has stolen `)
+                                        this.sendNotifications(`${ship.ship.name} has stolen ${this.teams[i].color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
                                     }
                                     if (!flagPos.equals(this.map.flags[i]) && this.teams[i].team == ship.team.team) {
                                         this.flags[i].reset();
+
+                                        this.sendNotifications(`${ship.ship.name} has returned the ${this.teams[i].color.toUpperCase()} team's flag!`, `Chance for ${this.teams[(ship.team.team + 1) % 2].color.toUpperCase()} team is over.`, ship.team);
                                     }
                                 }
                                 if (this.map.flags[i].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Game.C.DISTANCE_TO_FLAG) {
@@ -527,6 +534,8 @@ class Game {
                                         ship.team.setScore(ship.team.score + 1);
 
                                         this.flags[opp].show();
+
+                                        this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
                                     }
 
                                 }
@@ -539,6 +548,7 @@ class Game {
                         if (timeLeft <= UIComponent.C.TICKS.WARNING) {
                             timer.components[0].fill = '#8B000080';
                             timer.components[0].stroke = '#FFBBBB';
+                            timer.components[0].width = 2;
                             timer.components[1].color = '#FFBBBB';
                         }
                         ship.sendUI(timer);
@@ -550,11 +560,11 @@ class Game {
                     let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
                     scoreboard.components[0].fill = this.teams[0].hex + 'BF';
                     scoreboard.components[2].fill = this.teams[1].hex + 'BF';
-                    scoreboard.components[1].value = this.teams[0].name;
+                    scoreboard.components[1].value = this.teams[0].color.toUpperCase() + ' TEAM';
                     if (this.teams[0].color == 'Yellow') {
                         scoreboard.components[1].color = '#000000';
                     }
-                    scoreboard.components[3].value = this.teams[1].name;
+                    scoreboard.components[3].value = this.teams[1].color.toUpperCase() + ' TEAM';
                     if (this.teams[1].color == 'Yellow') {
                         scoreboard.components[3].color = '#000000';
                     }
@@ -576,14 +586,14 @@ class Game {
                         if (players1[i]) {
                             scoreboard.components.push({
                                 type: 'player',
-                                position: [0, (i + 1) * 100 / 12, 90, 100 / 12],
+                                position: [0, (i + 1) * 100 / 12, 85, 100 / 12],
                                 id: players1[i].ship.id,
                                 color: '#ffffff',
                                 align: 'left'
                             },
                                 {
                                     type: 'text',
-                                    position: [90, (i + 1) * 100 / 12, 10, 100 / 12],
+                                    position: [87.5, (i + 1) * 100 / 12, 10, 100 / 12],
                                     value: players1[i].score,
                                     color: '#ffffff',
                                     align: 'right'
@@ -597,14 +607,14 @@ class Game {
                         if (players2[i]) {
                             scoreboard.components.push({
                                 type: 'player',
-                                position: [0, 50 + (i + 1) * 100 / 12, 90, 100 / 12],
+                                position: [0, 50 + (i + 1) * 100 / 12, 85, 100 / 12],
                                 id: players2[i].ship.id,
                                 color: '#ffffff',
                                 align: 'left'
                             },
                                 {
                                     type: 'text',
-                                    position: [90, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
+                                    position: [87.5, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
                                     value: players2[i].score,
                                     color: '#ffffff',
                                     align: 'right'
@@ -718,6 +728,21 @@ class Game {
         }
     }
 
+    sendNotifications(title, message, supportingTeam) {
+        for (let ship of this.ships) {
+            let leftMessage = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
+            if (supportingTeam.team == ship.team.team) {
+                leftMessage.components[0].fill = '#008B00';
+            }
+            else {
+                leftMessage.components[0].fill = '#8B0000';
+            }
+            leftMessage.components[1].value = title;
+            leftMessage.components[2].value = message;
+            ship.sendTimedUI(leftMessage, TimedUI.C.NOTIFICATION_TIME);
+        }
+    }
+
     findShip(gameShip) {
         for (let ship of this.ships) {
             if (ship.ship == gameShip || ship.ship.id == gameShip.id) {
@@ -743,7 +768,7 @@ class Game {
         }
         else { // on respawn
             ship.fillUp();
-            ship.setInvulnerable(Ship.C.TIMES.INVULNERABLE)
+            ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
             if (this.waiting) {
                 ship.setPosition(new Vector2(0, 0));
             } else {
@@ -769,6 +794,8 @@ class Game {
                 ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
                 this.flagHolders[ship.team.team] = null;
+                
+                this.sendNotifications(`${ship.ship.name} has dropped the flag!`, `Will ${ship.team.color.toUpperCase()} team steal it again?`, this.teams[opp]);
             }
         }
     }
@@ -781,8 +808,8 @@ class Game {
                 ship.setType(ship.chosenType);
                 ship.fillUp();
                 ship.setCollider(true);
-                ship.setInvulnerable(Ship.C.TIMES.INVULNERABLE)
-                ship.hideUIIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
+                ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
+                ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
             }
         }
     }
@@ -910,10 +937,7 @@ class Ship {
     flagTime = -1;
 
     static C = {
-        TIMES: {
-            LOGO_TIME: 480,
-            INVULNERABLE: 360
-        }
+        INVULNERABLE_TIME: 360
     }
 
     constructor(ship) {
@@ -973,7 +997,7 @@ class Ship {
         this.sendUI(cUI, true);
     }
 
-    hideUIIncludingID(ui) {
+    hideUIsIncludingID(ui) {
         let uiID = ui.id;
         let removedUIs = [];
         for (let u of this.allUIs) {
@@ -1665,7 +1689,9 @@ class TimedUI {
     ui = null;
 
     static C = {
-        DEFAULT_TIME: 300
+        DEFAULT_TIME: 300,
+        LOGO_TIME: 480,
+        NOTIFICATION_TIME: 480,
     }
 
     constructor(ship, ui, time = TimedUI.C.DEFAULT_TIME) {
@@ -1746,8 +1772,6 @@ class UIComponent {
                         type: "box",
                         position: [0, 0, 100, 100],
                         fill: "#00000080",
-                        stroke: "#ffffff",
-                        width: 2
                     },
                     {
                         type: "text",
@@ -1849,26 +1873,26 @@ class UIComponent {
                     }
                 ]
             },
-            LEFT_MESSAGE: {
-                id: "left_message",
-                position: [10, 75, 15, 15],
+            NOTIFICATION: {
+                id: "notification",
+                position: [5, 75, 60, 15],
                 visible: true,
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 100, 100],
-                        fill: '#00000080',
+                        position: [0, 0, 2.5, 100],
+                        fill: '#ffffff',
                     },
                     {
                         type: "text",
-                        position: [10, 10, 80, 40],
-                        value: '',
+                        position: [5, 15, 90, 40],
+                        align: "left",
                         color: '#ffffff'
                     },
                     {
                         type: "text",
-                        position: [10, 50, 80, 40],
-                        value: '',
+                        position: [5, 57.5, 80, 27.5],
+                        align: "left",
                         color: '#ffffff'
                     }
                 ]
@@ -1964,7 +1988,7 @@ class UIComponent {
             },
         },
         TICKS: {
-            WARNING: 600
+            WARNING: 600,
         }
     }
 
@@ -3780,68 +3804,68 @@ class GameMap {
                 tiers: [4, 5, 6]
             },
             {
-                name: "Boxes 3.0",
+                name: "Boxes 4.0",
                 author: "EDEN",
-                map: "                                                            \n" +
-                    " 9999999999999999999999999999999999999999999999999999999999 \n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999   7    99     99    99   99   99    99     99    7   999\n" +
-                    "999   7 7  999    99    99   99   99    99    999  7 7   999\n" +
-                    "999 7 7    99999999999999999999999999999999999999    7 7 999\n" +
-                    "999   997779999999779999779999999977999977999999977799   999\n" +
-                    "99977799   9999999  9999  99999999  9999  9999999   99777999\n" +
-                    "999    7 7 99                                  99 7 7    999\n" +
-                    "999  7 7   99                                  99   7 7  999\n" +
-                    "999    7  999    9999  9999      9999  9999    999  7    999\n" +
-                    "9999999999999   999997799999    999997799999   9999999999999\n" +
-                    "999999999999    999999999999    999999999999    999999999999\n" +
-                    "999                       99    99                       999\n" +
-                    "999                      999    999                      999\n" +
-                    "999                     999      999                     999\n" +
-                    "999                99  999        999  99                999\n" +
-                    "999                99  99          99  99                999\n" +
-                    "99999999                99        99                99999999\n" +
-                    "99999999                 99      99                 99999999\n" +
-                    "999                99  99999    99999  99                999\n" +
-                    "99                9999 999999  999999 9999                99\n" +
-                    "99               999 9999          9999 999               99\n" +
-                    "99    9         999   999          999   999         9    99\n" +
-                    "99   99   99   999     99          99     999   99   99   99\n" +
-                    "99    9   9   999       9   9  9   9       999   9   9    99\n" +
-                    "99    9   9                                      9   9    99\n" +
-                    "99    9   9                                      9   9    99\n" +
-                    "99    9   9   999       9   9  9   9       999   9   9    99\n" +
-                    "99   99   99   999     99          99     999   99   99   99\n" +
-                    "99    9         999   999          999   999         9    99\n" +
-                    "99               999 9999          9999 999               99\n" +
-                    "99                9999 999999  999999 9999                99\n" +
-                    "999                99  99999    99999  99                999\n" +
-                    "99999999                 99      99                 99999999\n" +
-                    "99999999                99        99                99999999\n" +
-                    "999                99  99          99  99                999\n" +
-                    "999                99  999        999  99                999\n" +
-                    "999                     999      999                     999\n" +
-                    "999                      999    999                      999\n" +
-                    "999                       99    99                       999\n" +
-                    "999999999999    999999999999    999999999999    999999999999\n" +
-                    "9999999999999   999997799999    999997799999   9999999999999\n" +
-                    "999    7  999    9999  9999      9999  9999    999  7    999\n" +
-                    "999  7 7   99                                  99   7 7  999\n" +
-                    "999    7 7 99                                  99 7 7    999\n" +
-                    "99977799   9999999  9999  99999999  9999  9999999   99777999\n" +
-                    "999   997779999999779999779999999977999977999999977799   999\n" +
-                    "999 7 7    99999999999999999999999999999999999999    7 7 999\n" +
-                    "999   7 7  999    99    99   99   99    99    999  7 7   999\n" +
-                    "999   7    99     99    99   99   99    99     99    7   999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    "999999999999999999999999999999999999999999999999999999999999\n" +
-                    " 9999999999999999999999999999999999999999999999999999999999 \n" +
-                    "                                                            ",
+                map: "999999999999999999999999999999999999999999999999999999999999\n"+
+                    "999999999999999999999999999999999999999999999999999999999999\n"+
+                    "9999999999999999999  999999999999999999  9999999999999999999\n"+
+                    "99999999999        99                  99        99999999999\n"+
+                    "9999999999                                        9999999999\n"+
+                    "999999999                                          999999999\n"+
+                    "999999999    99999    999999    999999    99999    999999999\n"+
+                    "999999999   99    9999     9    9     9999    99   999999999\n"+
+                    "99999999     99            9    9            99     99999999\n"+
+                    "9999999       999999999999 9    9 999999999999       9999999\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "99                      9 9      9 9                      99\n"+
+                    "99                     9 9        9 9                     99\n"+
+                    "99                    9 9          9 9                    99\n"+
+                    "99                   9 9            9 9                   99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99               999  9              9  999               99\n"+
+                    "99              9     9              9     9              99\n"+
+                    "99             9 99999 9            9 99999 9             99\n"+
+                    "99            9 9     9 9          9 9     9 9            99\n"+
+                    "99           9 9       9 999    999 9       9 9           99\n"+
+                    "99            9         9          9         9            99\n"+
+                    "99       9              9          9              9       99\n"+
+                    "99   9   9              9          9              9   9   99\n"+
+                    "99   9   9                   99                   9   9   99\n"+
+                    "99   9   9                   99                   9   9   99\n"+
+                    "99   9   9                   99                   9   9   99\n"+
+                    "99   9   9                   99                   9   9   99\n"+
+                    "99   9   9              9          9              9   9   99\n"+
+                    "99       9              9          9              9       99\n"+
+                    "99            9         9          9         9            99\n"+
+                    "99           9 9       9 999    999 9       9 9           99\n"+
+                    "99            9 9     9 9          9 9     9 9            99\n"+
+                    "99             9 99999 9            9 99999 9             99\n"+
+                    "99              9     9              9     9              99\n"+
+                    "99               999  9              9  999               99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99                  9 9              9 9                  99\n"+
+                    "99                   9 9            9 9                   99\n"+
+                    "99                    9 9          9 9                    99\n"+
+                    "99                     9 9        9 9                     99\n"+
+                    "99                      9 9      9 9                      99\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "99                       9 9    9 9                       99\n"+
+                    "9999999       999999999999 9    9 999999999999       9999999\n"+
+                    "99999999     99            9    9            99     99999999\n"+
+                    "999999999   99    9999     9    9     9999    99   999999999\n"+
+                    "999999999    99999    999999    999999    99999    999999999\n"+
+                    "999999999                                          999999999\n"+
+                    "9999999999                                        9999999999\n"+
+                    "99999999999        99                  99        99999999999\n"+
+                    "9999999999999999999  999999999999999999  9999999999999999999\n"+
+                    "999999999999999999999999999999999999999999999999999999999999\n"+
+                    "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
                     x: -215,
                     y: 0
@@ -3856,7 +3880,7 @@ class GameMap {
                     x: 265,
                     y: 0
                 }],
-                tiers: []
+                tiers: [3, 4]
             },
 
             {
