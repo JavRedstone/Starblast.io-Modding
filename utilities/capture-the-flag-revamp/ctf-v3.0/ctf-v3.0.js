@@ -26,6 +26,7 @@ class Game {
     timesUp = false;
     betweenTime = -1;
     totalScores = [0, 0];
+    numRounds = 0;
 
     flagHolders = [null, null];
     flagDespawns = [-1, -1];
@@ -88,14 +89,16 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 1800,
-            ROUND: 1800, // 28800
-            BETWEEN: 540
+            WAIT: 360, // 1800
+            ROUND: 3600, // 28800
+            BETWEEN: 180 // 540
         },
         IS_TESTING: true,
+        IS_DEBUGGING: false,
         MIN_PLAYERS: 1,
         DISTANCE_TO_FLAG: 8,
-        ROUND_MAX: 3
+        ROUND_MAX: 3,
+        NUM_ROUNDS: 3
     }
 
     static setShipGroups() {
@@ -135,6 +138,9 @@ class Game {
     }
 
     deleteEverything() {
+        if (this.map) {
+            this.map.destroySelf();
+        }
         for (let alien of game.aliens) {
             alien.set({ kill: true });
         }
@@ -168,53 +174,55 @@ class Game {
     }
 
     setMap() {
-        let randMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
+        let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
         if (Game.C.IS_TESTING) {
-            randMap = GameMap.C.TEST_MAP;
+            newMap = GameMap.C.TEST_MAP;
         }
         if (this.waiting) {
-            randMap = GameMap.C.WAITING_MAP
+            newMap = GameMap.C.WAITING_MAP
         }
-        this.map = new GameMap(randMap.name, randMap.author, randMap.map, randMap.flags, randMap.spawns, randMap.tiers);
+        this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.flags, newMap.spawns, newMap.tiers, newMap.asteroids).spawn();
     }
 
     setShipGroup() {
-        for (let shipGroup of Game.shipGroups) {
-            if (this.map.tier == shipGroup.tier) {
-                this.shipGroup = shipGroup;
-                this.shipGroup.chooseShips(!this.waiting);
+        if (this.map) {
+            for (let shipGroup of Game.shipGroups) {
+                if (this.map.tier == shipGroup.tier) {
+                    this.shipGroup = shipGroup;
+                    this.shipGroup.chooseShips(!this.waiting);
+                }
             }
         }
     }
 
     spawnFlags() {
         this.deleteFlags();
-        for (let i = 0; i < this.map.flags.length; i++) {
-            let flagPos = this.map.flags[i];
-            let flag = new Obj(
-                Obj.C.OBJS.FLAG.id,
-                Obj.C.OBJS.FLAG.type,
-                new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAG.position.z),
-                new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
-                new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
-                this.teams[i].hex,
-                true,
-                true
-            );
-            flag.update();
-            let flagStand = new Obj(
-                Obj.C.OBJS.FLAGSTAND.id,
-                Obj.C.OBJS.FLAGSTAND.type,
-                new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
-                new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
-                new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
-                this.teams[i].hex,
-                true,
-                true
-            );
-            flagStand.update();
-            this.flags.push(flag);
-            this.flagStands.push(flagStand);
+        if (this.map) {
+            for (let i = 0; i < this.map.flags.length; i++) {
+                let flagPos = this.map.flags[i];
+                let flag = new Obj(
+                    Obj.C.OBJS.FLAG.id,
+                    Obj.C.OBJS.FLAG.type,
+                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAG.position.z),
+                    new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
+                    new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
+                    true,
+                    true,
+                    this.teams[i].hex
+                ).update();
+                let flagStand = new Obj(
+                    Obj.C.OBJS.FLAGSTAND.id,
+                    Obj.C.OBJS.FLAGSTAND.type,
+                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
+                    new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
+                    new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
+                    true,
+                    true,
+                    this.teams[i].hex
+                ).update();
+                this.flags.push(flag);
+                this.flagStands.push(flagStand);
+            }
         }
     }
 
@@ -275,6 +283,13 @@ class Game {
         for (let ship of this.ships) {
             this.sendChooseShip(ship);
         }
+        this.numRounds++;
+    }
+
+    gameOver() {
+        for (let ship of this.ships) {
+            ship.gameOver();
+        }
     }
 
     getWinningTeam() {
@@ -292,6 +307,9 @@ class Game {
     }
 
     manageGameState() {
+        if (this.map) {
+            this.map.tick();
+        }
         if (this.ships.length < Game.C.MIN_PLAYERS) {
             if (!this.waiting || this.waitTimer != -1) {
                 this.waiting = true;
@@ -318,6 +336,7 @@ class Game {
             }
 
             if (this.betweenTime != -1) {
+                this.roundTime = -1;
                 if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
                     this.betweenTime = -1;
                     let winningTeam = this.getWinningTeam();
@@ -327,7 +346,12 @@ class Game {
 
                     this.teams[0].setScore(0);
                     this.teams[1].setScore(0);
-                    this.newRound();
+
+                    if (this.numRounds < Game.C.NUM_ROUNDS) {
+                        this.newRound();
+                    } else {
+                        this.gameOver();
+                    }
                 }
             }
 
@@ -471,6 +495,7 @@ class Game {
                             ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                             ship.setMaxStats();
                             ship.setHue(ship.team.hue);
+
                             this.flagHolders[ship.team.team] = null;
 
                             this.flags[opp].show();
@@ -488,7 +513,11 @@ class Game {
                         } else {
                             bottomMessage.components[1].value += "It's a tie and no team won. ";
                         }
-                        bottomMessage.components[1].value +=  "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
+                        if (this.numRounds < Game.C.NUM_ROUNDS) {
+                            bottomMessage.components[1].value +=  "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
+                        } else {
+                            bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
+                        }
                         ship.sendUI(bottomMessage);
                     } else {
                         ship.setCollider(true);
@@ -529,6 +558,8 @@ class Game {
                                         ship.setMaxStats();
                                         ship.setHue(ship.team.hue);
                                         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                        ship.setScore(ship.score + 1);
+                                        ship.setTotalScore(ship.totalScore + 1);
                                         this.flagHolders[i] = null;
 
                                         ship.team.setScore(ship.team.score + 1);
@@ -542,16 +573,18 @@ class Game {
                             }
                         }
 
-                        let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
-                        let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
-                        timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
-                        if (timeLeft <= UIComponent.C.TICKS.WARNING) {
-                            timer.components[0].fill = '#8B000080';
-                            timer.components[0].stroke = '#FFBBBB';
-                            timer.components[0].width = 2;
-                            timer.components[1].color = '#FFBBBB';
+                        if (Game.C.TICKS.ROUND - (game.step - this.roundTime) >= 0) {
+                            let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
+                            let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
+                            timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
+                            if (timeLeft <= UIComponent.C.TICKS.WARNING) {
+                                timer.components[0].fill = '#8B000080';
+                                timer.components[0].stroke = '#FFBBBB';
+                                timer.components[0].width = 2;
+                                timer.components[1].color = '#FFBBBB';
+                            }
+                            ship.sendUI(timer);
                         }
-                        ship.sendUI(timer);
                     }
 
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
@@ -627,6 +660,10 @@ class Game {
                     ship.sendUI(scoreboard);
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
+                        let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
+                        topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        ship.sendUI(topMessage);
+
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
                         let winningTeam = this.getWinningTeam();
                         if (winningTeam == null) {
@@ -657,10 +694,11 @@ class Game {
 
     spawnAliens() {
         if (
+            this.map &&
             game.step % Alien.C.SPAWN_RATE === 0 &&
             game.aliens.length < Alien.C.MAX_AMOUNT
         ) {
-            let pos = Helper.getRandomMapCoordinate();
+            let pos = Helper.getRandomArrayElement(this.map.spawnArea);
 
             let as = [];
             for (let i = 0; i < Alien.C.TYPES.length; i++) {
@@ -691,11 +729,12 @@ class Game {
 
     spawnCollectibles() {
         if (
+            this.map &&
             game.step % Collectible.C.SPAWN_RATE === 0 &&
             game.collectibles.length < Collectible.C.MAX_AMOUNT
         ) {
             for (let i = 0; i < Collectible.C.MAX_AMOUNT; i++) {
-                let pos = Helper.getRandomMapCoordinate();
+                let pos = Helper.getRandomArrayElement(this.map.spawnArea);
                 let cs = [];
                 for (let j = 0; j < Collectible.C.TYPES.length; j++) {
                     let type = Collectible.C.TYPES[j];
@@ -933,6 +972,7 @@ class Ship {
     hasFlag = false;
 
     score = 0;
+    totalScore = 0;
 
     flagTime = -1;
 
@@ -949,6 +989,7 @@ class Ship {
         this.setVelocity(new Vector2(0, 0));
         this.setCollider(true);
         this.setIdle(false);
+        this.setScore(0);
 
         this.chosenType = 0;
         this.hasFlag = false;
@@ -1011,7 +1052,18 @@ class Ship {
     }
 
     sendTimedUI(ui, time) {
-        this.timedUIs.push(new TimedUI(this, ui, time));
+        let removedUIs = [];
+        for (let timedUI of this.timedUIs) {
+            if (timedUI.ui.id == ui.id) {
+                timedUI.running = false;
+                removedUIs.push(timedUI);
+            }
+        }
+        for (let timedUI of removedUIs) {
+            this.timedUIs.splice(this.timedUIs.indexOf(timedUI), 1);
+        }
+        let tui = new TimedUI(this, ui, time);
+        this.timedUIs.push(tui);
     }
 
     hideAllUIs() {
@@ -1169,9 +1221,15 @@ class Ship {
 
     setScore(score) {
         this.score = score;
+        
         if (game.ships.includes(this.ship)) {
             this.ship.set({ score: score });
         }
+        return this;
+    }
+
+    setTotalScore(totalScore) {
+        this.totalScore = totalScore;
         return this;
     }
 
@@ -1195,14 +1253,27 @@ class Ship {
 
     setMaxShield() {
         this.setShield(999999);
+        return this;
     }
 
     setMaxStats() {
         this.setStats(99999999);
+        return this;
     }
 
     setMaxGenerator() {
         this.setGenerator(999999);
+        return this;
+    }
+
+    gameOver() {
+        if (game.ships.includes(this.ship)) {
+            this.ship.gameover({
+                "Congratulations": "Thanks for playing!",
+                "Flags Captured": this.totalScore
+            });
+        }
+        return this;
     }
 
     destroySelf() {
@@ -1426,6 +1497,45 @@ class Collectible {
     }
 }
 
+class AsteroidPath {
+    asteroid = null;
+    initialPos = null;
+    velocity = null;
+    size = 1;
+
+    initTime = -1;
+
+    constructor(initialPos, velocity, size) {
+        this.initialPos = initialPos;
+        this.velocity = velocity;
+        this.size = size;
+    }
+
+    spawn() {
+        this.asteroid = new Asteroid(this.initialPos, this.velocity, this.size);
+        this.initTime = game.step;
+        return this;
+    }
+
+    tick() {
+        if (this.initTime != -1) {
+            this.asteroid.setPosition(this.initialPos.clone().add(this.velocity.clone().multiply(game.step - this.initTime)));
+            this.asteroid.setVelocity(this.velocity);
+        }
+        return this;
+    }
+
+    stop() {
+        this.initTime = -1;
+        return this;
+    }
+
+    destroySelf() {
+        this.asteroid.destroySelfNoRemains();
+        return this;
+    }
+}
+
 class Asteroid {
     asteroid = null;
 
@@ -1491,6 +1601,29 @@ class Obj {
                     z: 0
                 },
                 scale: {
+                    x: 1,
+                    y: 1,
+                    z: 0
+                },
+                type: {
+                    id: 'plane',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: '',
+                }
+            },
+            GRID: {
+                id: 'grid',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
                     x: 10,
                     y: 10,
                     z: 0
@@ -1498,7 +1631,7 @@ class Obj {
                 type: {
                     id: 'grid',
                     obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
-                    emissive: ''
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
             },
             FLAG: {
@@ -1560,9 +1693,9 @@ class Obj {
         id,
         type,
         position, rotation, scale,
-        color = "#ffffff",
         randomizeID = false,
-        randomizeTypeID = false
+        randomizeTypeID = false,
+        color = "#ffffff",
     ) {
         this.obj = {
             id: id,
@@ -1599,11 +1732,13 @@ class Obj {
 
     update() {
         game.setObject(this.obj);
+        return this;
     }
 
     reset() {
         this.obj = Helper.deepCopy(this.originalObj);
         this.update();
+        return this;
     }
 
     setPosition(position) {
@@ -1691,7 +1826,7 @@ class TimedUI {
     static C = {
         DEFAULT_TIME: 300,
         LOGO_TIME: 480,
-        NOTIFICATION_TIME: 480,
+        NOTIFICATION_TIME: 300,
     }
 
     constructor(ship, ui, time = TimedUI.C.DEFAULT_TIME) {
@@ -1852,6 +1987,24 @@ class UIComponent {
                         position: [5, 0, 90, 10],
                         value: "Waiting for more players...",
                         color: "#ffffff"
+                    }
+                ]
+            },
+            TOP_MESSAGE: {
+                id: "top_message",
+                position: [0, 0, 100, 5],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: "text",
+                        position: [10, 10, 80, 80],
+                        value: '',
+                        color: '#ffffff'
                     }
                 ]
             },
@@ -2123,9 +2276,12 @@ class GameMap {
     name = '';
     author = '';
     map = '';
+    spawnArea = [];
+    gridObjs = [];
     flags = [];
     spawns = [];
     tiers = [];
+    asteroidPaths = [];
 
     tier = 0;
 
@@ -2195,7 +2351,8 @@ class GameMap {
                 '    9999999999999   999999999999999   999999999999999999    ',
             flags: [],
             spawns: [],
-            tiers: [6]
+            tiers: [6],
+            asteroids: []
         },
         TEST_MAP: {
             name: "Testing",
@@ -2274,7 +2431,8 @@ class GameMap {
                 x: 45,
                 y: 0
             }],
-            tiers: []
+            tiers: [],
+            asteroids: []
         },
         MAPS: [
             {
@@ -2354,7 +2512,8 @@ class GameMap {
                     x: 0,
                     y: 260
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Square Roundabout",
@@ -2433,7 +2592,8 @@ class GameMap {
                     x: 90,
                     y: -90
                 }],
-                tiers: [4, 5, 6]
+                tiers: [4, 5, 6],
+                asteroids: []
             },
             {
                 name: "CTF",
@@ -2512,7 +2672,8 @@ class GameMap {
                     x: 90,
                     y: 0
                 }],
-                tiers: [4, 5, 6]
+                tiers: [4, 5, 6],
+                asteroids: []
             },
             {
                 name: "Plinko",
@@ -2591,7 +2752,8 @@ class GameMap {
                     x: 150,
                     y: -250
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Cutoff",
@@ -2670,7 +2832,8 @@ class GameMap {
                     x: 230,
                     y: -230
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Machinery",
@@ -2749,7 +2912,8 @@ class GameMap {
                     x: 210,
                     y: -210
                 }],
-                tiers: [3, 4, 5]
+                tiers: [3, 4, 5],
+                asteroids: []
             },
             {
                 name: "Highway",
@@ -2821,6 +2985,7 @@ class GameMap {
                     x: 200,
                     y: 0
                 }],
+                portals: [],
                 spawns: [{
                     x: -240,
                     y: 0
@@ -2829,31 +2994,16 @@ class GameMap {
                     y: 0
                 }],
                 tiers: [],
-                traffic: function () {
-                    let xPos = [-180, -140, -75, -35, 35, 75, 140, 180];
-                    let yPos = [280, 295, 250, 200, 225, 290, 100, 50];
-                    let vy = [0.7, -0.9, 0.7, -0.8, 0.9, 0.7, 0.8, -0.8];
-                    for (let i = 0; i < xPos.length; i++) {
-                        game.addAsteroid({
-                            x: xPos[i],
-                            y: yPos[i],
-                            vx: 0,
-                            vy: vy[i],
-                            size: 40
-                        });
-                    }
-                },
-                cars: function () {
-                    let xPos = [-180, -140, -75, -35, 35, 75, 140, 180];
-                    let vy = [0.7, -0.9, 0.7, -0.8, 0.9, 0.7, 0.8, -0.8];
-                    for (let i = 0; i < game.asteroids.length; i++) {
-                        game.asteroids[i].set({
-                            x: xPos[i],
-                            vx: 0,
-                            vy: vy[i]
-                        });
-                    }
-                }
+                asteroids: [
+                    { x: -180, y: 280, vx: 0, vy: 0.7, size: 40 },
+                    { x: -140, y: 295, vx: 0, vy: -0.9, size: 40 },
+                    { x: -75, y: 250, vx: 0, vy: 0.7, size: 40 },
+                    { x: -35, y: 200, vx: 0, vy: -0.8, size: 40 },
+                    { x: 35, y: 225, vx: 0, vy: 0.9, size: 40 },
+                    { x: 75, y: 290, vx: 0, vy: 0.7, size: 40 },
+                    { x: 140, y: 100, vx: 0, vy: 0.8, size: 40 },
+                    { x: 180, y: 50, vx: 0, vy: -0.8, size: 40 }
+                ]
             },
             {
                 name: "Dimension 2.0",
@@ -2925,6 +3075,24 @@ class GameMap {
                     x: 235,
                     y: 235
                 }],
+                portals: [
+                    {
+                        x: -150,
+                        y: 0
+                    },
+                    {
+                        x: 150,
+                        y: 0
+                    },
+                    {
+                        x: 0,
+                        y: -150
+                    },
+                    {
+                        x: 0,
+                        y: 150
+                    }
+                ],
                 spawns: [{
                     x: -195,
                     y: -195
@@ -2932,7 +3100,8 @@ class GameMap {
                     x: 195,
                     y: 195
                 }],
-                tiers: [5, 6]
+                tiers: [5, 6],
+                asteroids: []
             },
             {
                 name: "Walls",
@@ -2998,12 +3167,22 @@ class GameMap {
                     "99999999999     999999999999    999999999999     99999999999\n" +
                     "9999999999       9999999999      9999999999       9999999999",
                 flags: [{
-                    x: -246,
+                    x: -245,
                     y: 0
                 }, {
                     x: 245,
                     y: 0
                 }],
+                portals: [
+                    {
+                        x: 0,
+                        y: 235
+                    },
+                    {
+                        x: 0,
+                        y: -235
+                    }
+                ],
                 spawns: [{
                     x: -185,
                     y: 0
@@ -3011,71 +3190,72 @@ class GameMap {
                     x: 185,
                     y: 0
                 }],
-                tiers: [5, 6]
+                tiers: [5, 6],
+                asteroids: []
             },
             {
                 name: "Dots",
                 author: "Healer",
-                map: "9  999999999999999999999999999999999999999999999999999999  9\n" +
-                    "   993566533364536434555539999999935555434635463335665399   \n" +
-                    "    9999999999999999999999999  9999999999999999999999999    \n" +
-                    "99  999                9999      9999                999  99\n" +
-                    "999999                9999        9999                999999\n" +
-                    "9399999             79999    99    99997             9999939\n" +
-                    "9399 99   99                9999                99   99 9939\n" +
-                    "969       99               999999               99       969\n" +
-                    "969        99            9999  9999            99        969\n" +
-                    "949        999    99      99    99      99    999        949\n" +
-                    "939         99    99                    99    99         939\n" +
-                    "939                                                      939\n" +
-                    "939  9999                                          9999  939\n" +
-                    "939  9999     99       99          99       99     9999  939\n" +
-                    "939            99      99          99      99            939\n" +
-                    "969             99           99           99             969\n" +
-                    "969                          99                          969\n" +
-                    "959    999          99                99          999    959\n" +
-                    "949     999         99999          99999         999     949\n" +
-                    "939      999          999999    999999          999      939\n" +
-                    "9399     9999    99                      99    9999     9939\n" +
-                    "9499       999   99                      99   999       9949\n" +
-                    "95999       999                              999       99959\n" +
-                    "95999   99  999          999    999          999  99   99959\n" +
-                    "9499    99   88           99999999           88   99    9949\n" +
-                    "999           6    99       9999       99    6           999\n" +
-                    "99                 99                  99                 99\n" +
-                    "                             99                             \n" +
-                    "   9                         99                         9   \n" +
-                    "  999     99    99    99            99    99    99     999  \n" +
-                    "  999     99    99    99            99    99    99     999  \n" +
-                    "   9                         99                         9   \n" +
-                    "                             99                             \n" +
-                    "99                 99                  99                 99\n" +
-                    "999           6    99       9999       99    6           999\n" +
-                    "9499    99   88           99999999           88   99    9949\n" +
-                    "95999   99  999          999    999          999  99   99959\n" +
-                    "95999       999                              999       99959\n" +
-                    "9499       999   99                      99   999       9949\n" +
-                    "9399     9999    99                      99    9999     9939\n" +
-                    "939      999          999999    999999          999      939\n" +
-                    "949     999         99999          99999         999     949\n" +
-                    "959    999          99                99          999    959\n" +
-                    "969                          99                          969\n" +
-                    "969             99           99           99             969\n" +
-                    "939            99      99          99      99            939\n" +
-                    "939  9999     99       99          99       99     9999  939\n" +
-                    "939  9999                                          9999  939\n" +
-                    "939                                                      939\n" +
-                    "939         99    99                    99    99         939\n" +
-                    "949        999    99      99    99      99    999        949\n" +
-                    "969        99            9999  9999            99        969\n" +
-                    "969       99               999999               99       969\n" +
-                    "9399 99   99                9999                99   99 9939\n" +
-                    "9399999             79999    99    99997             9999939\n" +
-                    "999999                9999        9999                999999\n" +
-                    "99  999                9999      9999                999  99\n" +
-                    "    9999999999999999999999999  9999999999999999999999999    \n" +
-                    "   993566533364536434555539999999935555434635463335665399   \n" +
-                    "9  999999999999999999999999999999999999999999999999999999  9",
+                map: '9  999999999999999999999999999999999999999999999999999999  9\n'+
+                    '   993566533364536434555539999999935555434635463335665399   \n'+
+                    '    9999999999999999999999999  9999999999999999999999999    \n'+
+                    '                       9999      9999                       \n'+
+                    '999999                9999        9999                999999\n'+
+                    '9399999             79999    99    99997             9999939\n'+
+                    '9399 99   99                9999                99   99 9939\n'+
+                    '969       99               999999               99       969\n'+
+                    '969        99            9999  9999            99        969\n'+
+                    '949        999    99      99    99      99    999        949\n'+
+                    '939         99    99                    99    99         939\n'+
+                    '939                                                      939\n'+
+                    '939  9999                                          9999  939\n'+
+                    '939  9999     99       99          99       99     9999  939\n'+
+                    '939            99      99          99      99            939\n'+
+                    '969             99           99           99             969\n'+
+                    '969                          99                          969\n'+
+                    '959    999          99                99          999    959\n'+
+                    '949     999         99999          99999         999     949\n'+
+                    '939      999          999999    999999          999      939\n'+
+                    '9399     9999    99                      99    9999     9939\n'+
+                    '9499       999   99                      99   999       9949\n'+
+                    '95999       999                              999       99959\n'+
+                    '95999   99  999          999    999          999  99   99959\n'+
+                    '9499    99   88           99999999           88   99    9949\n'+
+                    '999           6    99       9999       99    6           999\n'+
+                    '99                 99                  99                 99\n'+
+                    '                                                            \n'+
+                    '   9                                                    9   \n'+
+                    '  999     99    99    99            99    99    99     999  \n'+
+                    '  999     99    99    99            99    99    99     999  \n'+
+                    '   9                                                    9   \n'+
+                    '                                                            \n'+
+                    '99                 99                  99                 99\n'+
+                    '999           6    99       9999       99    6           999\n'+
+                    '9499    99   88           99999999           88   99    9949\n'+
+                    '95999   99  999          999    999          999  99   99959\n'+
+                    '95999       999                              999       99959\n'+
+                    '9499       999   99                      99   999       9949\n'+
+                    '9399     9999    99                      99    9999     9939\n'+
+                    '939      999          999999    999999          999      939\n'+
+                    '949     999         99999          99999         999     949\n'+
+                    '959    999          99                99          999    959\n'+
+                    '969                          99                          969\n'+
+                    '969             99           99           99             969\n'+
+                    '939            99      99          99      99            939\n'+
+                    '939  9999     99       99          99       99     9999  939\n'+
+                    '939  9999                                          9999  939\n'+
+                    '939                                                      939\n'+
+                    '939         99    99                    99    99         939\n'+
+                    '949        999    99      99    99      99    999        949\n'+
+                    '969        99            9999  9999            99        969\n'+
+                    '969       99               999999               99       969\n'+
+                    '9399 99   99                9999                99   99 9939\n'+
+                    '9399999             79999    99    99997             9999939\n'+
+                    '999999                9999        9999                999999\n'+
+                    '                       9999      9999                       \n'+
+                    '    9999999999999999999999999  9999999999999999999999999    \n'+
+                    '   993566533364536434555539999999935555434635463335665399   \n'+
+                    '9  999999999999999999999999999999999999999999999999999999  9',
                 flags: [{
                     x: 0,
                     y: -205
@@ -3083,6 +3263,16 @@ class GameMap {
                     x: 0,
                     y: 205
                 }],
+                portals: [
+                    {
+                        x: 0,
+                        y: -180
+                    },
+                    {
+                        x: 0,
+                        y: 180
+                    }
+                ],
                 spawns: [{
                     x: 0,
                     y: -265
@@ -3090,7 +3280,8 @@ class GameMap {
                     x: 0,
                     y: 265
                 }],
-                tiers: [5, 6]
+                tiers: [5, 6],
+                asteroids: []
             },
             {
                 name: "Concentration",
@@ -3162,6 +3353,24 @@ class GameMap {
                     x: 180,
                     y: 0
                 }],
+                portals: [
+                    {
+                        x: -220,
+                        y: -220
+                    },
+                    {
+                        x: -220,
+                        y: 220
+                    },
+                    {
+                        x: 220,
+                        y: -220
+                    },
+                    {
+                        x: 220,
+                        y: 220
+                    }
+                ],
                 spawns: [{
                     x: -210,
                     y: 0
@@ -3169,7 +3378,8 @@ class GameMap {
                     x: 210,
                     y: 0
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Temple",
@@ -3241,6 +3451,16 @@ class GameMap {
                     x: 0,
                     y: 185
                 }],
+                portals: [
+                    {
+                        x: 160,
+                        y: 0
+                    },
+                    {
+                        x: -160,
+                        y: 0
+                    }
+                ],
                 spawns: [{
                     x: 0,
                     y: -235
@@ -3248,7 +3468,8 @@ class GameMap {
                     x: 0,
                     y: 235
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Crop Circles",
@@ -3320,14 +3541,29 @@ class GameMap {
                     x: 188,
                     y: 190
                 }],
+                portals: [
+                    {
+                        x: -220,
+                        y: 160
+                    },
+                    {
+                        x: 210,
+                        y: -240
+                    },
+                    {
+                        x: -60,
+                        y: 240
+                    }
+                ],
                 spawns: [{
                     x: -220,
-                    y: -175
+                    y: -160
                 }, {
-                    x: 220,
+                    x: 210,
                     y: 210
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Oblivion",
@@ -3399,6 +3635,16 @@ class GameMap {
                     x: 180,
                     y: 190
                 }],
+                portals: [
+                    {
+                        x: -110,
+                        y: -110
+                    },
+                    {
+                        x: 110,
+                        y: 110
+                    }
+                ],
                 spawns: [{
                     x: -230,
                     y: -230
@@ -3406,7 +3652,8 @@ class GameMap {
                     x: 230,
                     y: 230
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Fusion",
@@ -3478,6 +3725,7 @@ class GameMap {
                     x: 232,
                     y: 225
                 }],
+                portals: [],
                 spawns: [{
                     x: -170,
                     y: 110
@@ -3485,7 +3733,8 @@ class GameMap {
                     x: 170,
                     y: -110
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Stadium",
@@ -3564,7 +3813,8 @@ class GameMap {
                     x: 242,
                     y: 150
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Agony",
@@ -3643,7 +3893,8 @@ class GameMap {
                     x: 200,
                     y: 225
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Fortress",
@@ -3722,7 +3973,8 @@ class GameMap {
                     x: -225,
                     y: 5
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Paths",
@@ -3801,7 +4053,8 @@ class GameMap {
                     x: 180,
                     y: 0
                 }],
-                tiers: [4, 5, 6]
+                tiers: [4, 5, 6],
+                asteroids: []
             },
             {
                 name: "Boxes 4.0",
@@ -3880,7 +4133,8 @@ class GameMap {
                     x: 265,
                     y: 0
                 }],
-                tiers: [3, 4]
+                tiers: [3, 4],
+                asteroids: []
             },
 
             {
@@ -3953,6 +4207,16 @@ class GameMap {
                     x: 175,
                     y: 175
                 }],
+                portals: [
+                    {
+                        x: -180,
+                        y: -50
+                    },
+                    {
+                        x: 180,
+                        y: 50
+                    }
+                ],
                 spawns: [{
                     x: -235,
                     y: -235
@@ -3960,7 +4224,8 @@ class GameMap {
                     x: 235,
                     y: 235
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Heartache",
@@ -4039,7 +4304,8 @@ class GameMap {
                     x: 265,
                     y: 0
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Snowflake",
@@ -4118,7 +4384,8 @@ class GameMap {
                     x: 255,
                     y: 0
                 }],
-                tiers: []
+                tiers: [],
+                asteroids: []
             },
             {
                 name: "Shortcut",
@@ -4198,71 +4465,38 @@ class GameMap {
                     y: -225
                 }],
                 tiers: [],
-                traffic: function () {
-                    for (let i = 0; i < 4; i++) {
-                        game.addAsteroid({
-                            x: 600 / 4 * i,
-                            y: 600 / 4 * i,
-                            vx: 0.25,
-                            vy: 0.25,
-                            size: 100
-                        });
-                    }
-                    for (let i = 0; i < 7; i++) {
-                        game.addAsteroid({
-                            x: 600 / 7 * i,
-                            y: 600 / 7 * i + 90,
-                            vx: 0.4,
-                            vy: 0.4,
-                            size: 40
-                        });
-                        game.addAsteroid({
-                            x: 600 / 7 * i,
-                            y: 600 / 7 * i - 90,
-                            vx: -0.4,
-                            vy: -0.4,
-                            size: 40
-                        });
-                    }
-                },
-                cars: function () {
-                    let index = 0;
-
-                    for (let i = 0; i < 4; i++) {
-                        game.asteroids[index].set({
-                            vx: 0.25,
-                            vy: 0.25,
-                            size: 100
-                        });
-
-                        index++;
-                    }
-                    for (let i = 0; i < 7; i++) {
-                        game.asteroids[index].set({
-                            vx: 0.4,
-                            vy: 0.4,
-                            size: 40
-                        });
-
-                        index++;
-
-                        game.asteroids[index].set({
-                            vx: -0.4,
-                            vy: -0.4,
-                            size: 40
-                        });
-
-                        index++;
-                    }
-                },
+                asteroids: [
+                    ...Array.from({ length: 4 }, (_, i) => i).map(i => ({
+                        x: 600 / 4 * i,
+                        y: 600 / 4 * i,
+                        vx: 0.25,
+                        vy: 0.25,
+                        size: 100
+                    })),
+                    ...Array.from({ length: 7 }, (_, i) => i).map(i => ({
+                        x: 600 / 7 * i,
+                        y: 600 / 7 * i + 90,
+                        vx: 0.4,
+                        vy: 0.4,
+                        size: 40
+                    })),
+                    ...Array.from({ length: 7 }, (_, i) => i).map(i => ({
+                        x: 600 / 7 * i,
+                        y: 600 / 7 * i - 90,
+                        vx: -0.4,
+                        vy: -0.4,
+                        size: 40
+                    })),
+                ]
             }
         ]
     }
 
-    constructor(name, author, map, flags, spawns, tiers) {
+    constructor(name, author, map, flags, spawns, tiers, asteroids) {
         this.name = name;
         this.author = author;
         this.map = map;
+        this.getSpawnArea();
         this.flags = [];
         if (flags) {
             for (let i = 0; i < flags.length; i++) {
@@ -4280,7 +4514,78 @@ class GameMap {
             this.tiers = [3, 4, 5, 6];
         }
         this.tier = Helper.getRandomArrayElement(this.tiers);
+
+        this.asteroidPaths = [];
+        for (let i = 0; i < asteroids.length; i++) {
+            this.asteroidPaths.push(new AsteroidPath(
+                new Vector2(asteroids[i].x, asteroids[i].y),
+                new Vector2(asteroids[i].vx, asteroids[i].vy),
+                asteroids[i].size
+            ));
+        }
+    }
+
+    getSpawnArea() {
+        let sMap = this.map.split('\n');
+        this.spawnArea = [];
+        for (let i = 0; i < Game.C.OPTIONS.MAP_SIZE; i++) {
+            for (let j = 0; j < Game.C.OPTIONS.MAP_SIZE; j++) {
+                let char = sMap[i].charAt(j);
+                if (char == ' ') {
+                    this.spawnArea.push(new Vector2(
+                        j - Game.C.OPTIONS.MAP_SIZE / 2 + 0.5,
+                        Game.C.OPTIONS.MAP_SIZE / 2 - 0.5 - i
+                    ));
+                }
+            }
+        }
+    
+        if (Game.C.IS_DEBUGGING) {
+            for (let i = 0; i < this.spawnArea.length; i++) {
+                let grid = Helper.deepCopy(Obj.C.OBJS.GRID);
+                this.gridObjs.push(new Obj(
+                    grid.id,
+                    grid.type,
+                    new Vector3(this.spawnArea[i].x * 10, this.spawnArea[i].y * 10, grid.position.z),
+                    new Vector3(grid.rotation.x, grid.rotation.y, grid.rotation.z),
+                    new Vector3(grid.scale.x, grid.scale.y, grid.scale.z),
+                    true,
+                    false
+                ).update());
+            }
+        }
+    }
+
+    spawn() {
         game.setCustomMap(this.map);
+        for (let asteroidPath of this.asteroidPaths) {
+            asteroidPath.spawn();
+        }
+        return this;
+    }
+
+    tick() {
+        for (let asteroidPath of this.asteroidPaths) {
+            asteroidPath.tick();
+        }
+        return this;
+    }
+
+    stop() {
+        for (let asteroidPath of this.asteroidPaths) {
+            asteroidPath.stop();
+        }
+        return this;
+    }
+
+    destroySelf() {
+        for (let gridObj of this.gridObjs) {
+            gridObj.destroySelf();
+        }
+        for (let asteroidPath of this.asteroidPaths) {
+            asteroidPath.destroySelf();
+        }
+        return this;
     }
 }
 
