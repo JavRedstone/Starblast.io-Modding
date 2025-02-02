@@ -2556,7 +2556,7 @@ function genPortals() {
             let gravity = deepCopy(OBJECTS.GRAVITY);
             gravity.id = `${OBJECTS.GRAVITY.id}-${i}`;
             gravity.position.x = game.custom.portals[i].x * SCALING_FACTOR;
-            gravity.position.y = game.custom.portals[i].y * SCALING_FACTOR - OBJECTS.GRAVITY.scale.y / GRAVITY_SCALING_FACTOR / 2 * SCALING_FACTOR;
+            gravity.position.y = game.custom.portals[i].y * SCALING_FACTOR;
             game.setObject(gravity); 
         }
     }
