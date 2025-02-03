@@ -100,7 +100,7 @@ class Game {
         IS_TESTING: true,
         IS_DEBUGGING: false,
         MIN_PLAYERS: 1,
-        ROUND_MAX: 3,
+        ROUND_MAX: 5,
         NUM_ROUNDS: 3
     }
 
@@ -267,8 +267,6 @@ class Game {
                 this.portals.push(portal);
                 this.gravityWells.push(gravityWell);
             }
-
-            console.log(this)
         }
     }
 
@@ -564,6 +562,9 @@ class Game {
                             bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
                         }
                         ship.sendUI(bottomMessage);
+
+                        ship.hideUI(UIComponent.C.UIS.TIMER);
+                        ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
                     } else {
                         ship.setCollider(true);
                         if (ship.hasFlag) {
@@ -590,7 +591,7 @@ class Game {
                                 }
                                 chooseShip.components[1].value = i + 1;
                                 chooseShip.components[5].value = this.shipGroup.chosenNames[i];
-                                chooseShip.components[8].value = this.shipGroup.chosenTypes[i];
+                                chooseShip.components[8].value = Math.floor(this.shipGroup.chosenTypes[i] / 100);
                                 ship.sendUI(chooseShip);
                             }
                             let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
@@ -669,6 +670,10 @@ class Game {
                         }
                     }
 
+                    let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
+                    mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
+                    ship.sendUI(mapAuthor);
+
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
                     ship.sendUI(radarBackground);
 
@@ -743,7 +748,23 @@ class Game {
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-                        topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        
+                        let firstScore = this.teams[0].score;
+                        let secondScore = this.teams[1].score;
+                        let total = firstScore + secondScore;
+                        if (total == 0) {
+                            total = 2;
+                            firstScore = 1;
+                            secondScore = 1;
+                        }
+                        topMessage.components[0].position[2] = 100 * firstScore / total;
+                        topMessage.components[0].fill = this.teams[0].hex + '66';
+                        topMessage.components[1].position[0] = 100 * firstScore / total;
+                        topMessage.components[1].position[2] = 100 * secondScore / total;
+                        topMessage.components[1].fill = this.teams[1].hex + '66';
+                        
+                        topMessage.components[2].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        
                         ship.sendUI(topMessage);
 
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
@@ -766,6 +787,21 @@ class Game {
                         totalScore.components[1].value = this.totalScores[0];
                         totalScore.components[3].value = this.totalScores[1];
                         ship.sendUI(totalScore);
+
+                        if (this.betweenTime == -1) {
+                            let portalCooldown = Helper.deepCopy(UIComponent.C.UIS.PORTAL_COOLDOWN);
+                            let portalTime = Ship.C.PORTAL_TIME - (game.step - ship.portalTime);
+                            if (portalTime < 0) {
+                                portalTime = 0;
+                            }
+                            portalCooldown.components[2].value = Helper.formatTime(portalTime);
+                            if (portalTime == 0) {
+                                portalCooldown.components[0].stroke = "#00ff00";
+                            } else {
+                                portalCooldown.components[0].stroke = "#ff0000";
+                            }
+                            ship.sendUI(portalCooldown);
+                        }
                     }
                 }
 
@@ -774,7 +810,7 @@ class Game {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (this.betweenTime == -1) {
+                if (!this.waiting && this.betweenTime == -1 && ship.ship.alive && ship.ship.type != 101) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
@@ -2090,7 +2126,7 @@ class UIComponent {
             },
             TIMER: {
                 id: "timer",
-                position: [3, 30, 15, 5],
+                position: [2, 30, 15, 5],
                 visible: true,
                 components: [
                     {
@@ -2101,6 +2137,30 @@ class UIComponent {
                     {
                         type: "text",
                         position: [5, 0, 90, 100],
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            MAP_AUTHOR: {
+                id: "map_author",
+                position: [80, 45, 20, 5],
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                    },
+                    {
+                        type: "box",
+                        position: [0, 0, 0, 100],
+                        stroke: "#ffffff",
+                        width: 5
+                    },
+                    {
+                        type: "text",
+                        position: [5, 0, 90, 100],
+                        value: "Map: ",
                         color: "#ffffff"
                     }
                 ]
@@ -2187,8 +2247,11 @@ class UIComponent {
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 100, 100],
-                        fill: '#00000080',
+                        position: [0, 0, 50, 100],
+                    },
+                    {
+                        type: 'box',
+                        position: [50, 0, 50, 100],
                     },
                     {
                         type: "text",
@@ -2196,21 +2259,6 @@ class UIComponent {
                         value: '',
                         color: '#ffffff'
                     }
-                ]
-            },
-            SCORE_DIVISION: {
-                id: "score_division",
-                position: [0, 0, 100, 5],
-                visible: true,
-                components: [
-                    {
-                        type: 'box',
-                        position: [0, 0, 50, 100],
-                    },
-                    {
-                        type: 'box',
-                        position: [50, 0, 50, 100],
-                    },
                 ]
             },
             BOTTOM_MESSAGE: {
@@ -2295,7 +2343,7 @@ class UIComponent {
                     {
                         type: "text",
                         position: [10, 70, 80, 10],
-                        value: "Ship Code",
+                        value: "Ship Tier",
                         color: "#ffffff80"
                     },
                     {
@@ -2374,6 +2422,31 @@ class UIComponent {
                         type: "text",
                         position: [75, 0, 25, 100],
                         color: "#ffffffBF"
+                    }
+                ]
+            },
+            PORTAL_COOLDOWN: {
+                id: 'portal_cooldown',
+                position: [57.5, 7.5, 20, 5],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [100, 0, 0, 100],
+                        width: 3
+                    },
+                    {
+                        type: 'text',
+                        position: [0, 0, 95, 50],
+                        value: 'Portal cooldown',
+                        align: 'right',
+                        color: '#ffffff'
+                    },
+                    {
+                        type: 'text',
+                        position: [0, 50, 95, 50],
+                        align: 'right',
+                        color: '#ffffff'
                     }
                 ]
             },
