@@ -168,15 +168,6 @@ class Game {
     }
 
     deletePortals() {
-        if (this.mainPortal) {
-            this.mainPortal.destroySelf();
-        }
-        this.mainPortal = null;
-        if (this.mainGravityWell) {
-            this.mainGravityWell.destroySelf();
-        }
-        this.mainGravityWell = null;
-
         for (let portal of this.portals) {
             portal.destroySelf();
         }
@@ -279,30 +270,6 @@ class Game {
 
             console.log(this)
         }
-    }
-
-    spawnMainPortal() {
-        this.deletePortals();
-        this.mainPortal = new Obj(
-            Obj.C.OBJS.PORTAL.id,
-            Obj.C.OBJS.PORTAL.type,
-            new Vector3(0, 0, Obj.C.OBJS.PORTAL.position.z),
-            new Vector3(Obj.C.OBJS.PORTAL.rotation.x, Obj.C.OBJS.PORTAL.rotation.y, Obj.C.OBJS.PORTAL.rotation.z),
-            new Vector3(Obj.C.OBJS.PORTAL.scale.x, Obj.C.OBJS.PORTAL.scale.y, Obj.C.OBJS.PORTAL.scale.z).multiply(Obj.C.OBJS.PORTAL.MAIN_SCALE),
-            true,
-            true,
-            '#ff0000'
-        ).update();
-        this.mainGravityWell = new Obj(
-            Obj.C.OBJS.GRAVITY_WELL.id,
-            Obj.C.OBJS.GRAVITY_WELL.type,
-            new Vector3(0, 0, Obj.C.OBJS.GRAVITY_WELL.position.z),
-            new Vector3(Obj.C.OBJS.GRAVITY_WELL.rotation.x, Obj.C.OBJS.GRAVITY_WELL.rotation.y, Obj.C.OBJS.GRAVITY_WELL.rotation.z),
-            new Vector3(Obj.C.OBJS.GRAVITY_WELL.scale.x, Obj.C.OBJS.GRAVITY_WELL.scale.y, Obj.C.OBJS.GRAVITY_WELL.scale.z).multiply(Obj.C.OBJS.GRAVITY_WELL.MAIN_SCALE),
-            true,
-            true,
-            '#ff0000'
-        ).update();
     }
 
     selectRandomTeams() {
@@ -807,11 +774,7 @@ class Game {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (this.betweenTime != -1) {
-                    if (this.mainPortal && this.mainGravityWell) {
-                        this.suckPortalShip(ship, this.mainPortal, this.mainGravityWell, false, false, Game.C.OPTIONS.MAP_SIZE / 2 * 10, Obj.C.OBJS.GRAVITY_WELL.MAIN_INTENSITY);
-                    }
-                } else {
+                if (this.betweenTime == -1) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
@@ -1896,13 +1859,13 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 5,
-                    y: 5,
-                    z: 5
+                    x: 30,
+                    y: 30,
+                    z: 30
                 },
                 type: {
                     id: 'gravity',
-                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v2.0/gravity.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/gravity2.obj',
                     emissiveColor: '#ffffff',
                     transparent: false
                 },
@@ -1911,7 +1874,7 @@ class Obj {
                 MAX_VELOCITY: 1,
                 VELOCITY_FACTOR: 0.5,
                 INTENSITY: 0.5,
-                SUCK_FACTOR: 4
+                SUCK_FACTOR: 3
             },
         }
     }
@@ -2235,6 +2198,21 @@ class UIComponent {
                     }
                 ]
             },
+            SCORE_DIVISION: {
+                id: "score_division",
+                position: [0, 0, 100, 5],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 50, 100],
+                    },
+                    {
+                        type: 'box',
+                        position: [50, 0, 50, 100],
+                    },
+                ]
+            },
             BOTTOM_MESSAGE: {
                 id: "bottom_message",
                 position: [0, 95, 100, 5],
@@ -2286,7 +2264,6 @@ class UIComponent {
                     {
                         type: "box",
                         position: [0, 0, 100, 20],
-                        fill: "#ffffff80",
                     },
                     {
                         type: "text",
