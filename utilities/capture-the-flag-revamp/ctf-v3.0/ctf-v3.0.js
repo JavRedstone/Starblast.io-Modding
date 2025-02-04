@@ -17,10 +17,9 @@ class Game {
     flags = [];
     flagStands = [];
 
-    mainPortal = null;
-    mainGravityWell = null;
     portals = [];
     gravityWells = [];
+    beacons = [];
 
     waiting = true;
     waitTimer = -1;
@@ -97,7 +96,7 @@ class Game {
             ROUND: 28800,
             BETWEEN: 360
         },
-        IS_TESTING: true,
+        IS_TESTING: false,
         IS_DEBUGGING: false,
         MIN_PLAYERS: 1,
         ROUND_MAX: 5,
@@ -151,8 +150,11 @@ class Game {
         for (let ship of game.ships) {
             ship.emptyWeapons();
         }
+
         this.deleteFlags();
         this.deletePortals();
+        this.deleteBeacons();
+
         game.removeObject();
     }
 
@@ -176,6 +178,13 @@ class Game {
             gravityWell.destroySelf();
         }
         this.gravityWells = [];
+    }
+
+    deleteBeacons() {
+        for (let beacon of this.beacons) {
+            beacon.destroySelf();
+        }
+        this.beacons = [];
     }
 
     resetContainers() {
@@ -276,7 +285,6 @@ class Game {
         for (let teamOption of randTeamOption) {
             this.teams.push(
                 new Team(
-                    teamOption.NAME,
                     teamOption.TEAM,
                     teamOption.COLOR,
                     teamOption.HEX,
@@ -429,11 +437,23 @@ class Game {
                     }
                 }
             }
+
+            let removedBeacons = [];
+            for (let beacon of this.beacons) {
+                beacon.tick();
+                if (!beacon.running) {
+                    removedBeacons.push(beacon);
+                }
+            }
+            for (let beacon of removedBeacons) {
+                Helper.deleteFromArray(this.beacons, beacon);
+            }
         }
     }
 
     manageEntities() {
         if (game.step % Game.C.TICKS.ENTITY_MANAGER === 0) {
+            let notFoundAsteroids = [];
             for (let asteroid of this.asteroids) {
                 let found = false;
                 for (let gameAsteroid of game.asteroids) {
@@ -443,10 +463,14 @@ class Game {
                     }
                 }
                 if (!found) {
-                    Helper.deleteFromArray(this.asteroids, asteroid);
+                    notFoundAsteroids.push(asteroid);
                 }
             }
+            for (let asteroid of notFoundAsteroids) {
+                Helper.deleteFromArray(this.asteroids, asteroid);
+            }
 
+            let notFoundAliens = [];
             for (let alien of this.aliens) {
                 let found = false;
                 for (let gameAlien of game.aliens) {
@@ -456,10 +480,14 @@ class Game {
                     }
                 }
                 if (!found) {
-                    Helper.deleteFromArray(this.aliens, alien);
+                    notFoundAliens.push(alien);
                 }
             }
+            for (let alien of notFoundAliens) {
+                Helper.deleteFromArray(this.aliens, alien);
+            }
 
+            let notFoundShips = [];
             for (let ship of this.ships) {
                 let found = false;
                 for (let gameShip of game.ships) {
@@ -469,9 +497,12 @@ class Game {
                     }
                 }
                 if (!found) {
-                    ship.team.numShips--;
-                    Helper.deleteFromArray(this.ships, ship);
+                    notFoundShips.push(ship);
                 }
+            }
+            for (let ship of notFoundShips) {
+                Helper.deleteFromArray(ship.team.ships, ship);
+                Helper.deleteFromArray(this.ships, ship);
             }
 
             // check if the gameShip is there, but is not recorded in this.ships, if so, then this.onShipSpawned
@@ -647,9 +678,26 @@ class Game {
 
                                         ship.team.setScore(ship.team.score + 1);
 
+                                        this.flags[opp].reset();
                                         this.flags[opp].show();
 
                                         this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
+
+                                        this.beacons.push(
+                                            new TimedObj(
+                                                new Obj(
+                                                    Obj.C.OBJS.BEACON.id,
+                                                    Obj.C.OBJS.BEACON.type,
+                                                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.BEACON.position.z),
+                                                    new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
+                                                    new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
+                                                    true,
+                                                    true,
+                                                    this.teams[i].hex
+                                                ),
+                                                TimedObj.C.BEACON_TIME
+                                            ).spawn()
+                                        );
                                     }
 
                                 }
@@ -675,17 +723,69 @@ class Game {
                     ship.sendUI(mapAuthor);
 
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
+                    for (let i = 0; i < this.map.flags.length; i++) {
+                        let flag = this.flags[i];
+                        let flagStand = this.flagStands[i];
+
+                        radarBackground.components.push({
+                            type: 'text',
+                            position: Helper.getRadarSpotPosition(flagStand.obj.position.x, flagStand.obj.position.y, 100, 100),
+                            value: '⬡',
+                            color: this.teams[i].hex
+                        });
+
+                        if (flag.obj.scale.x > 0.1) {
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(flag.obj.position.x, flag.obj.position.y, 50, 50),
+                                value: '⚐',
+                                color: this.teams[i].hex
+                            });
+                        }
+                    }
+                    for (let i = 0; i < this.map.portals.length; i++) {
+                        let portal = this.portals[i];
+
+                        radarBackground.components.push({
+                            type: 'text',
+                            position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 120, 120),
+                            value: '⬡',
+                            color: '#00ff0080'
+                        });
+
+                        radarBackground.components.push({
+                            type: 'text',
+                            position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 80, 80),
+                            value: '⬡',
+                            color: '#00ff0060'
+                        });
+
+                        radarBackground.components.push({
+                            type: 'text',
+                            position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 40, 40),
+                            value: '⬡',
+                            color: '#00ff0040'
+                        });
+                    }
+                    for (let i = 0; i < this.map.spawns.length; i++) {
+                        let spawn = this.map.spawns[i];
+                        radarBackground.components.push({
+                            type: 'round',
+                            position: Helper.getRadarSpotPosition(spawn.x, spawn.y, 25, 25),
+                            fill: this.teams[i].hex + '80'
+                        });
+                    }
                     ship.sendUI(radarBackground);
 
                     let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
                     scoreboard.components[0].fill = this.teams[0].hex + 'BF';
                     scoreboard.components[2].fill = this.teams[1].hex + 'BF';
                     scoreboard.components[1].value = this.teams[0].color.toUpperCase() + ' TEAM';
-                    if (this.teams[0].color == 'Yellow') {
+                    if (this.teams[0].color == 'Yellow' || this.teams[0].color == 'Cyan') {
                         scoreboard.components[1].color = '#000000';
                     }
                     scoreboard.components[3].value = this.teams[1].color.toUpperCase() + ' TEAM';
-                    if (this.teams[1].color == 'Yellow') {
+                    if (this.teams[1].color == 'Yellow' || this.teams[1].color == 'Cyan') {
                         scoreboard.components[3].color = '#000000';
                     }
                     let players1 = [];
@@ -797,8 +897,10 @@ class Game {
                             portalCooldown.components[2].value = Helper.formatTime(portalTime);
                             if (portalTime == 0) {
                                 portalCooldown.components[0].stroke = "#00ff00";
+                                portalCooldown.components[2].color = "#00ff00";
                             } else {
                                 portalCooldown.components[0].stroke = "#ff0000";
+                                portalCooldown.components[2].color = "#ff0000";
                             }
                             ship.sendUI(portalCooldown);
                         }
@@ -898,6 +1000,21 @@ class Game {
                         }
                     }
                     let spawnPos = Helper.getRandomArrayElement(portalCoords);
+                    this.beacons.push(
+                        new TimedObj(
+                            new Obj(
+                                Obj.C.OBJS.BEACON.id,
+                                Obj.C.OBJS.BEACON.type,
+                                new Vector3(spawnPos.x, spawnPos.y, Obj.C.OBJS.BEACON.position.z),
+                                new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
+                                new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
+                                true,
+                                true,
+                                '#00ff00'
+                            ),
+                            TimedObj.C.BEACON_TIME
+                        ).spawn()
+                    );
                     ship.setPosition(spawnPos);
                     ship.setVelocity(new Vector2(0, 0));
                     ship.portalTime = game.step;
@@ -922,16 +1039,16 @@ class Game {
 
     sendNotifications(title, message, supportingTeam) {
         for (let ship of this.ships) {
-            let leftMessage = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
+            let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
             if (supportingTeam.team == ship.team.team) {
-                leftMessage.components[0].fill = '#008B00';
+                notification.components[0].stroke = '#00ff00';
             }
             else {
-                leftMessage.components[0].fill = '#8B0000';
+                notification.components[0].stroke = '#ff0000';
             }
-            leftMessage.components[1].value = title;
-            leftMessage.components[2].value = message;
-            ship.sendTimedUI(leftMessage, TimedUI.C.NOTIFICATION_TIME);
+            notification.components[1].value = title;
+            notification.components[2].value = message;
+            ship.sendTimedUI(notification, TimedUI.C.NOTIFICATION_TIME);
         }
     }
 
@@ -1020,7 +1137,6 @@ class Game {
 }
 
 class Team {
-    name = '';
     team = 0;
     color = '';
     hex = 0;
@@ -1038,7 +1154,6 @@ class Team {
                     TEAM: 0,
                     COLOR: 'Red',
                     HEX: '#ff0000',
-                    NAME: 'Anarchist Concord Vega',
                     HUE: 0,
                     FLAGGED: 40
                 },
@@ -1046,7 +1161,6 @@ class Team {
                     TEAM: 1,
                     COLOR: 'Blue',
                     HEX: '#0000ff',
-                    NAME: 'Andromeda Union',
                     HUE: 240,
                     FLAGGED: 180
                 }
@@ -1056,7 +1170,6 @@ class Team {
                     TEAM: 0,
                     COLOR: 'Yellow',
                     HEX: '#ffff00',
-                    NAME: 'Solaris Dominion',
                     HUE: 60,
                     FLAGGED: 100
                 },
@@ -1064,7 +1177,6 @@ class Team {
                     TEAM: 1,
                     COLOR: 'Purple',
                     HEX: '#ff00ff',
-                    NAME: 'Galactic Empire',
                     HUE: 300,
                     FLAGGED: 260
                 }
@@ -1072,17 +1184,15 @@ class Team {
             [
                 {
                     TEAM: 0,
-                    COLOR: 'Green',
-                    HEX: '#00ff00',
-                    NAME: 'Rebel Alliance',
-                    HUE: 120,
-                    FLAGGED: 80
+                    COLOR: 'Cyan',
+                    HEX: '#00ffff',
+                    HUE: 180,
+                    FLAGGED: 200
                 },
                 {
                     TEAM: 1,
                     COLOR: 'Orange',
                     HEX: '#ff8000',
-                    NAME: 'Sovereign Trappist Colonies',
                     HUE: 30,
                     FLAGGED: 0
                 }
@@ -1090,8 +1200,7 @@ class Team {
         ]
     }
 
-    constructor(name, team, color, hex, hue, flagged) {
-        this.name = name;
+    constructor(team, color, hex, hue, flagged) {
         this.team = team;
         this.color = color;
         this.hex = hex;
@@ -1144,7 +1253,7 @@ class Ship {
     static C = {
         INVULNERABLE_TIME: 360,
         CHOOSE_SHIP_TIME: 600,
-        PORTAL_TIME: 120 // 3600
+        PORTAL_TIME: 3600
     }
 
     constructor(ship) {
@@ -1177,7 +1286,7 @@ class Ship {
                     }
                 }
                 for (let u of removedUIs) {
-                    this.allUIs.splice(this.allUIs.indexOf(u), 1);
+                    Helper.deleteFromArray(this.allUIs, u);
                 }
                 this.allUIs.push(ui);
             }
@@ -1199,7 +1308,7 @@ class Ship {
             }
         }
         for (let u of removedUIs) {
-            this.allUIs.splice(this.allUIs.indexOf(u), 1);
+            Helper.deleteFromArray(this.allUIs, u);
         }
 
         this.sendUI(cUI, true);
@@ -1227,7 +1336,7 @@ class Ship {
             }
         }
         for (let timedUI of removedUIs) {
-            this.timedUIs.splice(this.timedUIs.indexOf(timedUI), 1);
+            Helper.deleteFromArray(this.timedUIs, timedUI);
         }
         let tui = new TimedUI(this, ui, time);
         this.timedUIs.push(tui);
@@ -1268,14 +1377,10 @@ class Ship {
             }
         }
         for (let timedUI of removeTimedUIs) {
-            this.timedUIs.splice(this.timedUIs.indexOf(timedUI), 1);
+            Helper.deleteFromArray(this.timedUIs, timedUI);
         }
 
         this.ship.set({ score: this.score });
-    }
-
-    sendMessage(text, baseColor) {
-        this.message = new Message(this, text, baseColor);
     }
 
     getLevel() {
@@ -1901,16 +2006,38 @@ class Obj {
                 },
                 type: {
                     id: 'gravity',
-                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/gravity2.obj',
-                    emissiveColor: '#ffffff',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/gravity3.obj',
                     transparent: false
                 },
                 MAIN_SCALE: 12,
                 MAIN_INTENSITY: 2,
                 MAX_VELOCITY: 1,
                 VELOCITY_FACTOR: 0.5,
-                INTENSITY: 0.5,
+                INTENSITY: 0.75,
                 SUCK_FACTOR: 3
+            },
+            BEACON: {
+                id: 'beacib',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: Math.PI / 2,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 1e4,
+                    z: 1
+                },
+                type: {
+                    id: 'beacon',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon.obj',
+                    transparent: false
+                },
             },
         }
     }
@@ -1973,7 +2100,7 @@ class Obj {
     }
 
     setRotation(rotation) {
-        this.object.rotation = rotation;
+        this.obj.rotation = rotation;
         return this;
     }
 
@@ -2001,6 +2128,44 @@ class Obj {
     destroySelf() {
         this.hide();
         game.removeObject(this.obj.id);
+    }
+}
+
+class TimedObj {
+    obj = null;
+    time = 0;
+
+    spawnTime = 0;
+    running = false;
+
+    static C = {
+        BEACON_TIME: 300
+    };
+
+    constructor(obj, time) {
+        this.obj = obj;
+        this.time = time;
+    }
+
+    spawn() {
+        this.spawnTime = game.step;
+        this.running = true;
+        this.obj.update();
+        return this;
+    }
+
+    tick() {
+        if (this.running) {
+            if (game.step - this.spawnTime >= this.time) {
+                this.obj.destroySelf();
+                this.running = false;
+            }
+        }
+        return this;
+    }
+
+    destroySelf() {
+        this.obj.destroySelf();
     }
 }
 
@@ -2281,25 +2446,25 @@ class UIComponent {
             },
             NOTIFICATION: {
                 id: "notification",
-                position: [5, 75, 60, 15],
+                position: [5, 75, 60, 10],
                 visible: true,
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 2.5, 100],
-                        fill: '#ffffff',
+                        position: [0, 0, 0, 100],
+                        width: 10
                     },
                     {
                         type: "text",
-                        position: [5, 15, 90, 40],
+                        position: [2.5, 5, 90, 50],
                         align: "left",
                         color: '#ffffff'
                     },
                     {
                         type: "text",
-                        position: [5, 57.5, 80, 27.5],
+                        position: [2.5, 52.5, 60, 42.5],
                         align: "left",
-                        color: '#ffffff'
+                        color: '#ffffffaa'
                     }
                 ]
             },
@@ -2433,18 +2598,18 @@ class UIComponent {
                     {
                         type: 'box',
                         position: [100, 0, 0, 100],
-                        width: 3
+                        width: 5
                     },
                     {
                         type: 'text',
-                        position: [0, 0, 95, 50],
+                        position: [5, 0, 90, 50],
                         value: 'Portal cooldown',
                         align: 'right',
                         color: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [0, 50, 95, 50],
+                        position: [5, 50, 90, 50],
                         align: 'right',
                         color: '#ffffff'
                     }
@@ -2813,10 +2978,10 @@ class GameMap {
                     "                                                            \n" +
                     "                                                            ",
                 flags: [{
-                    x: -15,
+                    x: -60,
                     y: 0
                 }, {
-                    x: 15,
+                    x: 60,
                     y: 0
                 }],
                 portals: [
