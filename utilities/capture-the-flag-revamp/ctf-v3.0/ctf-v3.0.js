@@ -14,6 +14,8 @@ class Game {
     aliens = [];
     asteroids = [];
 
+    logoWaiting = null;
+
     flags = [];
     flagStands = [];
 
@@ -21,7 +23,7 @@ class Game {
     gravityWells = [];
     beacons = [];
 
-    waiting = true;
+    waiting = false;
     waitTimer = -1;
 
     roundTime = -1;
@@ -88,6 +90,8 @@ class Game {
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 30,
             SHIP_MANAGER_FAST: 5,
+
+            GAME_MANAGER: 30,
 
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
@@ -358,96 +362,119 @@ class Game {
         if (this.map) {
             this.map.tick();
         }
-        if (this.ships.length < Game.C.MIN_PLAYERS) {
-            if (!this.waiting || this.waitTimer != -1) {
-                this.waiting = true;
-                this.waitTimer = -1;
-                this.reset();
-            }
-        } else if (this.waiting && this.waitTimer == -1 || game.step - this.waitTimer < Game.C.TICKS.WAIT) {
-            if (this.waitTimer == -1) {
-                this.waitTimer = game.step;
-            }
-        } else {
-            if (this.waiting) {
-                this.waitTimer = -1;
-                this.waiting = false;
-                this.newRound();
-            }
+        if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
+            if (this.ships.length < Game.C.MIN_PLAYERS) {
+                if (!this.waiting || this.waitTimer != -1) {
+                    this.waiting = true;
+                    this.waitTimer = -1;
+                    this.reset();
 
-            if (this.roundTime != -1) {
-                if (game.step - this.roundTime > Game.C.TICKS.ROUND) {
+                    this.logoWaiting = new Obj(
+                        Obj.C.OBJS.LOGO_WAITING.id,
+                        Obj.C.OBJS.LOGO_WAITING.type,
+                        new Vector3(Obj.C.OBJS.LOGO_WAITING.position.x, Obj.C.OBJS.LOGO_WAITING.position.y, Obj.C.OBJS.LOGO_WAITING.position.z),
+                        new Vector3(Obj.C.OBJS.LOGO_WAITING.rotation.x, Obj.C.OBJS.LOGO_WAITING.rotation.y, Obj.C.OBJS.LOGO_WAITING.rotation.z),
+                        new Vector3(Obj.C.OBJS.LOGO_WAITING.scale.x, Obj.C.OBJS.LOGO_WAITING.scale.y, Obj.C.OBJS.LOGO_WAITING.scale.z),
+                        true,
+                        false
+                    ).update();
+                }
+            } else if (this.waiting && this.waitTimer == -1 || game.step - this.waitTimer < Game.C.TICKS.WAIT) {
+                if (this.waitTimer == -1) {
+                    this.waitTimer = game.step;
+                }
+            } else {
+                if (this.waiting) {
+                    this.waitTimer = -1;
+                    this.waiting = false;
+                    if (this.logoWaiting) {
+                        this.logoWaiting.destroySelf();
+                        this.logoWaiting = null;
+                    }
+                    this.newRound();
+                }
+    
+                if (this.roundTime != -1) {
+                    if (game.step - this.roundTime > Game.C.TICKS.ROUND) {
+                        this.roundTime = -1;
+                        this.betweenTime = game.step;
+                        this.timesUp = true;
+                    }
+                }
+    
+                if (this.betweenTime != -1) {
+                    this.roundTime = -1;
+                    if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
+                        this.betweenTime = -1;
+                        let winningTeam = this.getWinningTeam();
+                        if (winningTeam != null) {
+                            this.totalScores[winningTeam.team]++;
+                        }
+    
+                        this.teams[0].setScore(0);
+                        this.teams[1].setScore(0);
+    
+                        if (this.numRounds < Game.C.NUM_ROUNDS) {
+                            this.newRound();
+                        } else {
+                            this.gameOver();
+                        }
+                    }
+                }
+    
+                if (this.betweenTime == -1 && (this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX)) {
                     this.roundTime = -1;
                     this.betweenTime = game.step;
-                    this.timesUp = true;
-                    this.spawnMainPortal();
                 }
-            }
-
-            if (this.betweenTime != -1) {
-                this.roundTime = -1;
-                if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
-                    this.betweenTime = -1;
-                    let winningTeam = this.getWinningTeam();
-                    if (winningTeam != null) {
-                        this.totalScores[winningTeam.team]++;
-                    }
-
-                    this.teams[0].setScore(0);
-                    this.teams[1].setScore(0);
-
-                    if (this.numRounds < Game.C.NUM_ROUNDS) {
-                        this.newRound();
-                    } else {
-                        this.gameOver();
+    
+                for (let i = 0; i < this.flagDespawns.length; i++) {
+                    if (this.flagDespawns[i] != -1) {
+                        if (game.step - this.flagDespawns[i] > Game.C.TICKS.FLAG_DESPAWN) {
+                            this.flagDespawns[i] = -1;
+                            this.flags[i].reset();
+                        }
                     }
                 }
-            }
-
-            if (this.betweenTime == -1 && (this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX)) {
-                this.roundTime = -1;
-                this.betweenTime = game.step;
-                this.spawnMainPortal();
-            }
-
-            for (let i = 0; i < this.flagDespawns.length; i++) {
-                if (this.flagDespawns[i] != -1) {
-                    if (game.step - this.flagDespawns[i] > Game.C.TICKS.FLAG_DESPAWN) {
-                        this.flagDespawns[i] = -1;
-                        this.flags[i].reset();
-                    }
-                }
-            }
-
-            for (let i = 0; i < this.flagHolders.length; i++) {
-                if (this.flagHolders[i] != null) {
-                    if (this.flagHolders[i].hasFlag && this.flagHolders[i].flagTime != -1) {
-                        if (game.step - this.flagHolders[i].flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
-                            let opp = (i + 1) % 2;
-                            this.flagHolders[i].flagTime = -1;
-                            this.flagHolders[i].hasFlag = false;
-                            this.flagHolders[i].setType(this.flagHolders[i].chosenType == 0 ? this.flagHolders[i].ship.type - this.shipGroup.normalShips.length : this.flagHolders[i].chosenType);
-                            this.flagHolders[i].setMaxStats();
-                            this.flagHolders[i].setHue(this.flagHolders[i].team.hue);
-                            this.flagHolders[i].hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                            this.flagHolders[i] = null;
-
-                            this.flags[opp].show();
+    
+                for (let i = 0; i < this.flagHolders.length; i++) {
+                    if (this.flagHolders[i] != null) {
+                        if (this.flagHolders[i].hasFlag && this.flagHolders[i].flagTime != -1) {
+                            if (game.step - this.flagHolders[i].flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
+                                let opp = (i + 1) % 2;
+                                this.flagHolders[i].flagTime = -1;
+                                this.flagHolders[i].hasFlag = false;
+                                this.flagHolders[i].setType(this.flagHolders[i].chosenType == 0 ? this.flagHolders[i].ship.type - this.shipGroup.normalShips.length : this.flagHolders[i].chosenType);
+                                this.flagHolders[i].setMaxStats();
+                                this.flagHolders[i].setHue(this.flagHolders[i].team.hue);
+                                this.flagHolders[i].hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                this.flagHolders[i] = null;
+    
+                                this.flags[opp].show();
+                            }
                         }
                     }
                 }
             }
-
-            let removedBeacons = [];
-            for (let beacon of this.beacons) {
-                beacon.tick();
-                if (!beacon.running) {
-                    removedBeacons.push(beacon);
+    
+            if (this.waiting) {
+                if (this.map && game.step % Obj.C.OBJS.BEACON.SPAWN_RATE == 0) {
+                    for (let i = 0; i < Obj.C.OBJS.BEACON.SPAWN_AMOUNT; i++) {
+                        let randPos = Helper.getRandomArrayElement(this.map.spawnArea);
+                        this.spawnBeacon(randPos, Helper.getRandomLightHex());
+                    }
                 }
             }
-            for (let beacon of removedBeacons) {
-                Helper.deleteFromArray(this.beacons, beacon);
+        }
+
+        let removedBeacons = [];
+        for (let beacon of this.beacons) {
+            beacon.tick();
+            if (!beacon.running) {
+                removedBeacons.push(beacon);
             }
+        }
+        for (let beacon of removedBeacons) {
+            Helper.deleteFromArray(this.beacons, beacon);
         }
     }
 
@@ -683,21 +710,7 @@ class Game {
 
                                         this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
 
-                                        this.beacons.push(
-                                            new TimedObj(
-                                                new Obj(
-                                                    Obj.C.OBJS.BEACON.id,
-                                                    Obj.C.OBJS.BEACON.type,
-                                                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.BEACON.position.z),
-                                                    new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
-                                                    new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
-                                                    true,
-                                                    true,
-                                                    this.teams[i].hex
-                                                ),
-                                                TimedObj.C.BEACON_TIME
-                                            ).spawn()
-                                        );
+                                        this.spawnBeacon(flagPos, this.teams[i].hex);
                                     }
 
                                 }
@@ -1002,21 +1015,7 @@ class Game {
                         }
                     }
                     let spawnPos = Helper.getRandomArrayElement(portalCoords);
-                    this.beacons.push(
-                        new TimedObj(
-                            new Obj(
-                                Obj.C.OBJS.BEACON.id,
-                                Obj.C.OBJS.BEACON.type,
-                                new Vector3(spawnPos.x, spawnPos.y, Obj.C.OBJS.BEACON.position.z),
-                                new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
-                                new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
-                                true,
-                                true,
-                                '#00ff00'
-                            ),
-                            TimedObj.C.BEACON_TIME
-                        ).spawn()
-                    );
+                    this.spawnBeacon(spawnPos, '#00ff00');
                     ship.setPosition(spawnPos);
                     ship.setVelocity(new Vector2(0, 0));
                     ship.portalTime = game.step;
@@ -1037,6 +1036,24 @@ class Game {
                 ));
             }
         }
+    }
+
+    spawnBeacon(pos, hex) {
+        this.beacons.push(
+            new TimedObj(
+                new Obj(
+                    Obj.C.OBJS.BEACON.id,
+                    Obj.C.OBJS.BEACON.type,
+                    new Vector3(pos.x, pos.y, Obj.C.OBJS.BEACON.position.z),
+                    new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
+                    new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
+                    true,
+                    true,
+                    hex
+                ),
+                Obj.C.OBJS.BEACON.EXISTENCE_TIME
+            ).spawn()
+        );
     }
 
     sendNotifications(title, message, supportingTeam) {
@@ -1887,6 +1904,29 @@ class Obj {
                     emissive: '',
                 }
             },
+            LOGO_WAITING: {
+                id: 'logo_waiting',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -500
+                },
+                rotation: {
+                    x: Math.PI,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 500,
+                    y: 500,
+                    z: 0
+                },
+                type: {
+                    id: 'logo_waiting',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/logo_waiting.png',
+                }
+            },
             GRID: {
                 id: 'grid',
                 position: {
@@ -2021,7 +2061,7 @@ class Obj {
                 SUCK_FACTOR: 3
             },
             BEACON: {
-                id: 'beacib',
+                id: 'beacon',
                 position: {
                     x: 0,
                     y: 0,
@@ -2042,6 +2082,9 @@ class Obj {
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon.obj',
                     transparent: false
                 },
+                EXISTENCE_TIME: 300,
+                SPAWN_RATE: 30,
+                SPAWN_AMOUNT: 2
             },
         }
     }
@@ -2141,10 +2184,6 @@ class TimedObj {
 
     spawnTime = 0;
     running = false;
-
-    static C = {
-        BEACON_TIME: 300
-    };
 
     constructor(obj, time) {
         this.obj = obj;
@@ -5609,6 +5648,21 @@ class Helper {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
+    }
+
+    static getRandomLightValue() {
+        return Math.floor(Math.random()*156)+100;
+    }
+
+    static getRandomLightHex() {
+        let r = Helper.getRandomLightValue().toString(16);
+        let g = Helper.getRandomLightValue().toString(16);
+        let b = Helper.getRandomLightValue().toString(16);
+        return "#" + r + g + b;
+    }
+
+    static getRandomHex() {
+        return "#" + Math.floor(Math.random()*16777215).toString(16);
     }
 
     static getRandomRectCoordinate(min, max) {
