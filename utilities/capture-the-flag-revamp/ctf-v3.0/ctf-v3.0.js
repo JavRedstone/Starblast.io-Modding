@@ -2326,7 +2326,7 @@ class Obj {
                 DISTANCE: 30,
                 DAMAGE: 10,
                 ASTEROID_SIZE: 10,
-                ASTEROID_TIME: 5
+                ASTEROID_TIME: 10
             }
         }
     }
