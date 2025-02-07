@@ -98,13 +98,13 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 0, // 3600
+            WAIT: 3600,
             ROUND: 28800,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        MIN_PLAYERS: 1, // 2
+        MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
         TEAM_PLAYER_DEFICIT: 2,
@@ -933,6 +933,13 @@ class Game {
                     players2.sort((a, b) => b.score - a.score);
                     for (let i = 0; i < 5; i++) {
                         if (players1[i]) {
+                            if (players1[i].ship.id == ship.ship.id) {
+                                scoreboard.components.push({
+                                    type: 'box',
+                                    position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
+                                    fill: '#ffffff20'
+                                });
+                            }
                             scoreboard.components.push({
                                 type: 'player',
                                 position: [0, (i + 1) * 100 / 12, 85, 100 / 12],
@@ -940,13 +947,13 @@ class Game {
                                 color: '#ffffff',
                                 align: 'left'
                             },
-                                {
-                                    type: 'text',
-                                    position: [87.5, (i + 1) * 100 / 12, 10, 100 / 12],
-                                    value: players1[i].score,
-                                    color: '#ffffff',
-                                    align: 'right'
-                                });
+                            {
+                                type: 'text',
+                                position: [87.5, (i + 1) * 100 / 12, 10, 100 / 12],
+                                value: players1[i].score,
+                                color: '#ffffff',
+                                align: 'right'
+                            });
                         }
                         else {
                             break;
@@ -954,6 +961,13 @@ class Game {
                     }
                     for (let i = 0; i < 5; i++) {
                         if (players2[i]) {
+                            if (players2[i].ship.id == ship.ship.id) {
+                                scoreboard.components.push({
+                                    type: 'box',
+                                    position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
+                                    fill: '#ffffff20'
+                                });
+                            }
                             scoreboard.components.push({
                                 type: 'player',
                                 position: [0, 50 + (i + 1) * 100 / 12, 85, 100 / 12],
@@ -961,13 +975,13 @@ class Game {
                                 color: '#ffffff',
                                 align: 'left'
                             },
-                                {
-                                    type: 'text',
-                                    position: [87.5, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
-                                    value: players2[i].score,
-                                    color: '#ffffff',
-                                    align: 'right'
-                                });
+                            {
+                                type: 'text',
+                                position: [87.5, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
+                                value: players2[i].score,
+                                color: '#ffffff',
+                                align: 'right'
+                            });
                         }
                         else {
                             break;
