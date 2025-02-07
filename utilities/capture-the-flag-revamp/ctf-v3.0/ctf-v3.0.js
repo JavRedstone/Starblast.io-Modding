@@ -13,6 +13,7 @@ class Game {
 
     aliens = [];
     asteroids = [];
+    timedAsteroids = [];
 
     logoWaiting = null;
 
@@ -22,6 +23,7 @@ class Game {
     portals = [];
     gravityWells = [];
     beacons = [];
+    lasers = [];
 
     waiting = true;
     waitTimer = -2;
@@ -88,7 +90,7 @@ class Game {
             MILLISECONDS_PER_TICK: 1000 / 60,
 
             ENTITY_MANAGER: 60,
-            SHIP_MANAGER: 30,
+            SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
             GAME_MANAGER: 30,
@@ -96,16 +98,17 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 3600,
+            WAIT: 0, // 3600
             ROUND: 28800,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        MIN_PLAYERS: 2,
+        MIN_PLAYERS: 1, // 2
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
-        TEAM_DEFICIT: 2
+        TEAM_PLAYER_DEFICIT: 2,
+        TEAM_SCORE_DEFICIT: 2
     }
 
     static setShipGroups() {
@@ -128,6 +131,8 @@ class Game {
         this.spawnAliens();
         this.spawnCollectibles();
 
+        this.tickTimedEntities();
+        
         this.manageEntities();
     }
 
@@ -156,11 +161,16 @@ class Game {
             ship.emptyWeapons();
         }
 
+        this.deleteObjs();
+
+        game.removeObject();
+    }
+
+    deleteObjs() {
         this.deleteFlags();
         this.deletePortals();
         this.deleteBeacons();
-
-        game.removeObject();
+        this.deleteLasers();
     }
 
     deleteFlags() {
@@ -190,6 +200,13 @@ class Game {
             beacon.destroySelf();
         }
         this.beacons = [];
+    }
+
+    deleteLasers() {
+        for (let laser of this.lasers) {
+            laser.destroySelf();
+        }
+        this.lasers = [];
     }
 
     resetContainers() {
@@ -403,7 +420,7 @@ class Game {
                         this.betweenTime = game.step;
                         this.timesUp = true;
                     } else {
-                        if (Math.abs(this.teams[0].ships.length - this.teams[1].ships.length) >= Game.C.TEAM_DEFICIT) {
+                        if (Math.abs(this.teams[0].ships.length - this.teams[1].ships.length) >= Game.C.TEAM_PLAYER_DEFICIT) {
                             let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                             let t = diff > 0 ? 0 : 1;
                             let opp = t + 1 % 2;
@@ -471,17 +488,66 @@ class Game {
                     }
                 }
             }
-    
-            if (this.waiting) {
-                if (this.map && game.step % Obj.C.OBJS.BEACON.SPAWN_RATE == 0) {
-                    for (let i = 0; i < Obj.C.OBJS.BEACON.SPAWN_AMOUNT; i++) {
-                        let randPos = Helper.getRandomArrayElement(this.map.spawnArea);
-                        this.spawnBeacon(randPos, Helper.getRandomVividHSL());
+        }
+
+        if (this.waiting) {
+            if (this.map && game.step % Obj.C.OBJS.BEACON.SPAWN_RATE == 0) {
+                for (let i = 0; i < Obj.C.OBJS.BEACON.SPAWN_AMOUNT; i++) {
+                    let randPos = Helper.getRandomArrayElement(this.map.spawnArea);
+                    this.spawnBeacon(randPos, Helper.getRandomVividHSL());
+                }
+            }
+        } else {
+            if (this.map && game.step % Obj.C.OBJS.LASER.SHOOT_RATE == 0) {
+                for (let i = 0; i < this.teams.length; i++) {
+                    let team = this.teams[i];
+                    let opp = (i + 1) % 2;
+                    let oppTeam = this.teams[opp];
+                    if (oppTeam.score - team.score >= Game.C.TEAM_SCORE_DEFICIT) {
+                        let corners = Helper.getNGonCorners(Obj.C.OBJS.FLAGSTAND.N_GON, Obj.C.OBJS.FLAGSTAND.N_GON_OFFSET);
+                        for (let j = 0; j < corners.length; j++) {
+                            corners[j] = corners[j].multiply(Obj.C.OBJS.FLAGSTAND.N_GON_SCALE);
+                            corners[j] = corners[j].add(this.map.flags[i]);
+
+                            let closestShip = null;
+                            let closestDistance = -1;
+
+                            for (let ship of oppTeam.ships) {
+                                if (ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
+                                    if (closestShip == null) {
+                                        closestShip = ship;
+                                        closestDistance = new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y));
+                                    } else {
+                                        let distance = new Vector2(ship.ship.x, ship.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y));
+                                        if (distance < closestDistance) {
+                                            closestShip = ship;
+                                            closestDistance = distance;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if (closestShip && new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y)) < Obj.C.OBJS.LASER.DISTANCE) {
+                                this.spawnLaser(corners[j], closestShip, team.hex);
+                                let asteroid = new Asteroid(
+                                    new Vector2(closestShip.ship.x, closestShip.ship.y),
+                                    new Vector2(0, 0),
+                                    Obj.C.OBJS.LASER.ASTEROID_SIZE
+                                );
+                                this.asteroids.push(asteroid);
+                                this.timedAsteroids.push(
+                                    new TimedAsteroid(asteroid, Obj.C.OBJS.LASER.ASTEROID_TIME)
+                                );
+                                closestShip.takeDamage(Obj.C.OBJS.LASER.DAMAGE);
+                            }
+                        }
                     }
                 }
             }
         }
+    }
 
+    tickTimedEntities() {
         let removedBeacons = [];
         for (let beacon of this.beacons) {
             beacon.tick();
@@ -491,6 +557,31 @@ class Game {
         }
         for (let beacon of removedBeacons) {
             Helper.deleteFromArray(this.beacons, beacon);
+        }
+
+        let removedLasers = [];
+        for (let laser of this.lasers) {
+            laser.tick();
+            if (!laser.running) {
+                removedLasers.push(laser);
+            }
+        }
+        for (let laser of removedLasers) {
+            Helper.deleteFromArray(this.lasers, laser);
+        }
+
+        let removedTimedAsteroids = [];
+        let removedAsteroids = [];
+        for (let timedAsteroid of this.timedAsteroids) {
+            timedAsteroid.tick();
+            if (!timedAsteroid.running) {
+                removedTimedAsteroids.push(timedAsteroid);
+                removedAsteroids.push(timedAsteroid.asteroid);
+            }
+        }
+        for (let timedAsteroid of removedTimedAsteroids) {
+            Helper.deleteFromArray(this.timedAsteroids, timedAsteroid);
+            Helper.deleteFromArray(this.asteroids, timedAsteroid.asteroid);
         }
     }
 
@@ -601,6 +692,13 @@ class Game {
                         ship.setCollider(false);
                     }
 
+                    if (!(this.shipGroup.chosenTypes.includes(ship.ship.type) || (ship.hasFlag && this.shipGroup.chosenTypes.includes(ship.ship.type - this.shipGroup.normalShips.length))) && ship.ship.type != 101 && ship.ship.type != 201) {
+                        let shipType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
+                        ship.setType(shipType);
+                        ship.fillUp();
+                        ship.chosenType = shipType;
+                    }
+
                     if (this.betweenTime != -1) {
                         ship.setCollider(false);
                         ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
@@ -684,7 +782,7 @@ class Game {
                             }
                         }
 
-                        if (ship.ship.alive && ship.ship.type != 101) {
+                        if (ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
                             for (let i = 0; i < this.map.flags.length; i++) {
                                 let opp = (i + 1) % 2;
                                 let flagPos = new Vector2(this.flags[i].obj.position.x, this.flags[i].obj.position.y);
@@ -879,23 +977,7 @@ class Game {
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-
-                        let firstScore = this.teams[0].score;
-                        let secondScore = this.teams[1].score;
-                        let total = firstScore + secondScore;
-                        if (total == 0) {
-                            total = 2;
-                            firstScore = 1;
-                            secondScore = 1;
-                        }
-                        topMessage.components[0].position[2] = 100 * firstScore / total;
-                        topMessage.components[0].fill = this.teams[0].hex + '66';
-                        topMessage.components[1].position[0] = 100 * firstScore / total;
-                        topMessage.components[1].position[2] = 100 * secondScore / total;
-                        topMessage.components[1].fill = this.teams[1].hex + '66';
-
-                        topMessage.components[2].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
-
+                        topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
                         ship.sendUI(topMessage);
 
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
@@ -943,7 +1025,7 @@ class Game {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (!this.waiting && this.betweenTime == -1 && ship.ship.alive && ship.ship.type != 101) {
+                if (!this.waiting && this.betweenTime == -1 && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
@@ -1068,6 +1150,26 @@ class Game {
                     hex
                 ),
                 Obj.C.OBJS.BEACON.EXISTENCE_TIME
+            ).spawn()
+        );
+    }
+
+    spawnLaser(pos, ship, hex) {
+        let laserRotation = new Vector2(ship.ship.x, ship.ship.y).getAngleTo(new Vector2(pos.x, pos.y));
+        let laserDistance = new Vector2(ship.ship.x, ship.ship.y).getDistanceTo(new Vector2(pos.x, pos.y));
+        this.lasers.push(
+            new TimedObj(
+                new Obj(
+                    Obj.C.OBJS.LASER.id,
+                    Obj.C.OBJS.LASER.type,
+                    new Vector3(pos.x - Math.cos(laserRotation) * laserDistance / 2, pos.y - Math.sin(laserRotation) * laserDistance / 2, Obj.C.OBJS.LASER.position.z),
+                    new Vector3(Obj.C.OBJS.LASER.rotation.x, Obj.C.OBJS.LASER.rotation.y, laserRotation + Math.PI / 2),
+                    new Vector3(Obj.C.OBJS.LASER.scale.x, laserDistance, Obj.C.OBJS.LASER.scale.z),
+                    true,
+                    true,
+                    hex
+                ),
+                Obj.C.OBJS.LASER.EXISTENCE_TIME
             ).spawn()
         );
     }
@@ -1479,6 +1581,8 @@ class Ship {
 
     setPosition(position) {
         if (game.ships.includes(this.ship)) {
+            this.ship.x = position.x;
+            this.ship.y = position.y;
             this.ship.set({ x: position.x, y: position.y });
         }
         return this;
@@ -1486,6 +1590,8 @@ class Ship {
 
     setVelocity(velocity) {
         if (game.ships.includes(this.ship)) {
+            this.ship.vx = velocity.x;
+            this.ship.vy = velocity.y;
             this.ship.set({ vx: velocity.x, vy: velocity.y });
         }
         return this;
@@ -1493,6 +1599,7 @@ class Ship {
 
     setCrystals(crystals) {
         if (game.ships.includes(this.ship)) {
+            this.ship.crystals = crystals;
             this.ship.set({ crystals: crystals });
         }
         return this;
@@ -1500,13 +1607,26 @@ class Ship {
 
     setShield(shield) {
         if (game.ships.includes(this.ship)) {
+            this.ship.shield = shield;
             this.ship.set({ shield: shield });
         }
         return this;
     }
+    
+    takeDamage(damage) {
+        if (this.ship.shield <= damage && this.ship.crystals <= damage) {
+            this.destroySelf();
+        } else if (this.ship.shield <= damage) {
+            this.setShield(0);
+            this.setCrystals(this.ship.crystals - damage);
+        } else {
+            this.setShield(this.ship.shield - damage);
+        }
+    }
 
     setStats(stats) {
         if (game.ships.includes(this.ship)) {
+            this.ship.stats = stats;
             this.ship.set({ stats: stats });
         }
         return this;
@@ -1544,6 +1664,8 @@ class Ship {
         this.team = team;
         this.team.addShip(this);
         if (game.ships.includes(this.ship)) {
+            this.ship.team = team.team;
+            this.ship.hue = team.hue;
             this.ship.set({ team: team.team, hue: team.hue });
         }
         return this;
@@ -1551,6 +1673,7 @@ class Ship {
 
     setHue(hue) {
         if (game.ships.includes(this.ship)) {
+            this.ship.hue = hue;
             this.ship.set({ hue: hue });
         }
         return this;
@@ -1558,8 +1681,8 @@ class Ship {
 
     setScore(score) {
         this.score = score;
-
         if (game.ships.includes(this.ship)) {
+            this.ship.score = score;
             this.ship.set({ score: score });
         }
         return this;
@@ -1571,8 +1694,8 @@ class Ship {
     }
 
     setType(type) {
-        this.ship.type = type;
         if (game.ships.includes(this.ship)) {
+            this.ship.type = type;
             this.ship.set({ type: type });
         }
         return this;
@@ -1919,6 +2042,35 @@ class Asteroid {
     }
 }
 
+class TimedAsteroid {
+    asteroid = null;
+    time = 0;
+
+    spawnTime = -1;
+    running = false;
+
+    constructor(asteroid, time) {
+        this.asteroid = asteroid;
+        this.time = time;
+        this.spawnTime = game.step;
+        this.running = true;
+    }
+
+    tick() {
+        if (this.running) {
+            if (game.step - this.spawnTime >= this.time) {
+                this.asteroid.destroySelfNoRemains();
+                this.running = false;
+            }
+        }
+        return this;
+    }
+
+    destroySelf() {
+        this.asteroid.destroySelfNoRemains();
+    }
+}
+
 class Obj {
     originalObj = null;
     obj = null;
@@ -2045,7 +2197,10 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
                     emissiveColor: '#ffffff',
                     transparent: false
-                }
+                },
+                N_GON: 6,
+                N_GON_SCALE: 6.5,
+                N_GON_OFFSET: 0,
             },
             PORTAL: {
                 id: 'portal',
@@ -2130,6 +2285,35 @@ class Obj {
                 SPAWN_RATE: 30,
                 SPAWN_AMOUNT: 2
             },
+            LASER: {
+                id: 'laser',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -4
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 0.25,
+                    y: 0.25,
+                    z: 0.25
+                },
+                type: {
+                    id: 'laser',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon.obj',
+                    transparent: false
+                },
+                EXISTENCE_TIME: 15,
+                SHOOT_RATE: 60,
+                DISTANCE: 30,
+                DAMAGE: 10,
+                ASTEROID_SIZE: 10,
+                ASTEROID_TIME: 5
+            }
         }
     }
 
@@ -2511,11 +2695,8 @@ class UIComponent {
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 50, 100],
-                    },
-                    {
-                        type: 'box',
-                        position: [50, 0, 50, 100],
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
                     },
                     {
                         type: "text",
@@ -3944,16 +4125,7 @@ class GameMap {
                     x: 245,
                     y: 0
                 }],
-                portals: [
-                    {
-                        x: 0,
-                        y: 235
-                    },
-                    {
-                        x: 0,
-                        y: -235
-                    }
-                ],
+                portals: [],
                 spawns: [{
                     x: -185,
                     y: 0
@@ -4339,66 +4511,66 @@ class GameMap {
             {
                 name: "Oblivion",
                 author: "Liberal",
-                map: "9 99343545559333559333433343999934333433395533395554534399 9\n" +
-                    " 9945645564595445494446546545995456456444945445954655465499 \n" +
-                    "999976656657967557976575577779977775575679755769756656679999\n" +
-                    "959999999999999999999999999999999999999999999999999999999959\n" +
-                    "557999999999999999999999999999999999999999999999999999999755\n" +
-                    "56699     999   999                                    99665\n" +
-                    "35599    999   999                                     99553\n" +
-                    "45699   999   999                                      99654\n" +
-                    "36599  999   999                               999     99563\n" +
-                    "54599 999   999      99999                      999    99545\n" +
-                    "45799999   999      999999                       999   99754\n" +
-                    "9999999   999      999  99         999   999      99   99999\n" +
-                    "346999   999      999   99        999     999      9   99643\n" +
-                    "54599   999      999    99       999       999         99545\n" +
-                    "44699  999      999     99      999    9    999        99644\n" +
-                    "34599 999      999      99      99    99     99        99543\n" +
-                    "54599999      999       99      99   99      99        99545\n" +
-                    "9999999       99        99      99   9       99        99999\n" +
-                    "556999        9         99      99           99        99655\n" +
-                    "55799      9            99      99           99        99755\n" +
-                    "55699     99           999      999          99        99655\n" +
-                    "45799    999            999      999         99        99754\n" +
-                    "54799    99          9   999      999        99        99745\n" +
-                    "34799    99   9     999   999      999       999       99743\n" +
-                    "36799    99   9    999     999      999       999      99763\n" +
-                    "46599    99   9   999       999      999       999     99564\n" +
-                    "46799    99   9   99         999      999       999    99764\n" +
-                    "55699    99   9   99                   999       99    99655\n" +
-                    "96599    99   9   99                    99   9   99    99569\n" +
-                    "99999    99   9   99                    99   9   99    99999\n" +
-                    "99999    99   9   99                    99   9   99    99999\n" +
-                    "96599    99       99                    99   9   99    99569\n" +
-                    "55699    999      999                   99   9   99    99655\n" +
-                    "46799     999      999      999         99   9   99    99764\n" +
-                    "46599      999      999      999       999   9   99    99564\n" +
-                    "36799       999      999      999     999    9   99    99763\n" +
-                    "34799        99       999      999   999     9   99    99743\n" +
-                    "54799        99        999      999   9          99    99745\n" +
-                    "45799        99         999      999            999    99754\n" +
-                    "55699        99          999      999           99     99655\n" +
-                    "55799        99           99      99            9      99755\n" +
-                    "55699        99           99      99         9        999655\n" +
-                    "99999        99       9   99      99        99       9999999\n" +
-                    "54599        99      99   99      99       999      99999545\n" +
-                    "34599        99     99    99      99      999      999 99543\n" +
-                    "44699        999    9    999      99     999      999  99644\n" +
-                    "54599         999       999       99    999      999   99545\n" +
-                    "34699          999     999        99   999      999   999643\n" +
-                    "99999   9       999   999         99  999      999   9999999\n" +
-                    "45799   99                        999999      999   99999754\n" +
-                    "54599   999                       99999      999   999 99545\n" +
-                    "36599    999                                999   999  99563\n" +
-                    "45699                                      999   999   99654\n" +
-                    "35599                                     999   999    99553\n" +
-                    "56699                                    999   999     99665\n" +
-                    "557999999999999999999999999999999999999999999999999999999755\n" +
-                    "959999999999999999999999999999999999999999999999999999999959\n" +
-                    "999976656657967557976575577779977775575679755769756656679999\n" +
-                    " 9945645564595445494446546545995456456444945445954655465499 \n" +
-                    "9 99343545559333559333433343999934333433395533395554534399 9",
+                map: '9 99343545559333559333433343999934333433395533395554534399 9\n'+
+                    ' 9945645564595445494446546545995456456444945445954655465499 \n'+
+                    '999976656657967557976575577779977775575679755769756656679999\n'+
+                    '959999999999999999999999999999999999999999999999999999999959\n'+
+                    '557999999999999999999999999999999999999999999999999999999755\n'+
+                    '5669999999999999999                                    99665\n'+
+                    '355999999999999999                                     99553\n'+
+                    '45699999999999999                                      99654\n'+
+                    '3659999999999999                               999     99563\n'+
+                    '545999999999999      99999                      999    99545\n'+
+                    '45799999999999      999999                       999   99754\n'+
+                    '9999999999999      999  99         999   999      99   99999\n'+
+                    '346999999999      999   99        999     999      9   99643\n'+
+                    '54599999999      999    99       999       999         99545\n'+
+                    '4469999999      999     99      999    9    999        99644\n'+
+                    '345999999      999      99      99    999    99        99543\n'+
+                    '54599999      999       99      99   99 99   99        99545\n'+
+                    '9999999       99        99      99   9   9   99        99999\n'+
+                    '556999        9         99      99           99        99655\n'+
+                    '55799      9            99      99           99        99755\n'+
+                    '55699     99           999      999          99        99655\n'+
+                    '45799    999            999      999         99        99754\n'+
+                    '54799    99          9   999      999        99        99745\n'+
+                    '34799    99   9     999   999      999       999       99743\n'+
+                    '36799    99   9    999     999      999       999      99763\n'+
+                    '46599    99   9   999       999      999       999     99564\n'+
+                    '46799    99   9   99         999      999       999    99764\n'+
+                    '55699    99   9   99                   999       99    99655\n'+
+                    '96599    99   9   99                    99   9   99    99569\n'+
+                    '99999    99   9   99                    99   9   99    99999\n'+
+                    '99999    99   9   99                    99   9   99    99999\n'+
+                    '96599    99       99                    99   9   99    99569\n'+
+                    '55699    999      999                   99   9   99    99655\n'+
+                    '46799     999      999      999         99   9   99    99764\n'+
+                    '46599      999      999      999       999   9   99    99564\n'+
+                    '36799       999      999      999     999    9   99    99763\n'+
+                    '34799        99       999      999   999     9   99    99743\n'+
+                    '54799        99        999      999   9          99    99745\n'+
+                    '45799        99         999      999            999    99754\n'+
+                    '55699        99          999      999           99     99655\n'+
+                    '55799        99           99      99            9      99755\n'+
+                    '55699        99           99      99         9        999655\n'+
+                    '99999        99   9   9   99      99        99       9999999\n'+
+                    '54599        99   99 99   99      99       999      99999545\n'+
+                    '34599        99    999    99      99      999      999999543\n'+
+                    '44699        999    9    999      99     999      9999999644\n'+
+                    '54599         999       999       99    999      99999999545\n'+
+                    '34699          999     999        99   999      999999999643\n'+
+                    '99999   9       999   999         99  999      9999999999999\n'+
+                    '45799   99                        999999      99999999999754\n'+
+                    '54599   999                       99999      999999999999545\n'+
+                    '36599    999                                9999999999999563\n'+
+                    '45699                                      99999999999999654\n'+
+                    '35599                                     999999999999999553\n'+
+                    '56699                                    9999999999999999665\n'+
+                    '557999999999999999999999999999999999999999999999999999999755\n'+
+                    '959999999999999999999999999999999999999999999999999999999959\n'+
+                    '999976656657967557976575577779977775575679755769756656679999\n'+
+                    ' 9945645564595445494446546545995456456444945445954655465499 \n'+
+                    '9 99343545559333559333433343999934333433395533395554534399 9',
                 flags: [{
                     x: -180,
                     y: -190
@@ -4409,11 +4581,11 @@ class GameMap {
                 portals: [
                     {
                         x: -110,
-                        y: -110
+                        y: 110
                     },
                     {
                         x: 110,
-                        y: 110
+                        y: -110
                     }
                 ],
                 spawns: [{
@@ -5503,6 +5675,10 @@ class ShipGroup {
     }
 
     processShips(ships) {
+        let totalLength = 0;
+        for (let i = 0; i < ships.length; i++) {
+            totalLength += ships[i].CODES.length;
+        }
         for (let i = 0; i < ships.length; i++) {
             let origin = ships[i].ORIGIN;
             let codes = ships[i].CODES;
@@ -5510,8 +5686,8 @@ class ShipGroup {
                 let ship = codes[j];
                 let jship = JSON.parse(ship);
 
-                jship.model = j + 1;
-                jship.typespec.model = j + 1;
+                jship.model = (i + 1) * (j + 1);
+                jship.typespec.model = (i + 1) * (j + 1);
                 jship.typespec.code = jship.level * 100 + jship.model;
 
                 jship.origin = origin;
@@ -5523,7 +5699,7 @@ class ShipGroup {
 
                 jship.bodies.flag = ShipGroup.C.FLAG.FLAG_OBJ;
                 jship.bodies.flagpole = ShipGroup.C.FLAG.FLAGPOLE_OBJ;
-                jship.model += codes.length;
+                jship.model += totalLength;
 
                 jship.typespec.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
                 jship.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
@@ -5867,6 +6043,15 @@ class Helper {
             }
         }
         return subset;
+    }
+
+    static getNGonCorners(n, angleOffset=0) {
+        let corners = [];
+        for (let i = 0; i < n; i++) {
+            let angle = i * 2 * Math.PI / n + angleOffset;
+            corners.push(new Vector2(Math.cos(angle), Math.sin(angle)));
+        }
+        return corners;
     }
 
     static formatTime(time) {
