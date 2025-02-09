@@ -9,6 +9,7 @@ class Game {
     shipGroup = null;
 
     ships = [];
+    leftShips = [];
     teams = [];
 
     aliens = [];
@@ -16,9 +17,6 @@ class Game {
     timedAsteroids = [];
 
     logoWaiting = null;
-
-    flags = [];
-    flagStands = [];
 
     portals = [];
     gravityWells = [];
@@ -33,9 +31,6 @@ class Game {
     betweenTime = -1;
     totalScores = [0, 0];
     numRounds = 0;
-
-    flagHolders = [null, null];
-    flagDespawns = [-1, -1];
 
     static C = {
         OPTIONS: {
@@ -98,7 +93,7 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 3600,
+            WAIT: 7200,
             ROUND: 28800,
             BETWEEN: 360
         },
@@ -174,14 +169,12 @@ class Game {
     }
 
     deleteFlags() {
-        for (let flag of this.flags) {
-            flag.destroySelf();
+        for (let team of this.teams) {
+            if (team.flag) {
+                team.flag.destroySelf();
+                team.flag = null;
+            }
         }
-        this.flags = [];
-        for (let flagStand of this.flagStands) {
-            flagStand.destroySelf();
-        }
-        this.flagStands = [];
     }
 
     deletePortals() {
@@ -210,8 +203,6 @@ class Game {
     }
 
     resetContainers() {
-        this.flagHolders = [null, null];
-        this.flagDespawns = [-1, -1];
         this.roundTime = game.step;
         this.timesUp = false;
         this.betweenTime = -1;
@@ -241,32 +232,9 @@ class Game {
 
     spawnFlags() {
         this.deleteFlags();
-        if (this.map) {
-            for (let i = 0; i < this.map.flags.length; i++) {
-                let flagPos = this.map.flags[i];
-                let flag = new Obj(
-                    Obj.C.OBJS.FLAG.id,
-                    Obj.C.OBJS.FLAG.type,
-                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAG.position.z),
-                    new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
-                    new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
-                    true,
-                    true,
-                    this.teams[i].hex
-                ).update();
-                let flagStand = new Obj(
-                    Obj.C.OBJS.FLAGSTAND.id,
-                    Obj.C.OBJS.FLAGSTAND.type,
-                    new Vector3(flagPos.x, flagPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
-                    new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
-                    new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
-                    true,
-                    true,
-                    this.teams[i].hex
-                ).update();
-                this.flags.push(flag);
-                this.flagStands.push(flagStand);
-            }
+        if (this.map && this.teams.length == 2 && this.map.flags.length == 2) {
+            this.teams[0].flag = new Flag(this.map.flags[0], this.teams[0].hex).spawn();
+            this.teams[1].flag = new Flag(this.map.flags[1], this.teams[1].hex).spawn();
         }
     }
 
@@ -425,6 +393,10 @@ class Game {
                             let t = diff > 0 ? 0 : 1;
                             let opp = t + 1 % 2;
                             let randShip = Helper.getRandomArrayElement(this.teams[t].ships);
+                            if (this.teams[t].flag && this.teams[t].flagHolder && this.teams[t].flagHolder.id == randShip.ship.id) {
+                                this.teams[t].flagHolder = null;
+                                this.teams[opp].flag.reset();
+                            }
                             this.resetShip(randShip);
                             randShip.chooseShipTime = game.step;
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -459,30 +431,29 @@ class Game {
                     this.roundTime = -1;
                     this.betweenTime = game.step;
                 }
-    
-                for (let i = 0; i < this.flagDespawns.length; i++) {
-                    if (this.flagDespawns[i] != -1) {
-                        if (game.step - this.flagDespawns[i] > Game.C.TICKS.FLAG_DESPAWN) {
-                            this.flagDespawns[i] = -1;
-                            this.flags[i].reset();
+
+                for (let i = 0; i < this.teams.length; i++) {
+                    let oppTeam = this.getOppTeam(this.teams[i]);
+                    if (this.teams[i].flag && this.teams[i].flagHolder) {
+                        if (game.step - this.teams[i].flagHolder.flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
+                            this.teams[i].flagHolder.flagTime = -1;
+                            this.teams[i].flagHolder.setType(this.teams[i].flagHolder.chosenType == 0 ? this.teams[i].flagHolder.ship.type - this.shipGroup.normalShips.length : this.teams[i].flagHolder.chosenType);
+                            this.teams[i].flagHolder.setMaxStats();
+                            this.teams[i].flagHolder.setHue(this.teams[i].hue);
+                            this.teams[i].flagHolder.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+
+                            this.sendNotifications(`${this.teams[i].flagHolder.ship.name} has ran out of time holding the flag!`, `Will ${this.teams[i].flagHolder.team.color.toUpperCase()} team steal it again?`, oppTeam);
+
+                            this.teams[i].flagHolder = null;
+
+                            oppTeam.flag.reset();
                         }
                     }
-                }
-    
-                for (let i = 0; i < this.flagHolders.length; i++) {
-                    if (this.flagHolders[i] != null) {
-                        if (this.flagHolders[i].hasFlag && this.flagHolders[i].flagTime != -1) {
-                            if (game.step - this.flagHolders[i].flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
-                                let opp = (i + 1) % 2;
-                                this.flagHolders[i].flagTime = -1;
-                                this.flagHolders[i].hasFlag = false;
-                                this.flagHolders[i].setType(this.flagHolders[i].chosenType == 0 ? this.flagHolders[i].ship.type - this.shipGroup.normalShips.length : this.flagHolders[i].chosenType);
-                                this.flagHolders[i].setMaxStats();
-                                this.flagHolders[i].setHue(this.flagHolders[i].team.hue);
-                                this.flagHolders[i].hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                this.flagHolders[i] = null;
-    
-                                this.flags[opp].show();
+
+                    if (this.teams[i].flag && !this.teams[i].flagHidden) {
+                        if (this.teams[i].flag.despawn != -1) {
+                            if (game.step - this.teams[i].flag.despawn > Game.C.TICKS.FLAG_DESPAWN) {
+                                this.teams[i].flag.reset();
                             }
                         }
                     }
@@ -501,8 +472,7 @@ class Game {
             if (this.map && game.step % Obj.C.OBJS.LASER.SHOOT_RATE == 0) {
                 for (let i = 0; i < this.teams.length; i++) {
                     let team = this.teams[i];
-                    let opp = (i + 1) % 2;
-                    let oppTeam = this.teams[opp];
+                    let oppTeam = this.getOppTeam(team);
                     if (oppTeam.score - team.score >= Game.C.TEAM_SCORE_DEFICIT) {
                         let corners = Helper.getNGonCorners(Obj.C.OBJS.FLAGSTAND.N_GON, Obj.C.OBJS.FLAGSTAND.N_GON_OFFSET);
                         for (let j = 0; j < corners.length; j++) {
@@ -513,7 +483,7 @@ class Game {
                             let closestDistance = -1;
 
                             for (let ship of oppTeam.ships) {
-                                if (ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
+                                if (!ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
                                     if (closestShip == null) {
                                         closestShip = ship;
                                         closestDistance = new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y));
@@ -532,13 +502,13 @@ class Game {
                                 let asteroid = new Asteroid(
                                     new Vector2(closestShip.ship.x, closestShip.ship.y),
                                     new Vector2(0, 0),
-                                    Obj.C.OBJS.LASER.ASTEROID_SIZE
+                                    closestShip.getLevel() * Obj.C.OBJS.LASER.ASTEROID_SIZE_LEVEL
                                 );
                                 this.asteroids.push(asteroid);
                                 this.timedAsteroids.push(
                                     new TimedAsteroid(asteroid, Obj.C.OBJS.LASER.ASTEROID_TIME)
                                 );
-                                closestShip.takeDamage(Obj.C.OBJS.LASER.DAMAGE);
+                                closestShip.takeDamage(closestShip.getLevel() * Obj.C.OBJS.LASER.DAMAGE_LEVEL);
                             }
                         }
                     }
@@ -637,6 +607,17 @@ class Game {
             for (let ship of notFoundShips) {
                 Helper.deleteFromArray(ship.team.ships, ship);
                 Helper.deleteFromArray(this.ships, ship);
+                let hasLeftShip = false;
+                for (let leftShip of this.leftShips) {
+                    if (leftShip.ship.id == ship.ship.id) {
+                        hasLeftShip = true;
+                        break;
+                    }
+                }
+                if (!hasLeftShip) {
+                    ship.left = true;
+                    this.leftShips.push(ship);
+                }
             }
 
             // check if the gameShip is there, but is not recorded in this.ships, if so, then this.onShipSpawned
@@ -692,28 +673,17 @@ class Game {
                         ship.setCollider(false);
                     }
 
-                    if (!(this.shipGroup.chosenTypes.includes(ship.ship.type) || (ship.hasFlag && this.shipGroup.chosenTypes.includes(ship.ship.type - this.shipGroup.normalShips.length))) && ship.ship.type != 101 && ship.ship.type != 201) {
-                        let shipType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
-                        ship.setType(shipType);
-                        ship.fillUp();
-                        ship.chosenType = shipType;
-                    }
-
                     if (this.betweenTime != -1) {
                         ship.setCollider(false);
                         ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
 
-                        if (ship.hasFlag) {
-                            let opp = (ship.team.team + 1) % 2;
-
-                            ship.hasFlag = false;
+                        if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                             ship.setMaxStats();
                             ship.setHue(ship.team.hue);
 
-                            this.flagHolders[ship.team.team] = null;
-
-                            this.flags[opp].show();
+                            ship.team.flagHolder = null;
+                            this.getOppTeam(ship.team).flag.reset();
                         }
 
                         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -739,10 +709,26 @@ class Game {
                         ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
                     } else {
                         ship.setCollider(true);
-                        if (ship.hasFlag) {
+                        if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Game.C.TICKS.FLAGHOLDER_DROP - (game.step - ship.flagTime)));
                             ship.sendUI(bottomMessage);
+
+                            if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
+                                ship.setType(ship.chosenType + this.shipGroup.normalShips.length);
+                                ship.setMaxStats();
+                            }
+                            if (ship.ship.hue != ship.team.flagged) {
+                                ship.setHue(ship.team.flagged);
+                            }
+                        } else {
+                            if (ship.ship.type != ship.chosenType) {
+                                ship.setType(ship.chosenType);
+                                ship.setMaxStats();
+                            }
+                            if (ship.ship.hue != ship.team.hue) {
+                                ship.setHue(ship.team.hue);
+                            }
                         }
 
                         if (ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
@@ -782,52 +768,40 @@ class Game {
                             }
                         }
 
-                        if (ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
-                            for (let i = 0; i < this.map.flags.length; i++) {
-                                let opp = (i + 1) % 2;
-                                let flagPos = new Vector2(this.flags[i].obj.position.x, this.flags[i].obj.position.y);
-                                if (flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                    if (this.flagHolders[opp] == null && !ship.hasFlag && this.teams[i].team != ship.team.team) {
-                                        ship.hasFlag = true;
-                                        ship.flagTime = game.step;
-                                        ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
-                                        ship.setMaxStats();
-                                        ship.setHue(ship.team.flagged);
+                        if (!ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
+                            let oppTeam = this.getOppTeam(ship.team);
+                            if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                ship.team.flagHolder = ship;
+                                oppTeam.flag.hide();
 
-                                        this.flagHolders[opp] = ship;
+                                ship.flagTime = game.step;
+                                ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
+                                ship.setMaxStats();
+                                ship.setHue(ship.team.flagged);
+                                
+                                this.sendNotifications(`${ship.ship.name} has stolen ${oppTeam.color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
+                            }
+                            if (ship.team.flag && !ship.team.flag.flagHidden && !ship.team.flag.isAtStand() && ship.team.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                ship.team.flag.reset();
 
-                                        this.flags[i].hide();
+                                this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
+                            }
+                            if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                ship.team.flagHolder = null;
+                                oppTeam.flag.reset();
 
-                                        this.sendNotifications(`${ship.ship.name} has stolen ${this.teams[i].color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
-                                    }
-                                    if (!flagPos.equals(this.map.flags[i]) && this.teams[i].team == ship.team.team) {
-                                        this.flags[i].reset();
+                                ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
+                                ship.setMaxStats();
+                                ship.setHue(ship.team.hue);
+                                ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                ship.setScore(ship.score + 1);
+                                ship.setTotalScore(ship.totalScore + 1);
 
-                                        this.sendNotifications(`${ship.ship.name} has returned the ${this.teams[i].color.toUpperCase()} team's flag!`, `Chance for ${this.teams[(ship.team.team + 1) % 2].color.toUpperCase()} team is over.`, ship.team);
-                                    }
-                                }
-                                if (this.map.flags[i].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                    if (ship.hasFlag && this.teams[i].team == ship.team.team) {
-                                        ship.hasFlag = false;
-                                        ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
-                                        ship.setMaxStats();
-                                        ship.setHue(ship.team.hue);
-                                        ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                        ship.setScore(ship.score + 1);
-                                        ship.setTotalScore(ship.totalScore + 1);
-                                        this.flagHolders[i] = null;
+                                ship.team.setScore(ship.team.score + 1);
 
-                                        ship.team.setScore(ship.team.score + 1);
+                                this.spawnBeacon(ship.team.flagStandPos, ship.team.hex);
 
-                                        this.flags[opp].reset();
-                                        this.flags[opp].show();
-
-                                        this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
-
-                                        this.spawnBeacon(flagPos, this.teams[i].hex);
-                                    }
-
-                                }
+                                this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
                             }
                         }
 
@@ -850,47 +824,46 @@ class Game {
                     ship.sendUI(mapAuthor);
 
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
-                    if (this.map) {
-                        for (let i = 0; i < this.map.flags.length; i++) {
-                            let flag = this.flags[i];
-                            let flagStand = this.flagStands[i];
-
+                    for (let i = 0; i < this.teams.length; i++) {
+                        if (this.teams[i].flag) {
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(flagStand.obj.position.x, flagStand.obj.position.y, 100, 100),
+                                position: Helper.getRadarSpotPosition(this.teams[i].flag.flagStandPos, new Vector2(100, 100)),
                                 value: '⬡',
                                 color: this.teams[i].hex
                             });
 
-                            if (flag.obj.scale.x > 0.1) {
+                            if (!this.teams[i].flag.flagHidden) {
                                 radarBackground.components.push({
                                     type: 'text',
-                                    position: Helper.getRadarSpotPosition(flag.obj.position.x, flag.obj.position.y, 50, 50),
+                                    position: Helper.getRadarSpotPosition(this.teams[i].flag.flagPos, new Vector2(50, 50)),
                                     value: '⚐',
                                     color: this.teams[i].hex
                                 });
                             }
                         }
+                    }
+                    if (this.map) {
                         for (let i = 0; i < this.map.portals.length; i++) {
                             let portal = this.portals[i];
 
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 120, 120),
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(120, 120)),
                                 value: '⬡',
                                 color: '#00ff0080'
                             });
 
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 80, 80),
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(80, 80)),
                                 value: '⬡',
                                 color: '#00ff0060'
                             });
 
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(portal.obj.position.x, portal.obj.position.y, 40, 40),
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(40, 40)),
                                 value: '⬡',
                                 color: '#00ff0040'
                             });
@@ -899,7 +872,7 @@ class Game {
                             let spawn = this.map.spawns[i];
                             radarBackground.components.push({
                                 type: 'round',
-                                position: Helper.getRadarSpotPosition(spawn.x, spawn.y, 25, 25),
+                                position: Helper.getRadarSpotPosition(spawn, new Vector2(25, 25)),
                                 fill: this.teams[i].hex + '80'
                             });
                         }
@@ -1039,7 +1012,7 @@ class Game {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (!this.waiting && this.betweenTime == -1 && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
+                if (!this.waiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 201) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
@@ -1104,6 +1077,14 @@ class Game {
                     collectibleOption.NAME,
                     collectibleOption.CODE,
                 );
+            }
+        }
+    }
+
+    getOppTeam(team) {
+        for (let i = 0; i < this.teams.length; i++) {
+            if (this.teams[i].team != team.team) {
+                return this.teams[i];
             }
         }
     }
@@ -1209,6 +1190,11 @@ class Game {
                 return ship;
             }
         }
+        for (let ship of this.leftShips) {
+            if (ship.ship == gameShip || ship.ship.id == gameShip.id) {
+                return ship;
+            }
+        }
         return null;
     }
 
@@ -1245,22 +1231,21 @@ class Game {
     onShipDestroyed(gameShip) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-            if (ship.hasFlag) {
-                let opp = (ship.team.team + 1) % 2;
-                this.flags[opp].obj.position.x = ship.ship.x;
-                this.flags[opp].obj.position.y = ship.ship.y;
-                this.flags[opp].show();
+            ship.ship.alive = false;
 
-                this.flagDespawns[opp] = game.step;
+            if (ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                let oppTeam = this.getOppTeam(ship.team);
+                oppTeam.flag.setPosition(new Vector2(ship.ship.x, ship.ship.y));
+                oppTeam.flag.show();
+                oppTeam.flag.despawn = game.step;
 
-                ship.hasFlag = false;
+                ship.team.flagHolder = null;
+
                 ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                 ship.setHue(ship.team.hue);
                 ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
-                this.flagHolders[ship.team.team] = null;
-
-                this.sendNotifications(`${ship.ship.name} has dropped the flag!`, `Will ${ship.team.color.toUpperCase()} team steal it again?`, this.teams[opp]);
+                this.sendNotifications(`${ship.ship.name} has dropped the flag!`, `Will ${ship.team.color.toUpperCase()} team steal it again?`, oppTeam);
             }
         }
     }
@@ -1299,6 +1284,9 @@ class Team {
     score = 0;
 
     ships = [];
+
+    flag = null;
+    flagHolder = null;
 
     static C = {
         TEAMS: [
@@ -1401,6 +1389,7 @@ class Ship {
     allUIs = [];
     timedUIs = [];
 
+    left = false;
     done = false;
 
     chosenType = 0;
@@ -1412,7 +1401,6 @@ class Ship {
     choosingShip = false;
 
     flagTime = -1;
-    hasFlag = false;
 
     portalTime = -1;
 
@@ -1434,7 +1422,6 @@ class Ship {
         this.setScore(0);
 
         this.chosenType = 0;
-        this.hasFlag = false;
         this.score = 0;
     }
 
@@ -2085,6 +2072,79 @@ class TimedAsteroid {
     }
 }
 
+class Flag {
+    flagPos = null;
+    flag = null;
+    flagHidden = false;
+    flagStandPos = null;
+    flagStand = null;
+    color = '';
+
+    holder = null;
+    despawn = -1;
+
+    constructor(flagPos, color) {
+        this.flagPos = flagPos.clone();
+        this.flagStandPos = flagPos.clone();
+        this.color = color;
+    }
+
+    spawn() {
+        this.flag = new Obj(
+            Obj.C.OBJS.FLAG.id,
+            Obj.C.OBJS.FLAG.type,
+            new Vector3(this.flagPos.x, this.flagPos.y, Obj.C.OBJS.FLAG.position.z),
+            new Vector3(Obj.C.OBJS.FLAG.rotation.x, Obj.C.OBJS.FLAG.rotation.y, Obj.C.OBJS.FLAG.rotation.z),
+            new Vector3(Obj.C.OBJS.FLAG.scale.x, Obj.C.OBJS.FLAG.scale.y, Obj.C.OBJS.FLAG.scale.z),
+            true,
+            true,
+            this.color
+        ).update();
+        this.flagStand = new Obj(
+            Obj.C.OBJS.FLAGSTAND.id,
+            Obj.C.OBJS.FLAGSTAND.type,
+            new Vector3(this.flagStandPos.x, this.flagStandPos.y, Obj.C.OBJS.FLAGSTAND.position.z),
+            new Vector3(Obj.C.OBJS.FLAGSTAND.rotation.x, Obj.C.OBJS.FLAGSTAND.rotation.y, Obj.C.OBJS.FLAGSTAND.rotation.z),
+            new Vector3(Obj.C.OBJS.FLAGSTAND.scale.x, Obj.C.OBJS.FLAGSTAND.scale.y, Obj.C.OBJS.FLAGSTAND.scale.z),
+            true,
+            true,
+            this.color
+        ).update();
+        return this;
+    }
+
+    hide() {
+        this.flag.hide();
+        this.flagHidden = true;
+    }
+
+    show() {
+        this.flag.show();
+        this.flagHidden = false;
+    }
+
+    setPosition(position) {
+        this.flagPos = position.clone();
+        this.flag.setPosition(position);
+    }
+
+    reset() {
+        this.flagPos = this.flagStandPos.clone();
+        this.flag.setPosition(this.flagPos);
+        this.despawn = -1;
+        this.show();
+    }
+
+    isAtStand() {
+        return this.flagPos.equals(this.flagStandPos);
+    }
+
+    destroySelf() {
+        this.flag.destroySelf();
+        this.flagStand.destroySelf();
+    }
+}
+
 class Obj {
     originalObj = null;
     obj = null;
@@ -2324,8 +2384,8 @@ class Obj {
                 EXISTENCE_TIME: 15,
                 SHOOT_RATE: 60,
                 DISTANCE: 30,
-                DAMAGE: 10,
-                ASTEROID_SIZE: 10,
+                DAMAGE_LEVEL: 2,
+                ASTEROID_SIZE_LEVEL: 5,
                 ASTEROID_TIME: 10
             }
         }
@@ -5606,7 +5666,6 @@ class ShipGroup {
                             '{"name":"Scythe","level":3,"model":1,"size":1.45,"specs":{"shield":{"capacity":[115,175],"reload":[4,6]},"generator":{"capacity":[70,125],"reload":[23,35]},"ship":{"mass":75,"speed":[90,120],"rotation":[70,90],"acceleration":[80,110]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":5,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0],"y":[-45,-50,-40,-20,20,30,40,35],"z":[0,0,0,0,0,0,0,0]},"width":[0,10,20,25,25,20,15,0],"height":[0,10,20,20,20,20,15,0],"propeller":true,"texture":[4,63,2,10,2,12,17]},"cockpit":{"section_segments":8,"offset":{"x":0,"y":-20,"z":10},"position":{"x":[0,0,0,0,0,0,0],"y":[-15,0,20,30,60],"z":[0,0,0,0,0]},"width":[0,15,17,12,5],"height":[0,21,25,20,5],"propeller":false,"texture":[7,9,9,4,4]},"cannon":{"section_segments":8,"offset":{"x":0,"y":-20,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-55,-60,-20,0,20,30],"z":[0,0,0,0,0,0]},"width":[0,10,16,17,14,0],"height":[0,10,16,17,14,0],"angle":0,"laser":{"damage":[3.5,6],"rate":10,"type":1,"speed":[180,240],"number":1,"error":15,"recoil":0},"propeller":false,"texture":[3,3,2,3]},"side_props":{"section_segments":8,"offset":{"x":50,"y":42,"z":-30},"position":{"x":[0,0,0,0,0,0],"y":[-35,-40,-20,0,20,15],"z":[0,0,0,0,0,0]},"width":[0,8,12,12,10,0],"height":[0,8,12,12,10,0],"angle":0,"propeller":true,"texture":[3,2,10,2,17]}},"wings":{"spikes":{"doubleside":true,"offset":{"x":17,"y":-10,"z":0},"length":[10,0,15],"width":[30,40,160,50],"angle":[0,0,0],"position":[20,20,-15,0],"texture":[3,63,63],"bump":{"position":30,"size":10}},"below":{"doubleside":true,"offset":{"x":20,"y":10,"z":-5},"length":[40],"width":[50,30],"angle":[-40],"position":[0,30],"texture":[11],"bump":{"position":30,"size":10}},"belowFins":{"doubleside":true,"offset":{"x":58,"y":33,"z":-30},"length":[14],"width":[55,35],"angle":[0],"position":[0,0],"texture":[63],"bump":{"position":30,"size":10}}},"typespec":{"name":"Scythe","level":3,"model":1,"code":301,"specs":{"shield":{"capacity":[115,175],"reload":[4,6]},"generator":{"capacity":[70,125],"reload":[23,35]},"ship":{"mass":75,"speed":[90,120],"rotation":[70,90],"acceleration":[80,110]}},"shape":[2.325,2.338,3.144,2.797,2.312,1.998,1.777,1.636,1.505,1.389,1.309,1.255,1.227,1.785,2.154,2.245,2.379,2.55,2.536,2.502,2.333,1.777,1.376,1.372,1.328,1.307,1.328,1.372,1.376,1.777,2.333,2.502,2.536,2.55,2.379,2.245,2.154,1.785,1.227,1.255,1.309,1.389,1.505,1.636,1.777,1.998,2.312,2.797,3.144,2.338],"lasers":[{"x":0,"y":-2.32,"z":0,"angle":0,"damage":[3.5,6],"rate":10,"type":1,"speed":[180,240],"number":1,"spread":0,"error":15,"recoil":0}],"radius":3.144}}',
                             '{"name":"Pulse-Fighter","level":3,"model":2,"size":1.3,"specs":{"shield":{"capacity":[150,200],"reload":[3,5]},"generator":{"capacity":[60,90],"reload":[20,30]},"ship":{"mass":120,"speed":[105,120],"rotation":[60,80],"acceleration":[80,100]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0],"y":[-90,-75,-50,0,50,105,90],"z":[0,0,0,0,0,0,0]},"width":[0,15,25,30,35,20,0],"height":[0,10,15,25,25,20,0],"propeller":true,"texture":[63,1,1,10,2,12]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":-20,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-30,-10,10,30,60],"z":[0,0,0,0,0]},"width":[0,10,15,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":9},"cannon":{"section_segments":6,"offset":{"x":0,"y":-40,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,50],"z":[0,0,0,0,0,0]},"width":[0,5,10,10,15,0],"height":[0,5,15,15,10,0],"angle":0,"laser":{"damage":[15,30],"rate":1,"type":2,"speed":[150,175],"number":1,"error":0},"propeller":false,"texture":3},"deco":{"section_segments":8,"offset":{"x":50,"y":50,"z":-10},"position":{"x":[0,0,5,5,0,0,0],"y":[-52,-50,-20,0,20,40,42],"z":[0,0,0,0,0,0,0]},"width":[0,5,10,10,5,5,0],"height":[0,5,10,15,10,5,0],"angle":0,"laser":{"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"error":0},"propeller":false,"texture":4}},"wings":{"main":{"length":[80,20],"width":[120,50,40],"angle":[-10,20],"position":[30,50,30],"doubleside":true,"bump":{"position":30,"size":10},"texture":[11,63],"offset":{"x":0,"y":0,"z":0}},"winglets":{"length":[40],"width":[40,20,30],"angle":[10,-10],"position":[-40,-60,-55],"bump":{"position":0,"size":30},"texture":63,"offset":{"x":0,"y":0,"z":0}},"stab":{"length":[40,10],"width":[50,20,20],"angle":[40,30],"position":[70,75,80],"doubleside":true,"texture":63,"bump":{"position":0,"size":20},"offset":{"x":0,"y":0,"z":0}}},"typespec":{"name":"Pulse-Fighter","level":3,"model":2,"code":302,"specs":{"shield":{"capacity":[150,200],"reload":[3,5]},"generator":{"capacity":[60,90],"reload":[20,30]},"ship":{"mass":120,"speed":[105,120],"rotation":[60,80],"acceleration":[80,100]}},"shape":[2.343,2.204,1.998,1.955,2.088,1.91,1.085,0.974,0.895,0.842,0.829,0.95,1.429,2.556,2.618,2.726,2.851,2.837,2.825,2.828,2.667,2.742,2.553,2.766,2.779,2.735,2.779,2.766,2.553,2.742,2.667,2.828,2.825,2.837,2.851,2.726,2.618,2.556,1.43,0.95,0.829,0.842,0.895,0.974,1.085,1.91,2.088,1.955,1.998,2.204],"lasers":[{"x":0,"y":-2.34,"z":-0.26,"angle":0,"damage":[15,30],"rate":1,"type":2,"speed":[150,175],"number":1,"spread":0,"error":0,"recoil":0},{"x":1.3,"y":-0.052,"z":-0.26,"angle":0,"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"spread":0,"error":0,"recoil":0},{"x":-1.3,"y":-0.052,"z":-0.26,"angle":0,"damage":[3,6],"rate":3,"type":1,"speed":[100,150],"number":1,"spread":0,"error":0,"recoil":0}],"radius":2.851}}',
                             '{"name":"Xenon","level":3,"model":4,"size":2.2,"specs":{"shield":{"capacity":[145,225],"reload":[3,6]},"generator":{"capacity":[50,70],"reload":[21,33]},"ship":{"mass":150,"speed":[95,110],"rotation":[80,110],"acceleration":[80,120]}},"bodies":{"main":{"section_segments":10,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-39,-35,-25,-10,10,30,47,55,52],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,5,8,11,14,17,12,5,0],"height":[0,5,8,8,10,11,11,5,0],"propeller":true,"texture":[6,3,4,63,2,4,3,17]},"cockpit":{"section_segments":6,"offset":{"x":0,"y":-5,"z":2},"position":{"x":[0,0,0,0,0,0,0],"y":[-5,0,20,30,34],"z":[7,3,0,0,0]},"width":[0,7,9,8,0],"height":[0,7,13,8,5],"propeller":false,"texture":[9,9,3,4,4]},"detail1":{"section_segments":12,"offset":{"x":7,"y":15,"z":4},"position":{"x":[0,0,0,2,2,0],"y":[-20,-20,-20,0,0,3],"z":[0,0,0,1,1,0]},"width":[0,4,4,4,4,0],"height":[0,4,4,4,4,0],"angle":0,"propeller":false,"texture":[12,8,8,13]},"detail2":{"section_segments":12,"offset":{"x":0,"y":-5,"z":4.1},"position":{"x":[0,0,0,0,0,0],"y":[-30,-30,-20,0,0,3],"z":[0,-0.1,0,2.5,3.5,0]},"width":[0,4,4,4,4,0],"height":[0,4,4,3.4,4,0],"angle":0,"propeller":false,"texture":[12,3,10.24,13]},"cannon1":{"section_segments":12,"offset":{"x":37,"y":39,"z":-1},"position":{"x":[0,0,0,0,0,0],"y":[-30,-40,-20,0,0,-1],"z":[0,0,0,0,0,0]},"width":[0,2,2,3,3,0],"height":[0,2,2,3,3,0],"angle":0,"laser":{"damage":[1.5,3],"rate":5,"type":1,"speed":[150,210],"number":1,"error":0},"propeller":true,"texture":[12,12,10,17]},"cannon2":{"section_segments":12,"offset":{"x":16,"y":39,"z":1},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-30,0,0,-1],"z":[0,0,0,0,0,0]},"width":[0,2,3,4,4,0],"height":[0,2,3,4,4,0],"angle":0,"laser":{"damage":[1.75,3],"rate":5,"type":1,"speed":[180,200],"number":1,"error":0},"propeller":true,"texture":[12,12,63,17]}},"wings":{"main":{"length":[40,10],"width":[30,30,10],"angle":[10,49],"position":[60,70,90],"doubleside":true,"offset":{"x":0,"y":-47,"z":-4},"bump":{"position":10,"size":10},"texture":[8,63]}},"typespec":{"name":"Xenon","level":3,"model":4,"code":304,"specs":{"shield":{"capacity":[145,225],"reload":[3,6]},"generator":{"capacity":[50,70],"reload":[21,33]},"ship":{"mass":150,"speed":[95,110],"rotation":[80,110],"acceleration":[80,120]}},"shape":[2.376,2.261,1.785,1.365,1.11,0.939,0.824,0.823,0.928,0.904,0.861,0.831,1.717,1.729,1.809,1.945,2.142,2.427,2.772,2.924,2.018,1.928,1.896,1.804,1.772,1.763,1.772,1.804,1.896,1.928,2.018,2.924,2.772,2.427,2.142,1.945,1.809,1.729,1.717,0.831,0.861,0.904,0.928,0.823,0.824,0.939,1.11,1.365,1.785,2.261],"lasers":[{"x":1.628,"y":-0.044,"z":-0.044,"angle":0,"damage":[1.5,3],"rate":5,"type":1,"speed":[150,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":-1.628,"y":-0.044,"z":-0.044,"angle":0,"damage":[1.5,3],"rate":5,"type":1,"speed":[150,210],"number":1,"spread":0,"error":0,"recoil":0},{"x":0.704,"y":-0.484,"z":0.044,"angle":0,"damage":[1.75,3],"rate":5,"type":1,"speed":[180,200],"number":1,"spread":0,"error":0,"recoil":0},{"x":-0.704,"y":-0.484,"z":0.044,"angle":0,"damage":[1.75,3],"rate":5,"type":1,"speed":[180,200],"number":1,"spread":0,"error":0,"recoil":0}],"radius":2.924}}',
-                            '{"name":"Calypso","level":3,"model":8,"size":8,"specs":{"shield":{"capacity":[140,200],"reload":[2,4]},"generator":{"capacity":[60,100],"reload":[23,32]},"ship":{"mass":155,"speed":[90,110],"rotation":[60,80],"acceleration":[90,115]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0],"y":[-25,-20,-20,-10,0,10,20,15],"z":[0,0,0,0,0,0,0,0]},"width":[0,3,3,4,4,4,4,0],"height":[0,4,4,5,5,5,5,0],"texture":[3,11,11,4,63,13,13,0],"propeller":true},"side_pipes":{"section_segments":8,"offset":{"x":4.4,"y":-10,"z":0},"position":{"x":[-3,-3,-0.5,0,-1,-1,0,0,0],"y":[-10,-10,-6,4,10,20,25,32,30],"z":[0,0,0,0,3,3,0,0,0]},"width":[0,2,2,2,2,2,2,2,0],"height":[0,2,2,2,2,2,2,2,0],"texture":[3,3,3,8,3,8,3,13,13],"propeller":true},"back_things":{"section_segments":8,"angle":0,"offset":{"x":10.5,"y":11,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-10,-8,-1,4,5,5],"z":[0,0,0,0,0,0]},"width":[0,3,3,3,2.5,0],"height":[0,3,3,3,2.5,0],"texture":[3,63,13,4,3,3]},"cockpit":{"section_segments":8,"offset":{"x":0,"y":-12,"z":4},"position":{"x":[0,0,0,0,0,0],"y":[-7,-4,0,0,5,7],"z":[0,-0.5,-1,-1,-0.5,0]},"width":[0,1,2,2,1,0],"height":[0,2,3,3,2,0],"texture":9},"front_gun":{"section_segments":8,"offset":{"x":0,"y":-21,"z":-4.5},"position":{"x":[0,0,0,0,0],"y":[-4,-5,2,5,5],"z":[0,0,0,2,2]},"width":[0,1,1,1,0],"height":[0,1,1,1,0],"texture":[17,4,4,4,4],"laser":{"damage":[10,15],"speed":[180,250],"rate":4,"angle":0,"type":1,"error":0,"number":1,"recoil":30}},"back_guns":{"section_segments":8,"offset":{"x":10.5,"y":4,"z":0},"position":{"x":[0,0,0,0],"y":[-5,-6,-3,-1],"z":[0,0,0,0]},"width":[0,1,1,0],"height":[0,1,1,0],"texture":[17,4,4,4],"laser":{"damage":[6,10],"speed":[80,100],"rate":4,"angle":0,"type":1,"error":0,"number":1,"recoil":30}}},"wings":{"main":{"doubleside":true,"offset":{"x":0,"y":-21,"z":0},"length":[10],"width":[5,5],"angle":[0],"position":[24,30],"texture":4,"bump":{"position":15,"size":10}},"winglets":{"doubleside":true,"offset":{"x":2,"y":17,"z":3},"length":[3],"width":[5,4],"angle":[50],"position":[0,1],"texture":63,"bump":{"position":0,"size":20}}},"typespec":{"name":"Calypso","level":3,"model":8,"code":308,"specs":{"shield":{"capacity":[140,200],"reload":[2,4]},"generator":{"capacity":[60,100],"reload":[23,32]},"ship":{"mass":155,"speed":[90,110],"rotation":[60,80],"acceleration":[90,115]}},"shape":[4.163,3.623,3.173,2.814,2.266,1.843,1.582,1.404,1.212,1.083,0.994,1.868,1.854,1.847,2.228,2.321,2.464,2.668,2.96,3.285,3.298,3.032,3.313,3.666,3.583,3.206,3.583,3.666,3.313,3.032,3.298,3.285,2.96,2.668,2.464,2.321,2.228,1.847,1.854,1.868,0.994,1.083,1.212,1.404,1.582,1.843,2.266,2.814,3.173,3.623],"lasers":[{"x":0,"y":-4.16,"z":-0.72,"angle":0,"damage":[10,15],"rate":4,"type":1,"speed":[180,250],"number":1,"spread":0,"error":0,"recoil":30},{"x":1.68,"y":-0.32,"z":0,"angle":0,"damage":[6,10],"rate":4,"type":1,"speed":[80,100],"number":1,"spread":0,"error":0,"recoil":30},{"x":-1.68,"y":-0.32,"z":0,"angle":0,"damage":[6,10],"rate":4,"type":1,"speed":[80,100],"number":1,"spread":0,"error":0,"recoil":30}],"radius":4.163}}',
                         ]
                     }
                 ]
@@ -6087,7 +6146,11 @@ class Helper {
         return array;
     }
 
-    static getRadarSpotPosition(x, y, w, h) {
+    static getRadarSpotPosition(xy, wh) {
+        let x = xy.x;
+        let y = xy.y;
+        let w = wh.x;
+        let h = wh.y;
         let scalePos = 10 / Game.C.OPTIONS.MAP_SIZE;
         let scaleSize = 10 / Game.C.OPTIONS.MAP_SIZE;
         return [
