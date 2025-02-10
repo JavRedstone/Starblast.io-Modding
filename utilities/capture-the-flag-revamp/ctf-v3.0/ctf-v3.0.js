@@ -8,6 +8,8 @@ class Game {
     static shipGroups = [];
     shipGroup = null;
 
+    timeouts = [];
+
     ships = [];
     leftShips = [];
     teams = [];
@@ -56,7 +58,7 @@ class Game {
             RESET_TREE: true,
             CHOOSE_SHIP: null,
             SHIPS: [],
-            // MAX_PLAYERS: 20,
+            MAX_PLAYERS: 20,
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -89,6 +91,8 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
+            RESET_STAGGER: 15,
+
             GAME_MANAGER: 30,
 
             FLAGHOLDER_DROP: 5400,
@@ -117,10 +121,12 @@ class Game {
     }
 
     constructor() {
-        this.reset();
+        // this.reset();
     }
 
     tick() {
+        this.manageTimeouts();
+
         this.manageGameState();
 
         this.manageShips();
@@ -132,15 +138,45 @@ class Game {
         this.manageEntities();
     }
 
+    manageTimeouts() {
+        let removedTimeouts = [];
+        for (let i = 0; i < this.timeouts.length; i++) {
+            let timeout = this.timeouts[i];
+            if (timeout.running) {
+                timeout.tick();
+            } else {
+                removedTimeouts.push(timeout);
+            }
+        }
+        for (let timeout of removedTimeouts) {
+            Helper.deleteFromArray(this.timeouts, timeout);
+        }
+    }
+
     reset() {
         this.deleteEverything();
         this.resetContainers();
         this.selectRandomTeams();
-        this.setMap();
-        this.setShipGroup();
-        this.spawnFlags();
-        this.spawnPortals();
-        this.resetShips();
+        this.timeouts.push(new TimeoutCreator(() => {
+            this.setMap();
+            this.timeouts.push(new TimeoutCreator(() => {
+                this.setShipGroup();
+                this.timeouts.push(new TimeoutCreator(() => {
+                    this.spawnFlags();
+                    this.timeouts.push(new TimeoutCreator(() => {
+                        this.spawnPortals();
+                        this.timeouts.push(new TimeoutCreator(() => {
+                            this.resetShips();
+                        }
+                        , Game.C.TICKS.RESET_STAGGER).start());
+                    }
+                    , Game.C.TICKS.RESET_STAGGER).start());
+                }
+                , Game.C.TICKS.RESET_STAGGER).start());
+            }
+            , Game.C.TICKS.RESET_STAGGER).start());
+        }
+        , Game.C.TICKS.RESET_STAGGER).start());
     }
 
     deleteEverything() {
@@ -297,7 +333,7 @@ class Game {
     resetShip(ship, resetTeam = true) {
         ship.reset();
 
-        if (resetTeam) {
+        if (resetTeam && this.teams.length == 2) {
             if (this.teams[0].ships.length <= this.teams[1].ships.length) {
                 ship.setTeam(this.teams[0]);
                 this.teams[1].removeShip(ship);
@@ -307,13 +343,15 @@ class Game {
                 this.teams[0].removeShip(ship);
             }
 
-            ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+            if (this.shipGroup) {
+                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+            }
         }
 
         if (this.waiting) {
             ship.setPosition(new Vector2(0, 0));
         } else {
-            if (this.map) {
+            if (this.map && this.map.spawns.length == 2 && ship.team) {
                 ship.setPosition(this.map.spawns[ship.team.team])
             }
         }
@@ -321,10 +359,14 @@ class Game {
 
     newRound() {
         this.reset();
-        for (let ship of this.ships) {
-            ship.chooseShipTime = game.step;
-        }
-        this.numRounds++;
+        this.timeouts.push(
+            new TimeoutCreator(() => {
+                for (let ship of this.ships) {
+                    ship.chooseShipTime = game.step;
+                }
+                this.numRounds++;
+            }, 5 * Game.C.TICKS.RESET_STAGGER).start()
+        );
     }
 
     gameOver() {
@@ -500,15 +542,15 @@ class Game {
 
                             if (closestShip && new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y)) < Obj.C.OBJS.LASER.DISTANCE) {
                                 this.spawnLaser(corners[j], closestShip, team.hex);
-                                let asteroid = new Asteroid(
-                                    new Vector2(closestShip.ship.x, closestShip.ship.y),
-                                    new Vector2(0, 0),
-                                    closestShip.getLevel() * Obj.C.OBJS.LASER.ASTEROID_SIZE_LEVEL
-                                );
-                                this.asteroids.push(asteroid);
-                                this.timedAsteroids.push(
-                                    new TimedAsteroid(asteroid, Obj.C.OBJS.LASER.ASTEROID_TIME)
-                                );
+                                // let asteroid = new Asteroid(
+                                //     new Vector2(closestShip.ship.x, closestShip.ship.y),
+                                //     new Vector2(0, 0),
+                                //     closestShip.getLevel() * Obj.C.OBJS.LASER.ASTEROID_SIZE_LEVEL
+                                // );
+                                // this.asteroids.push(asteroid);
+                                // // this.timedAsteroids.push(
+                                // //     new TimedAsteroid(asteroid, Obj.C.OBJS.LASER.ASTEROID_TIME)
+                                // // );
                                 closestShip.takeDamage(closestShip.getLevel() * Obj.C.OBJS.LASER.DAMAGE_LEVEL);
                             }
                         }
@@ -665,9 +707,11 @@ class Game {
 
                     ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
                     ship.fillUp();
-                } else {
+                } else if (this.map) {
                     if (ship.chosenType == 0) {
-                        ship.setPosition(this.map.spawns[ship.team.team]);
+                        if (this.map.spawns.length == 2 && ship.team) {
+                            ship.setPosition(this.map.spawns[ship.team.team]);
+                        }
                         ship.setVelocity(new Vector2(0, 0));
                         ship.setType(101);
                         ship.setCrystals(0);
@@ -722,7 +766,7 @@ class Game {
                             if (ship.ship.hue != ship.team.flagged) {
                                 ship.setHue(ship.team.flagged);
                             }
-                        } else {
+                        } else if (ship.chosenType != 0) {
                             if (ship.ship.type != ship.chosenType) {
                                 ship.setType(ship.chosenType);
                                 ship.setMaxStats();
@@ -800,9 +844,9 @@ class Game {
 
                                 ship.team.setScore(ship.team.score + 1);
 
-                                this.spawnBeacon(ship.team.flagStandPos, ship.team.hex);
+                                this.spawnBeacon(ship.team.flag.flagStandPos, ship.team.hex);
 
-                                this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${this.teams[opp].color.toUpperCase()} team score next?`, ship.team);
+                                this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
                             }
                         }
 
@@ -848,26 +892,28 @@ class Game {
                         for (let i = 0; i < this.map.portals.length; i++) {
                             let portal = this.portals[i];
 
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(120, 120)),
-                                value: '⬡',
-                                color: '#00ff0080'
-                            });
+                            if (portal) {
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(120, 120)),
+                                    value: '⬡',
+                                    color: '#00ff0080'
+                                });
 
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(80, 80)),
-                                value: '⬡',
-                                color: '#00ff0060'
-                            });
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(80, 80)),
+                                    value: '⬡',
+                                    color: '#00ff0060'
+                                });
 
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(40, 40)),
-                                value: '⬡',
-                                color: '#00ff0040'
-                            });
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(40, 40)),
+                                    value: '⬡',
+                                    color: '#00ff0040'
+                                });
+                            }
                         }
                         for (let i = 0; i < this.map.spawns.length; i++) {
                             let spawn = this.map.spawns[i];
@@ -1219,7 +1265,9 @@ class Game {
                 ship.setPosition(new Vector2(0, 0));
                 ship.fillUp();
             } else {
-                ship.setPosition(this.map.spawns[ship.team.team]);
+                if (this.map && this.map.spawns.length == 2 && ship.team) {
+                    ship.setPosition(this.map.spawns[ship.team.team]);
+                }
                 ship.setVelocity(new Vector2(0, 0));
                 ship.setType(101);
                 ship.setCrystals(0);
@@ -1424,6 +1472,11 @@ class Ship {
 
         this.chosenType = 0;
         this.score = 0;
+
+        this.flagTime = -1;
+        this.portalTime = -1;
+
+        this.ship.emptyWeapons();
     }
 
     convertUIHexToHsla(ui) {
@@ -2357,8 +2410,8 @@ class Obj {
                     transparent: false
                 },
                 EXISTENCE_TIME: 300,
-                SPAWN_RATE: 60,
-                SPAWN_AMOUNT: 1
+                SPAWN_RATE: 30,
+                SPAWN_AMOUNT: 2
             },
             LASER: {
                 id: 'laser',
@@ -5959,6 +6012,34 @@ class Vector3 {
 
     equals(vector) {
         return this.x === vector.x && this.y === vector.y && this.z === vector.z;
+    }
+}
+
+class TimeoutCreator {
+    startTime = 0;
+    duration = 0;
+    callback = null;
+    running = false;
+
+    constructor(callback, duration) {
+        this.callback = callback;
+        this.duration = duration;
+    }
+
+    start() {
+        this.startTime = game.step;
+        this.running = true;
+        return this;
+    }
+
+    tick() {
+        if (this.running) {
+            if (game.step - this.startTime >= this.duration) {
+                this.callback();
+                this.running = false;
+            }
+        }
+        return this;
     }
 }
 
