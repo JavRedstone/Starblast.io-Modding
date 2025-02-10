@@ -38,6 +38,7 @@ class Game {
             MAP_SIZE: 60,
             MAP: null,
             ASTEROIDS_STRENGTH: 1e6,
+            RELEASE_CRYSTAL: false,
             CRYSTAL_DROP: 0,
             CRYSTAL_VALUE: 0,
 
@@ -55,7 +56,7 @@ class Game {
             RESET_TREE: true,
             CHOOSE_SHIP: null,
             SHIPS: [],
-            MAX_PLAYERS: 20,
+            // MAX_PLAYERS: 20,
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -595,7 +596,7 @@ class Game {
             for (let ship of this.ships) {
                 let found = false;
                 for (let gameShip of game.ships) {
-                    if (ship.ship == gameShip) {
+                    if (ship.ship.id == gameShip.id) {
                         found = true;
                         break;
                     }
@@ -624,7 +625,7 @@ class Game {
             for (let gameShip of game.ships) {
                 let found = false;
                 for (let ship of this.ships) {
-                    if (ship.ship == gameShip) {
+                    if (ship.ship.id == gameShip.id) {
                         found = true;
                         break;
                     }
@@ -2356,8 +2357,8 @@ class Obj {
                     transparent: false
                 },
                 EXISTENCE_TIME: 300,
-                SPAWN_RATE: 30,
-                SPAWN_AMOUNT: 2
+                SPAWN_RATE: 60,
+                SPAWN_AMOUNT: 1
             },
             LASER: {
                 id: 'laser',
@@ -6127,6 +6128,9 @@ class Helper {
     }
 
     static formatTime(time) {
+        if (time < 0) {
+            time = 0;
+        }
         let minutes = 0;
         let seconds = Math.floor(time / 60);
         minutes = Math.floor(seconds / 60);
@@ -6168,6 +6172,7 @@ this.options = {
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
     asteroids_strength: Game.C.OPTIONS.ASTEROIDS_STRENGTH,
+    release_crystals: Game.C.OPTIONS.RELEASE_CRYSTAL,
     crystal_drop: Game.C.OPTIONS.CRYSTAL_DROP,
     crystal_value: Game.C.OPTIONS.CRYSTAL_VALUE,
 
