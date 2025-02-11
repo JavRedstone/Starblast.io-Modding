@@ -100,14 +100,14 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 7200,
+            WAIT: 0,
             ROUND: 28800,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
         MIN_PLAYERS: 2,
-        ROUND_MAX: 5,
+        ROUND_MAX: 3,
         NUM_ROUNDS: 3,
         TEAM_PLAYER_DEFICIT: 2,
         TEAM_SCORE_DEFICIT: 2
@@ -268,7 +268,6 @@ class Game {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        newMap = GameMap.C.MAPS[GameMap.C.MAPS.length - 1];
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
