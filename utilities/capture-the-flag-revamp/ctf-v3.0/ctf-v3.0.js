@@ -20,9 +20,11 @@ class Game {
 
     logoWaiting = null;
 
+    spawns = [];
+    shipBeacons = [];
+    beacons = [];
     portals = [];
     gravityWells = [];
-    beacons = [];
     lasers = [];
 
     waiting = true;
@@ -153,7 +155,7 @@ class Game {
         }
     }
 
-    reset() {
+    reset(newRound = false) {
         this.deleteEverything();
         this.resetContainers();
         this.selectRandomTeams();
@@ -161,12 +163,19 @@ class Game {
             this.setMap();
             this.timeouts.push(new TimeoutCreator(() => {
                 this.setShipGroup();
+                this.spawnSpawns();
+                this.spawnFlags();
+                this.spawnPortals();
                 this.timeouts.push(new TimeoutCreator(() => {
-                    this.spawnFlags();
                     this.timeouts.push(new TimeoutCreator(() => {
-                        this.spawnPortals();
+                        this.resetShips();
                         this.timeouts.push(new TimeoutCreator(() => {
-                            this.resetShips();
+                            if (newRound) {
+                                for (let ship of this.ships) {
+                                    ship.chooseShipTime = game.step;
+                                }
+                                this.numRounds++;
+                            }
                         }
                         , Game.C.TICKS.RESET_STAGGER).start());
                     }
@@ -175,8 +184,8 @@ class Game {
                 , Game.C.TICKS.RESET_STAGGER).start());
             }
             , Game.C.TICKS.RESET_STAGGER).start());
-        }
-        , Game.C.TICKS.RESET_STAGGER).start());
+        },
+        Game.C.TICKS.RESET_STAGGER).start());
     }
 
     deleteEverything() {
@@ -199,10 +208,22 @@ class Game {
     }
 
     deleteObjs() {
+        this.deleteSpawns();
         this.deleteFlags();
         this.deletePortals();
         this.deleteBeacons();
         this.deleteLasers();
+    }
+
+    deleteSpawns() {
+        for (let spawn of this.spawns) {
+            spawn.destroySelf();
+        }
+        this.spawns = [];
+        for (let shipBeacon of this.shipBeacons) {
+            shipBeacon.destroySelf();
+        }
+        this.shipBeacons = [];
     }
 
     deleteFlags() {
@@ -247,6 +268,7 @@ class Game {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
+        newMap = GameMap.C.MAPS[GameMap.C.MAPS.length - 1];
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
@@ -263,6 +285,26 @@ class Game {
                     this.shipGroup = shipGroup;
                     this.shipGroup.chooseShips(!this.waiting);
                 }
+            }
+        }
+    }
+
+    spawnSpawns() {
+        this.deleteSpawns();
+        if (this.map && this.teams.length == 2) {
+            for (let i = 0; i < this.map.spawns.length; i++) {
+                let spawnPos = this.map.spawns[i];
+                let spawn = new Obj(
+                    Obj.C.OBJS.SPAWN.id,
+                    Obj.C.OBJS.SPAWN.type,
+                    new Vector3(spawnPos.x, spawnPos.y, Obj.C.OBJS.SPAWN.position.z),
+                    new Vector3(Obj.C.OBJS.SPAWN.rotation.x, Obj.C.OBJS.SPAWN.rotation.y, Obj.C.OBJS.SPAWN.rotation.z),
+                    new Vector3(Obj.C.OBJS.SPAWN.scale.x, Obj.C.OBJS.SPAWN.scale.y, Obj.C.OBJS.SPAWN.scale.z),
+                    true,
+                    true,
+                    this.teams[i].hex
+                ).update();
+                this.spawns.push(spawn);
             }
         }
     }
@@ -333,19 +375,24 @@ class Game {
     resetShip(ship, resetTeam = true) {
         ship.reset();
 
-        if (resetTeam && this.teams.length == 2) {
-            if (this.teams[0].ships.length <= this.teams[1].ships.length) {
-                ship.setTeam(this.teams[0]);
-                this.teams[1].removeShip(ship);
+        if (this.waiting) {
+            ship.setHue(Helper.getRandomHue());
+            ship.setTeamDefault(Helper.getRandomInt(0, 1));
+        } else {
+            if (resetTeam && this.teams.length == 2) {
+                if (this.teams[0].ships.length <= this.teams[1].ships.length) {
+                    ship.setTeam(this.teams[0]);
+                    this.teams[1].removeShip(ship);
+                }
+                else if (this.teams[1].ships.length < this.teams[0].ships.length) {
+                    ship.setTeam(this.teams[1]);
+                    this.teams[0].removeShip(ship);
+                }
             }
-            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-                ship.setTeam(this.teams[1]);
-                this.teams[0].removeShip(ship);
-            }
-
-            if (this.shipGroup) {
-                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
-            }
+        }
+        
+        if (this.shipGroup) {
+            ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
         }
 
         if (this.waiting) {
@@ -355,18 +402,6 @@ class Game {
                 ship.setPosition(this.map.spawns[ship.team.team])
             }
         }
-    }
-
-    newRound() {
-        this.reset();
-        this.timeouts.push(
-            new TimeoutCreator(() => {
-                for (let ship of this.ships) {
-                    ship.chooseShipTime = game.step;
-                }
-                this.numRounds++;
-            }, 5 * Game.C.TICKS.RESET_STAGGER).start()
-        );
     }
 
     gameOver() {
@@ -422,7 +457,7 @@ class Game {
                         this.logoWaiting.destroySelf();
                         this.logoWaiting = null;
                     }
-                    this.newRound();
+                    this.reset(true);
                 }
     
                 if (this.roundTime != -1) {
@@ -450,53 +485,55 @@ class Game {
                     }
                 }
     
-                if (this.betweenTime != -1) {
-                    this.roundTime = -1;
-                    if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
-                        this.betweenTime = -1;
-                        let winningTeam = this.getWinningTeam();
-                        if (winningTeam != null) {
-                            this.totalScores[winningTeam.team]++;
-                        }
-    
-                        this.teams[0].setScore(0);
-                        this.teams[1].setScore(0);
-    
-                        if (this.numRounds < Game.C.NUM_ROUNDS) {
-                            this.newRound();
-                        } else {
-                            this.gameOver();
-                        }
-                    }
-                }
-    
-                if (this.betweenTime == -1 && (this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX)) {
-                    this.roundTime = -1;
-                    this.betweenTime = game.step;
-                }
-
-                for (let i = 0; i < this.teams.length; i++) {
-                    let oppTeam = this.getOppTeam(this.teams[i]);
-                    if (this.teams[i].flag && this.teams[i].flagHolder) {
-                        if (game.step - this.teams[i].flagHolder.flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
-                            this.teams[i].flagHolder.flagTime = -1;
-                            this.teams[i].flagHolder.setType(this.teams[i].flagHolder.chosenType == 0 ? this.teams[i].flagHolder.ship.type - this.shipGroup.normalShips.length : this.teams[i].flagHolder.chosenType);
-                            this.teams[i].flagHolder.setMaxStats();
-                            this.teams[i].flagHolder.setHue(this.teams[i].hue);
-                            this.teams[i].flagHolder.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-
-                            this.sendNotifications(`${this.teams[i].flagHolder.ship.name} has ran out of time holding the flag!`, `Will ${this.teams[i].flagHolder.team.color.toUpperCase()} team steal it again?`, oppTeam);
-
-                            this.teams[i].flagHolder = null;
-
-                            oppTeam.flag.reset();
+                if (this.teams.length == 2) {
+                    if (this.betweenTime != -1) {
+                        this.roundTime = -1;
+                        if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
+                            this.betweenTime = -1;
+                            let winningTeam = this.getWinningTeam();
+                            if (winningTeam != null) {
+                                this.   totalScores[winningTeam.team]++;
+                            }
+        
+                            this.teams[0].setScore(0);
+                            this.teams[1].setScore(0);
+        
+                            if (this.numRounds < Game.C.NUM_ROUNDS) {
+                                this.reset(true);
+                            } else {
+                                this.gameOver();
+                            }
                         }
                     }
+        
+                    if (this.betweenTime == -1 && (this.teams[0].score >= Game.C.ROUND_MAX || this.teams[1].score >= Game.C.ROUND_MAX)) {
+                        this.roundTime = -1;
+                        this.betweenTime = game.step;
+                    }
 
-                    if (this.teams[i].flag && !this.teams[i].flagHidden) {
-                        if (this.teams[i].flag.despawn != -1) {
-                            if (game.step - this.teams[i].flag.despawn > Game.C.TICKS.FLAG_DESPAWN) {
-                                this.teams[i].flag.reset();
+                    for (let i = 0; i < this.teams.length; i++) {
+                        let oppTeam = this.getOppTeam(this.teams[i]);
+                        if (this.teams[i].flag && this.teams[i].flagHolder) {
+                            if (game.step - this.teams[i].flagHolder.flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
+                                this.teams[i].flagHolder.flagTime = -1;
+                                this.teams[i].flagHolder.setType(this.teams[i].flagHolder.chosenType == 0 ? this.teams[i].flagHolder.ship.type - this.shipGroup.normalShips.length : this.teams[i].flagHolder.chosenType);
+                                this.teams[i].flagHolder.setMaxStats();
+                                this.teams[i].flagHolder.setHue(this.teams[i].hue);
+                                this.teams[i].flagHolder.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+
+                                this.sendNotifications(`${this.teams[i].flagHolder.ship.name} has ran out of time holding the flag!`, `Will ${this.teams[i].flagHolder.team.color.toUpperCase()} team steal it again?`, oppTeam);
+
+                                this.teams[i].flagHolder = null;
+
+                                oppTeam.flag.reset();
+                            }
+                        }
+
+                        if (this.teams[i].flag && !this.teams[i].flagHidden) {
+                            if (this.teams[i].flag.despawn != -1) {
+                                if (game.step - this.teams[i].flag.despawn > Game.C.TICKS.FLAG_DESPAWN) {
+                                    this.teams[i].flag.reset();
+                                }
                             }
                         }
                     }
@@ -561,6 +598,18 @@ class Game {
     }
 
     tickTimedEntities() {
+        let removedShipBeacons = [];
+        for (let shipBeacon of this.shipBeacons) {
+            shipBeacon.tick();
+            if (!shipBeacon.running) {
+                removedShipBeacons.push(shipBeacon);
+            }
+        }
+        for (let shipBeacon of removedShipBeacons) {
+            Helper.deleteFromArray(this.shipBeacons, shipBeacon);
+        }
+
+
         let removedBeacons = [];
         for (let beacon of this.beacons) {
             beacon.tick();
@@ -722,7 +771,7 @@ class Game {
                         ship.setCollider(false);
                         ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
 
-                        if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                        if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
                             ship.setMaxStats();
                             ship.setHue(ship.team.hue);
@@ -754,7 +803,7 @@ class Game {
                         ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
                     } else {
                         ship.setCollider(true);
-                        if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                        if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Game.C.TICKS.FLAGHOLDER_DROP - (game.step - ship.flagTime)));
                             ship.sendUI(bottomMessage);
@@ -777,29 +826,39 @@ class Game {
                         }
 
                         if (ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
-                            ship.choosingShip = true;
-                            for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
-                                let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
-                                chooseShip.id += '-' + i;
-                                chooseShip.position[0] = 22.5 + 20 * i;
-                                if (i == 0) {
-                                    chooseShip.components[0].fill = '#ff000080';
-                                    chooseShip.components[2].fill = '#22000080';
-                                } else if (i == 1) {
-                                    chooseShip.components[0].fill = '#00ff0080';
-                                    chooseShip.components[2].fill = '#00220080';
-                                } else {
-                                    chooseShip.components[0].fill = '#0000ff80';
-                                    chooseShip.components[2].fill = '#00002280';
+                            if (!ship.choosingShip) {
+                                for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+                                    let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
+                                    chooseShip.id += '-' + i;
+                                    chooseShip.position[0] = 22.5 + 20 * i;
+                                    if (i == 0) {
+                                        chooseShip.components[0].fill = '#ff000080';
+                                        chooseShip.components[2].fill = '#22000080';
+                                    } else if (i == 1) {
+                                        chooseShip.components[0].fill = '#00ff0080';
+                                        chooseShip.components[2].fill = '#00220080';
+                                    } else {
+                                        chooseShip.components[0].fill = '#0000ff80';
+                                        chooseShip.components[2].fill = '#00002280';
+                                    }
+                                    chooseShip.components[1].value = i + 1;
+                                    chooseShip.components[5].value = this.shipGroup.chosenNames[i];
+                                    chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
+                                    ship.sendUI(chooseShip);
                                 }
-                                chooseShip.components[1].value = i + 1;
-                                chooseShip.components[5].value = this.shipGroup.chosenNames[i];
-                                chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
-                                ship.sendUI(chooseShip);
                             }
+                            ship.choosingShip = true;
                             let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                             chooseShipTime.components[0].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
                             ship.sendUI(chooseShipTime);
+
+                            if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                ship.setPosition(this.map.spawns[ship.team.team]);
+                            }
+                            ship.setType(101);
+                            ship.setCrystals(0);
+                            ship.setMaxStats();
+                            ship.setCollider(false);
                         } else {
                             if (ship.choosingShip) {
                                 ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
@@ -810,6 +869,10 @@ class Game {
                                 ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
                                 ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                                 ship.choosingShip = false;
+
+                                if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                    this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                                }
                             }
                         }
 
@@ -889,38 +952,37 @@ class Game {
                         }
                     }
                     if (this.map) {
-                        for (let i = 0; i < this.map.portals.length; i++) {
-                            let portal = this.portals[i];
-
-                            if (portal) {
-                                radarBackground.components.push({
-                                    type: 'text',
-                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(120, 120)),
-                                    value: '⬡',
-                                    color: '#00ff0080'
-                                });
-
-                                radarBackground.components.push({
-                                    type: 'text',
-                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(80, 80)),
-                                    value: '⬡',
-                                    color: '#00ff0060'
-                                });
-
-                                radarBackground.components.push({
-                                    type: 'text',
-                                    position: Helper.getRadarSpotPosition(new Vector2(portal.obj.position.x, portal.obj.position.y), new Vector2(40, 40)),
-                                    value: '⬡',
-                                    color: '#00ff0040'
-                                });
-                            }
-                        }
                         for (let i = 0; i < this.map.spawns.length; i++) {
                             let spawn = this.map.spawns[i];
                             radarBackground.components.push({
-                                type: 'round',
-                                position: Helper.getRadarSpotPosition(spawn, new Vector2(25, 25)),
-                                fill: this.teams[i].hex + '80'
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
+                                value: '⬢',
+                                color: this.teams[i].hex + '80'
+                            });
+                        }
+                        for (let i = 0; i < this.map.portals.length; i++) {
+                            let portal = this.map.portals[i];
+
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(120, 120)),
+                                value: '⬡',
+                                color: '#00ff0080'
+                            });
+
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(80, 80)),
+                                value: '⬡',
+                                color: '#00ff0060'
+                            });
+
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(40, 40)),
+                                value: '⬡',
+                                color: '#00ff0040'
                             });
                         }
                     }
@@ -1178,6 +1240,24 @@ class Game {
         }
     }
 
+    spawnShipBeacon(pos, hex) {
+        this.shipBeacons.push(
+            new TimedObj(
+                new Obj(
+                    Obj.C.OBJS.SHIP_BEACON.id,
+                    Obj.C.OBJS.SHIP_BEACON.type,
+                    new Vector3(pos.x, pos.y, Obj.C.OBJS.SHIP_BEACON.position.z),
+                    new Vector3(Obj.C.OBJS.SHIP_BEACON.rotation.x, Obj.C.OBJS.SHIP_BEACON.rotation.y, Obj.C.OBJS.SHIP_BEACON.rotation.z),
+                    new Vector3(Obj.C.OBJS.SHIP_BEACON.scale.x, Obj.C.OBJS.SHIP_BEACON.scale.y, Obj.C.OBJS.SHIP_BEACON.scale.z),
+                    true,
+                    true,
+                    hex
+                ),
+                Obj.C.OBJS.SHIP_BEACON.EXISTENCE_TIME
+            ).spawn()
+        );
+    }
+
     spawnBeacon(pos, hex) {
         this.beacons.push(
             new TimedObj(
@@ -1313,6 +1393,10 @@ class Game {
                     ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                     ship.chooseShipTime = -1;
                     ship.choosingShip = false;
+
+                    if (this.map && this.map.spawns.length == 2 && ship.team) {
+                        this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                    }
                 }
             }
         }
@@ -1435,6 +1519,8 @@ class Ship {
     team = null;
     ship = null;
 
+    timeouts = [];
+
     allUIs = [];
     timedUIs = [];
 
@@ -1456,6 +1542,7 @@ class Ship {
     static C = {
         INVULNERABLE_TIME: 360,
         CHOOSE_SHIP_TIME: 600,
+        CHOOSE_SHIP_TIMEOUT: 15,
         PORTAL_TIME: 7200
     }
 
@@ -1470,6 +1557,8 @@ class Ship {
         this.setIdle(false);
         this.setScore(0);
 
+        this.choosingShip = false;
+        this.chooseShipTime = -1;
         this.chosenType = 0;
         this.score = 0;
 
@@ -1590,6 +1679,25 @@ class Ship {
     }
 
     tick() {
+        this.tickTimeouts();
+        this.tickTimedUIs();
+    }
+
+    tickTimeouts() {
+        let removeTimeouts = [];
+        for (let timeout of this.timeouts) {
+            if (timeout.running) {
+                timeout.tick();
+            } else {
+                removeTimeouts.push(timeout);
+            }
+        }
+        for (let timeout of removeTimeouts) {
+            Helper.deleteFromArray(this.timeouts, timeout);
+        }
+    }
+
+    tickTimedUIs() {
         let removeTimedUIs = [];
         for (let timedUI of this.timedUIs) {
             if (timedUI.running) {
@@ -1724,6 +1832,12 @@ class Ship {
             this.ship.set({ team: team.team, hue: team.hue });
         }
         return this;
+    }
+
+    setTeamDefault(t) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ team: t });
+        }
     }
 
     setHue(hue) {
@@ -2034,7 +2148,8 @@ class AsteroidPath {
 
     tick() {
         if (this.initTime != -1) {
-            this.asteroid.setPosition(this.initialPos.clone().add(this.velocity.clone().multiply(game.step - this.initTime)));
+            let astPos = this.initialPos.clone().add(this.velocity.clone().multiply(game.step - this.initTime));
+            this.asteroid.setPosition(new Vector2(astPos.x % (Game.C.OPTIONS.MAP_SIZE * 10), astPos.y % (Game.C.OPTIONS.MAP_SIZE * 10)));
             this.asteroid.setVelocity(this.velocity);
         }
         return this;
@@ -2274,6 +2389,29 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
             },
+            SPAWN: {
+                id: 'spawn',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: Math.PI / 2,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 5,
+                    y: 5,
+                    z: 5
+                },
+                type: {
+                    id: 'spawn',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.obj',
+                    transparent: false,
+                }
+            },
             FLAG: {
                 id: 'flag',
                 position: {
@@ -2296,7 +2434,6 @@ class Obj {
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flag.obj',
                     diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-                    emissiveColor: '#ffffff',
                     transparent: false,
                 },
                 DISTANCE: 8
@@ -2323,7 +2460,6 @@ class Obj {
                     obj: "https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/flagstand.obj",
                     diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-                    emissiveColor: '#ffffff',
                     transparent: false
                 },
                 N_GON: 6,
@@ -2352,7 +2488,6 @@ class Obj {
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/portal.obj',
                     diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-                    emissiveColor: '#ffffff',
                     transparent: false
                 },
                 MAIN_SCALE: 3,
@@ -2386,6 +2521,30 @@ class Obj {
                 VELOCITY_FACTOR: 0.5,
                 INTENSITY: 0.5,
                 SUCK_FACTOR: 3
+            },
+            SHIP_BEACON: {
+                id: 'ship_beacon',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 7
+                },
+                rotation: {
+                    x: Math.PI / 2,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 5,
+                    y: 24,
+                    z: 5
+                },
+                type: {
+                    id: 'ship_beacon',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon.obj',
+                    transparent: false
+                },
+                EXISTENCE_TIME: 150,
             },
             BEACON: {
                 id: 'beacon',
@@ -6073,6 +6232,10 @@ class Helper {
             result += characters.charAt(Math.floor(Math.random() * characters.length));
         }
         return result;
+    }
+
+    static getRandomHue() {
+        return this.getRandomInt(0, 360);
     }
 
     static getRandomHex() {
