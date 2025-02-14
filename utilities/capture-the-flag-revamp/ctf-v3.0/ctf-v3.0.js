@@ -409,6 +409,7 @@ class Game {
                 ship.setPosition(new Vector2(0, 0));
                 if (this.shipGroup) {
                     ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+                    ship.fillUp();
                 }
             } else {
                 if (this.map && this.map.spawns.length == 2 && ship.team) {
@@ -1556,9 +1557,7 @@ class Team {
     }
 }
 
-class Ship {
-    type = 101;
-    
+class Ship {    
     team = null;
     ship = null;
 
@@ -1756,20 +1755,16 @@ class Ship {
         this.ship.set({ score: this.score });
     }
 
-    getLevel(realTier = false) {
-        if (realTier) {
-            return Math.trunc(this.ship.type / 100);
-        } else {
-            return Math.trunc(this.type / 100);
-        }
+    getLevel() {
+        return Math.trunc(this.ship.type / 100);
     }
 
     getModel() {
         return this.ship.type % 100;
     }
 
-    getMaxCrystals(realTier = false) {
-        switch (this.getLevel(realTier)) {
+    getMaxCrystals() {
+        switch (this.getLevel()) {
             case 1:
                 return 20;
             case 2:
@@ -1791,6 +1786,8 @@ class Ship {
 
     setPosition(position) {
         if (game.ships.includes(this.ship)) {
+            this.ship.x = position.x;
+            this.ship.y = position.y;
             this.ship.set({ x: position.x, y: position.y });
         }
         return this;
@@ -1798,6 +1795,8 @@ class Ship {
 
     setVelocity(velocity) {
         if (game.ships.includes(this.ship)) {
+            this.ship.vx = velocity.x;
+            this.ship.vy = velocity.y;
             this.ship.set({ vx: velocity.x, vy: velocity.y });
         }
         return this;
@@ -1805,6 +1804,7 @@ class Ship {
 
     setCrystals(crystals) {
         if (game.ships.includes(this.ship)) {
+            this.ship.crystals = crystals;
             this.ship.set({ crystals: crystals });
         }
         return this;
@@ -1812,6 +1812,7 @@ class Ship {
 
     setShield(shield) {
         if (game.ships.includes(this.ship)) {
+            this.ship.shield = shield;
             this.ship.set({ shield: shield });
         }
         return this;
@@ -1830,6 +1831,7 @@ class Ship {
 
     setStats(stats) {
         if (game.ships.includes(this.ship)) {
+            this.ship.stats = stats;
             this.ship.set({ stats: stats });
         }
         return this;
@@ -1867,6 +1869,8 @@ class Ship {
         this.team = team;
         this.team.addShip(this);
         if (game.ships.includes(this.ship)) {
+            this.ship.team = team.team;
+            this.ship.hue = team.hue;
             this.ship.set({ team: team.team, hue: team.hue });
         }
         return this;
@@ -1880,6 +1884,7 @@ class Ship {
 
     setHue(hue) {
         if (game.ships.includes(this.ship)) {
+            this.ship.hue = hue;
             this.ship.set({ hue: hue });
         }
         return this;
@@ -1888,6 +1893,7 @@ class Ship {
     setScore(score) {
         this.score = score;
         if (game.ships.includes(this.ship)) {
+            this.ship.score = score;
             this.ship.set({ score: score });
         }
         return this;
@@ -1899,8 +1905,8 @@ class Ship {
     }
 
     setType(type) {
-        this.type = type;
         if (game.ships.includes(this.ship)) {
+            this.ship.type = type;
             this.ship.set({ type: type });
         }
         return this;
