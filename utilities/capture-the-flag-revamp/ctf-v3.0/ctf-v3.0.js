@@ -95,7 +95,7 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
-            RESET_STAGGER: 30,
+            RESET_STAGGER: 15,
 
             GAME_MANAGER: 30,
 
@@ -110,7 +110,7 @@ class Game {
         IS_DEBUGGING: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
-        NUM_ROUNDS: 3,
+        NUM_ROUNDS: 5,
         TEAM_PLAYER_DEFICIT: 2,
         TEAM_SCORE_DEFICIT: 2
     }
@@ -171,16 +171,10 @@ class Game {
                 this.spawnFlags();
                 this.spawnPortals();
                 this.timeouts.push(new TimeoutCreator(() => {
-                    this.resetShips();
-                    this.timeouts.push(new TimeoutCreator(() => {
-                        if (newRound) {
-                            for (let ship of this.ships) {
-                                ship.chooseShipTime = game.step;
-                            }
-                            this.numRounds++;
-                        }
+                    this.resetShips(newRound);
+                    if (newRound) {
+                        this.numRounds++;
                     }
-                    , Game.C.TICKS.RESET_STAGGER).start());
                 }
                 , Game.C.TICKS.RESET_STAGGER).start());
             }
@@ -364,21 +358,26 @@ class Game {
         }
     }
 
-    resetShips() {
+    resetShips(newRound = false) {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
-            this.resetShip(ship);
-            ship.hideAllUIs();
+            this.resetShip(ship, false, true, true, newRound);
         }
     }
 
-    resetShip(ship, resetTeam = true) {
+    resetShip(ship, fast = false, hideUIs = false, resetTeam = true, newRound = false) {
         ship.reset();
 
-        this.resetShipNext(ship, resetTeam);
+        if (fast) {
+            this.resetShipNext(ship, hideUIs, resetTeam, newRound);
+        } else {
+            ship.timeouts.push(new TimeoutCreator(() => {
+                this.resetShipNext(ship, hideUIs, resetTeam, newRound);
+            }, Game.C.TICKS.RESET_STAGGER).start());
+        }
     }
     
-    resetShipNext(ship, resetTeam = true) {
+    resetShipNext(ship, hideUIs = false, resetTeam = true, newRound = false) {
         if (this.waiting) {
             ship.setHue(Helper.getRandomHue());
             ship.setTeamDefault(this.ships.length % 2);
@@ -405,16 +404,28 @@ class Game {
             }
         }
 
-        if (this.waiting) {
-            ship.setPosition(new Vector2(0, 0));
-            if (this.shipGroup) {
-                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+        ship.timeouts.push(new TimeoutCreator(() => {
+            if (this.waiting) {
+                ship.setPosition(new Vector2(0, 0));
+                if (this.shipGroup) {
+                    ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+                }
+            } else {
+                if (this.map && this.map.spawns.length == 2 && ship.team) {
+                    ship.setPosition(this.map.spawns[ship.team.team])
+                }
             }
-        } else {
-            if (this.map && this.map.spawns.length == 2 && ship.team) {
-                ship.setPosition(this.map.spawns[ship.team.team])
+            if (hideUIs) {
+                ship.timeouts.push(new TimeoutCreator(() => {
+                    ship.hideAllUIs();
+                    if (newRound) {
+                        ship.timeouts.push(new TimeoutCreator(() => {
+                            ship.chooseShipTime = game.step;
+                        }, Game.C.TICKS.RESET_STAGGER).start());
+                    }
+                } , Game.C.TICKS.RESET_STAGGER).start());
             }
-        }
+        }, Game.C.TICKS.RESET_STAGGER).start());
     }
 
     gameOver() {
@@ -490,7 +501,7 @@ class Game {
                                 this.teams[t].flagHolder = null;
                                 this.teams[opp].flag.reset();
                             }
-                            this.resetShip(randShip);
+                            this.resetShip(randShip, true);
                             randShip.chooseShipTime = game.step;
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             bottomMessage.components[1].value = `You have been moved to the ${this.teams[opp].color.toUpperCase()} team due to team player imbalance.`;
@@ -842,29 +853,29 @@ class Game {
                         }
 
                         if (ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
-                            if (!ship.choosingShip) {
-                                for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
-                                    let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
-                                    chooseShip.shortcut = `${i + 1}`;
-                                    chooseShip.id += '-' + i;
-                                    chooseShip.position[0] = 22.5 + 20 * i;
-                                    if (i == 0) {
-                                        chooseShip.components[0].fill = '#ff000080';
-                                        chooseShip.components[2].fill = '#22000080';
-                                    } else if (i == 1) {
-                                        chooseShip.components[0].fill = '#00ff0080';
-                                        chooseShip.components[2].fill = '#00220080';
-                                    } else {
-                                        chooseShip.components[0].fill = '#0000ff80';
-                                        chooseShip.components[2].fill = '#00002280';
-                                    }
-                                    chooseShip.components[1].value = i + 1;
-                                    chooseShip.components[5].value = this.shipGroup.chosenNames[i];
-                                    chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
-                                    ship.sendUI(chooseShip);
-                                }
-                            }
                             ship.choosingShip = true;
+
+                            for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+                                let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
+                                chooseShip.shortcut = `${i + 1}`;
+                                chooseShip.id += '-' + i;
+                                chooseShip.position[0] = 22.5 + 20 * i;
+                                if (i == 0) {
+                                    chooseShip.components[0].fill = '#ff000080';
+                                    chooseShip.components[2].fill = '#22000080';
+                                } else if (i == 1) {
+                                    chooseShip.components[0].fill = '#00ff0080';
+                                    chooseShip.components[2].fill = '#00220080';
+                                } else {
+                                    chooseShip.components[0].fill = '#0000ff80';
+                                    chooseShip.components[2].fill = '#00002280';
+                                }
+                                chooseShip.components[1].value = i + 1;
+                                chooseShip.components[5].value = this.shipGroup.chosenNames[i];
+                                chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
+                                ship.sendUI(chooseShip);
+                            }
+
                             let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                             chooseShipTime.components[0].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
                             ship.sendUI(chooseShipTime);
@@ -5919,7 +5930,7 @@ class ShipGroup {
                 vertical: true
             }
         },
-        ALLOWED_TIERS: [3, 4, 5, 6],
+        ALLOWED_TIERS: [4, 5, 6],
         GROUPS: [
             {
                 TIER: 3,
