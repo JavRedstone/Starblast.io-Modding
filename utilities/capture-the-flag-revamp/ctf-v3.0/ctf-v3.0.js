@@ -102,15 +102,15 @@ class Game {
             FLAGHOLDER_DROP: 5400,
             FLAG_DESPAWN: 5400,
 
-            WAIT: 0,
+            WAIT: 7200,
             ROUND: 28800,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        MIN_PLAYERS: 1,
-        ROUND_MAX: 1,
-        NUM_ROUNDS: 5,
+        MIN_PLAYERS: 2,
+        ROUND_MAX: 5,
+        NUM_ROUNDS: 3,
         TEAM_PLAYER_DEFICIT: 2,
         TEAM_SCORE_DEFICIT: 2
     }
@@ -165,8 +165,8 @@ class Game {
         this.selectRandomTeams();
         this.timeouts.push(new TimeoutCreator(() => {
             this.setMap();
+            this.setShipGroup();
             this.timeouts.push(new TimeoutCreator(() => {
-                this.setShipGroup();
                 this.spawnSpawns();
                 this.spawnFlags();
                 this.spawnPortals();
@@ -384,7 +384,7 @@ class Game {
     resetShipNext(ship, resetTeam = true) {
         if (this.waiting) {
             ship.setHue(Helper.getRandomHue());
-            ship.setTeamDefault(Helper.getRandomInt(0, 1));
+            ship.setTeamDefault(this.ships.length % 2);
         } else {
             if (resetTeam && this.teams.length == 2) {
                 if (this.teams[0].ships.length < this.teams[1].ships.length) {
@@ -407,13 +407,12 @@ class Game {
                 }
             }
         }
-        
-        if (this.shipGroup) {
-            ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
-        }
 
         if (this.waiting) {
             ship.setPosition(new Vector2(0, 0));
+            if (this.shipGroup) {
+                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+            }
         } else {
             if (this.map && this.map.spawns.length == 2 && ship.team) {
                 ship.setPosition(this.map.spawns[ship.team.team])
@@ -716,7 +715,9 @@ class Game {
                 }
             }
             for (let ship of notFoundShips) {
-                Helper.deleteFromArray(ship.team.ships, ship);
+                if (ship.team) {
+                    Helper.deleteFromArray(ship.team.ships, ship);
+                }
                 Helper.deleteFromArray(this.ships, ship);
                 let hasLeftShip = false;
                 for (let leftShip of this.leftShips) {
@@ -773,8 +774,7 @@ class Game {
                     ship.sendUI(bottomMessage);
                     ship.sendUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
-                    ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
-                    ship.fillUp();
+                    ship.setMaxStats();
                 } else if (this.map) {
                     if (ship.chosenType == 0) {
                         if (this.map.spawns.length == 2 && ship.team) {
@@ -893,6 +893,7 @@ class Game {
                                 ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
                                 ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                                 ship.choosingShip = false;
+                                ship.chooseShipTime = -1;
 
                                 if (this.map && this.map.spawns.length == 2 && ship.team) {
                                     this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
@@ -5800,6 +5801,9 @@ class GameMap {
             this.tiers = Helper.deepCopy(ShipGroup.C.ALLOWED_TIERS);
         } else {
             this.tiers = this.tiers.filter(tier => ShipGroup.C.ALLOWED_TIERS.includes(tier));
+            if (this.tiers.length == 0) {
+                this.tiers = Helper.deepCopy(ShipGroup.C.ALLOWED_TIERS);
+            }
         }
         this.tier = Helper.getRandomArrayElement(this.tiers);
 
@@ -6056,6 +6060,7 @@ class ShipGroup {
         for (let i = 0; i < ships.length; i++) {
             totalLength += ships[i].CODES.length;
         }
+        let prevLength = 0;
         for (let i = 0; i < ships.length; i++) {
             let origin = ships[i].ORIGIN;
             let codes = ships[i].CODES;
@@ -6063,8 +6068,8 @@ class ShipGroup {
                 let ship = codes[j];
                 let jship = JSON.parse(ship);
 
-                jship.model = (i + 1) * (j + 1);
-                jship.typespec.model = (i + 1) * (j + 1);
+                jship.model = prevLength + j + 1;
+                jship.typespec.model = jship.model;
                 jship.typespec.code = jship.level * 100 + jship.model;
 
                 jship.origin = origin;
@@ -6076,7 +6081,9 @@ class ShipGroup {
 
                 jship.bodies.flag = ShipGroup.C.FLAG.FLAG_OBJ;
                 jship.bodies.flagpole = ShipGroup.C.FLAG.FLAGPOLE_OBJ;
-                jship.model = (i + 1) * (j + 1) + totalLength;
+                jship.model = jship.model + totalLength;
+                jship.typespec.model = jship.model;
+                jship.typespec.code = jship.level * 100 + jship.model;
 
                 jship.typespec.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
                 jship.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
@@ -6086,6 +6093,7 @@ class ShipGroup {
                 let flagShip = JSON.stringify(jship);
                 this.flagShips.push(flagShip);
             }
+            prevLength += codes.length;
         }
 
         this.ships.push(...Helper.deepCopy(this.normalShips));
