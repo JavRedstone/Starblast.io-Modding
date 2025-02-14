@@ -95,7 +95,7 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
-            RESET_STAGGER: 15,
+            RESET_STAGGER: 30,
 
             GAME_MANAGER: 30,
 
@@ -171,17 +171,14 @@ class Game {
                 this.spawnFlags();
                 this.spawnPortals();
                 this.timeouts.push(new TimeoutCreator(() => {
+                    this.resetShips();
                     this.timeouts.push(new TimeoutCreator(() => {
-                        this.resetShips();
-                        this.timeouts.push(new TimeoutCreator(() => {
-                            if (newRound) {
-                                for (let ship of this.ships) {
-                                    ship.chooseShipTime = game.step;
-                                }
-                                this.numRounds++;
+                        if (newRound) {
+                            for (let ship of this.ships) {
+                                ship.chooseShipTime = game.step;
                             }
+                            this.numRounds++;
                         }
-                        , Game.C.TICKS.RESET_STAGGER).start());
                     }
                     , Game.C.TICKS.RESET_STAGGER).start());
                 }
