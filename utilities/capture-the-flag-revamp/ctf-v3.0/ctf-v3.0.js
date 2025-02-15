@@ -3116,7 +3116,7 @@ class UIComponent {
                     {
                         type: "text",
                         position: [5, 0, 90, 100],
-                        value: "Change Ship [C]",
+                        value: "Change Ship [0]",
                         color: "#00ff00"
                     }
                 ]
