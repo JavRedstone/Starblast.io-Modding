@@ -3105,7 +3105,7 @@ class UIComponent {
                 id: "change_ship",
                 position: [2, 40, 15, 5],
                 clickable: true,
-                shortcut: 'C',
+                shortcut: '0',
                 visible: true,
                 components: [
                     {
