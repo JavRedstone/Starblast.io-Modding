@@ -361,28 +361,30 @@ class Game {
     resetShips(newRound = false) {
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
-            this.resetShip(ship, false, true, true, newRound);
+            this.resetShip(ship, false, newRound);
         }
     }
 
-    resetShip(ship, fast = false, hideUIs = false, resetTeam = true, newRound = false) {
+    resetShip(ship, fast = false, newRound = false) {
         ship.reset();
+        
+        ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
         if (fast) {
-            this.resetShipNext(ship, hideUIs, resetTeam, newRound);
+            this.resetShipNext(ship, newRound);
         } else {
             ship.timeouts.push(new TimeoutCreator(() => {
-                this.resetShipNext(ship, hideUIs, resetTeam, newRound);
+                this.resetShipNext(ship, newRound);
             }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
     
-    resetShipNext(ship, hideUIs = false, resetTeam = true, newRound = false) {
+    resetShipNext(ship, newRound = false) {
         if (this.waiting) {
             ship.setHue(Helper.getRandomHue());
             ship.setTeamDefault(this.ships.length % 2);
         } else {
-            if (resetTeam && this.teams.length == 2) {
+            if (this.teams.length == 2) {
                 if (this.teams[0].ships.length < this.teams[1].ships.length) {
                     ship.setTeam(this.teams[0]);
                     this.teams[1].removeShip(ship);
@@ -416,15 +418,10 @@ class Game {
                     ship.setPosition(this.map.spawns[ship.team.team])
                 }
             }
-            if (hideUIs) {
-                ship.timeouts.push(new TimeoutCreator(() => {
-                    ship.hideAllUIs();
-                    if (newRound) {
-                        ship.timeouts.push(new TimeoutCreator(() => {
-                            ship.chooseShipTime = game.step;
-                        }, Game.C.TICKS.RESET_STAGGER).start());
-                    }
-                } , Game.C.TICKS.RESET_STAGGER).start());
+            if (!newRound) {
+                ship.hideAllUIs();
+            } else {
+                ship.chooseShipTime = game.step;
             }
         }, Game.C.TICKS.RESET_STAGGER).start());
     }
@@ -790,7 +787,9 @@ class Game {
                             ship.setPosition(this.map.spawns[ship.team.team]);
                         }
                         ship.setVelocity(new Vector2(0, 0));
-                        ship.setType(101);
+                        if (ship.ship.type != 101) {
+                            ship.setType(101);
+                        }
                         ship.setCrystals(0);
                         ship.setCollider(false);
                     }
@@ -3844,96 +3843,6 @@ class GameMap {
                 }, {
                     x: 90,
                     y: -90
-                }],
-                tiers: [4, 5, 6],
-                asteroids: []
-            },
-            {
-                name: "CTF",
-                author: "JavRedstone",
-                map: "999999999999999999999999999999999999999999999999999999999999\n"+
-                    "933333333333333333339333333333333333333393333333333333333333\n"+
-                    "937777737777737777739377777377777377777393777773777773777773\n"+
-                    "937333333373337333339373333333733373333393733333337333733333\n"+
-                    "937333333373337777739373333333733377777393733333337333777773\n"+
-                    "937333333373337333339373333333733373333393733333337333733333\n"+
-                    "937777733373337333339377777333733373333393777773337333733333\n"+
-                    "933333333333333333339333333333333333333393333333333333333333\n"+
-                    "999999999999999999999999999999999999999999999999999999999999\n"+
-                    "9                                                          9\n"+
-                    "9                                                          9\n"+
-                    "9                                                          9\n"+
-                    "9                                                          9\n"+
-                    "9                  99                   99                 9\n"+
-                    "9                99999                 99999               9\n"+
-                    "9              99955599               99555999             9\n"+
-                    "9            99955555599             99555555999           9\n"+
-                    "9          99955555555599           99555555555999         9\n"+
-                    "9        99955555555555599         99555555555555999       9\n"+
-                    "9       9975555555555555999       9995555555555557799      9\n"+
-                    "9        9975555555555999 99     99 9995555555557597       9\n"+
-                    "9         9975555577999    99   99    9977555557599        9\n"+
-                    "9          9975577999       99 99       9977557599         9\n"+
-                    "99          9977999          999          9977599         99\n"+
-                    "999          9999            999            9999         999\n"+
-                    "999999        9             99 99             9       999999\n"+
-                    "                           99   99                          \n"+
-                    "                          99     99                         \n"+
-                    "                    9999999       999999                    \n"+
-                    "                      9999         999                      \n"+
-                    "                      999           99                      \n"+
-                    "999999            9   99             99  9            999999\n"+
-                    "999               9  99       999     99 9               999\n"+
-                    "99       9        9 99        95999    999        9       99\n"+
-                    "9       99        999         9555999   99        99       9\n"+
-                    "9      9 9        99          955555999  99       9 9      9\n"+
-                    "9      9 9       99           955555559   99      9 9      9\n"+
-                    "9      99       99            999555759    99      99      9\n"+
-                    "9      9       99             9 9995559     99      9      9\n"+
-                    "9      9                      9   99959             9      9\n"+
-                    "9      9                      9     999             9      9\n"+
-                    "99                            9                           99\n"+
-                    "999                         99999                        999\n"+
-                    "9 99                     9999 9 9999                    99 9\n"+
-                    "9  99                  999   797   999                 99  9\n"+
-                    "9   99                99    7 9 7    99               99   9\n"+
-                    "9    99               999    797    999              99    9\n"+
-                    "9     99              9  999     999  9             99     9\n"+
-                    "9      99             99    99999    99            99      9\n"+
-                    "9       99             999         999            99       9\n"+
-                    "9 777777 99              9999   9999             99 777777 9\n"+
-                    "9 733337  99                99999               99  733337 9\n"+
-                    "9 733337   99                                  99   733337 9\n"+
-                    "9 777777    99                                99    777777 9\n"+
-                    "9      7     99                              99     7      9\n"+
-                    "9      7      99                            99      7      9\n"+
-                    "9      7       99                          99       7      9\n"+
-                    "9      7        99                        99        7      9\n"+
-                    "9                99                      99                9\n"+
-                    "999999999999999999999999999999999999999999999999999999999999",
-                flags: [{
-                    x: -40,
-                    y: 60
-                }, {
-                    x: 40,
-                    y: 60
-                }],
-                portals: [
-                    {
-                        x: 5,
-                        y: 150
-                    },
-                    {
-                        x: 5,
-                        y: -250
-                    }
-                ],
-                spawns: [{
-                    x: -90,
-                    y: 0
-                }, {
-                    x: 90,
-                    y: 0
                 }],
                 tiers: [4, 5, 6],
                 asteroids: []
