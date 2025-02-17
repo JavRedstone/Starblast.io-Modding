@@ -5849,6 +5849,7 @@ class ShipGroup {
         FLAG: {
             FLAG_SPEED_REDUCTION: 0.75,
             FLAG_MASS_MULTIPLIER: 1.1,
+            FLAG_ACCELERATION_MULTIPLIER: 1.1,
             FLAG_OBJ: {
                 section_segments: [44, 45, 46, 135, 225, 310, 315, 320],
                 offset: { x: 0, y: 25, z: 65 },
@@ -6040,6 +6041,8 @@ class ShipGroup {
 
                 jship.typespec.specs.ship.speed[1] *= ShipGroup.C.FLAG.FLAG_SPEED_REDUCTION;
                 jship.specs.ship.speed[1] *= ShipGroup.C.FLAG.FLAG_SPEED_REDUCTION;
+                jship.typespec.specs.ship.acceleration[1] *= ShipGroup.C.FLAG.FLAG_ACCELERATION_MULTIPLIER;
+                jship.specs.ship.acceleration[1] *= ShipGroup.C.FLAG.FLAG_ACCELERATION_MULTIPLIER;
                 jship.typespec.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_MASS_MULTIPLIER;
                 jship.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_MASS_MULTIPLIER;
 
