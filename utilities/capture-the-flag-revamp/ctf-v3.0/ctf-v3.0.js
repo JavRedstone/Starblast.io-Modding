@@ -882,16 +882,26 @@ class Game {
                                 let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
                                 chooseShip.shortcut = `${i + 1}`;
                                 chooseShip.id += '-' + i;
-                                chooseShip.position[0] = 22.5 + 20 * i;
+                                let separation = 100 / (ShipGroup.C.NUM_SHIPS + 2);
+                                let width = separation * 4 / 5;
+                                let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
+                                chooseShip.position[0] = start + separation * i;
+                                chooseShip.position[2] = width;
                                 if (i == 0) {
                                     chooseShip.components[0].fill = '#ff000080';
                                     chooseShip.components[2].fill = '#22000080';
                                 } else if (i == 1) {
                                     chooseShip.components[0].fill = '#00ff0080';
                                     chooseShip.components[2].fill = '#00220080';
-                                } else {
+                                } else if (i == 2) {
                                     chooseShip.components[0].fill = '#0000ff80';
                                     chooseShip.components[2].fill = '#00002280';
+                                } else if (i == 3) {
+                                    chooseShip.components[0].fill = '#ff00ff80';
+                                    chooseShip.components[2].fill = '#22002280';
+                                } else {
+                                    chooseShip.components[0].fill = '#00ffff80';
+                                    chooseShip.components[2].fill = '#00222280';
                                 }
                                 chooseShip.components[1].value = i + 1;
                                 chooseShip.components[5].value = this.shipGroup.chosenNames[i];
@@ -5845,7 +5855,7 @@ class ShipGroup {
     chosenOrigins = [];
 
     static C = {
-        NUM_SHIPS: 3,
+        NUM_SHIPS: 5,
         FLAG: {
             FLAG_SPEED_REDUCTION: 0.75,
             FLAG_MASS_MULTIPLIER: 1.1,
