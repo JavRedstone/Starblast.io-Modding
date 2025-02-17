@@ -160,21 +160,29 @@ class Game {
     }
 
     reset(newRound = false) {
+        echo('1.0');
         this.deleteEverything();
         this.resetContainers();
         this.selectRandomTeams();
+        echo('1.1');
         this.timeouts.push(new TimeoutCreator(() => {
+            echo('2.0');
             this.setMap();
             this.setShipGroup();
+            echo('2.1');
             this.timeouts.push(new TimeoutCreator(() => {
+                echo('3.0');
                 this.spawnSpawns();
                 this.spawnFlags();
                 this.spawnPortals();
+                echo('3.1');
                 this.timeouts.push(new TimeoutCreator(() => {
+                    echo('4.0');
                     this.resetShips(newRound);
                     if (newRound) {
                         this.numRounds++;
                     }
+                    echo('4.1');
                 }
                 , Game.C.TICKS.RESET_STAGGER).start());
             }
@@ -359,31 +367,44 @@ class Game {
     }
 
     resetShips(newRound = false) {
+        echo('5.0');
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
             this.resetShip(ship, false, newRound);
         }
+        echo('5.1');
     }
 
     resetShip(ship, fast = false, newRound = false) {
+        echo('6.0');
+        ship.isResetting = true;
+
         ship.reset();
         
         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+        echo('6.1');
 
         if (fast) {
+            echo('7.0');
             this.resetShipNext(ship, newRound);
+            echo('7.1');
         } else {
             ship.timeouts.push(new TimeoutCreator(() => {
+                echo('8.0');
                 this.resetShipNext(ship, newRound);
+                echo('8.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
     
     resetShipNext(ship, newRound = false) {
         if (this.waiting) {
+            echo('9.0');
             ship.setHue(Helper.getRandomHue());
             ship.setTeamDefault(this.ships.length % 2);
+            echo('9.1');
         } else {
+            echo('10.0');
             if (this.teams.length == 2) {
                 if (this.teams[0].ships.length < this.teams[1].ships.length) {
                     ship.setTeam(this.teams[0]);
@@ -404,25 +425,36 @@ class Game {
                     }
                 }
             }
+            echo('10.1');
         }
 
         ship.timeouts.push(new TimeoutCreator(() => {
             if (this.waiting) {
+                echo('11.0');
                 ship.setPosition(new Vector2(0, 0));
                 if (this.shipGroup) {
                     ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
                     ship.fillUp();
                 }
+                echo('11.1');
             } else {
+                echo('12.0');
                 if (this.map && this.map.spawns.length == 2 && ship.team) {
                     ship.setPosition(this.map.spawns[ship.team.team])
                 }
+                echo('12.1');
             }
-            if (!newRound) {
-                ship.hideAllUIs();
-            } else {
-                ship.chooseShipTime = game.step;
-            }
+            ship.timeouts.push(new TimeoutCreator(() => {
+                echo('13.0');
+                if (!newRound) {
+                    ship.hideAllUIs();
+                } else {
+                    ship.chooseShipTime = game.step;
+                }
+                ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
+                ship.isResetting = false;
+                echo('13.1');
+            }, Game.C.TICKS.RESET_STAGGER).start());
         }, Game.C.TICKS.RESET_STAGGER).start());
     }
 
@@ -768,8 +800,6 @@ class Game {
                     }
                 }
 
-                ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
-
                 if (this.waiting) {
                     ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -781,7 +811,7 @@ class Game {
                     ship.sendUI(UIComponent.C.UIS.RADAR_BACKGROUND);
 
                     ship.setMaxStats();
-                } else if (this.map) {
+                } else if (this.map && !ship.isResetting) {
                     if (ship.chosenType == 0) {
                         if (this.map.spawns.length == 2 && ship.team) {
                             ship.setPosition(this.map.spawns[ship.team.team]);
@@ -1502,7 +1532,7 @@ class Team {
                     COLOR: 'Cyan',
                     HEX: '#00ffff',
                     HUE: 180,
-                    FLAGGED: 200
+                    FLAGGED: 120
                 },
                 {
                     TEAM: 1,
@@ -1579,6 +1609,8 @@ class Ship {
     flagTime = -1;
 
     portalTime = -1;
+
+    isResetting = false;
 
     static C = {
         INVULNERABLE_TIME: 360,
@@ -4590,10 +4622,10 @@ class GameMap {
                     "999999999999999999999999999999999999999999999999999999999999\n"+
                     "99     9999                                      9999     99\n"+
                     "99   9999                                          9999   99\n"+
-                    "99 9999        9   9999999        9999999   9        9999 99\n"+
-                    "99999            999999  9        9  999999            99999\n"+
-                    "9999     9       99  99  9        9  99  99       9     9999\n"+
-                    "9999         9   99  99999   99   99999  99   9         9999\n"+
+                    "99 9999        9   99999999      99999999   9        9999 99\n"+
+                    "99999            999999  999    999  999999            99999\n"+
+                    "9999     9       99  99  9 99  99 9  99  99       9     9999\n"+
+                    "9999         9   99  99999  9999  99999  99   9         9999\n"+
                     "999          99  99  99999  9999  99999  99  99          999\n"+
                     "999       9  99  999999999 99  99 999999999  99  9       999\n"+
                     "999      99  99  9999    999    999    9999  99  99      999\n"+
@@ -4638,10 +4670,10 @@ class GameMap {
                     "999      99  99  9999    999    999    9999  99  99      999\n"+
                     "999       9  99  999999999 99  99 999999999  99  9       999\n"+
                     "999          99  99  99999  9999  99999  99  99          999\n"+
-                    "9999         9   99  99999   99   99999  99   9         9999\n"+
-                    "9999     9       99  99  9        9  99  99       9     9999\n"+
-                    "99999            999999  9        9  999999            99999\n"+
-                    "99 9999        9   9999999        9999999   9        9999 99\n"+
+                    "9999         9   99  99999  9999  99999  99   9         9999\n"+
+                    "9999     9       99  99  9 99  99 9  99  99       9     9999\n"+
+                    "99999            999999  999    999  999999            99999\n"+
+                    "99 9999        9   99999999      99999999   9        9999 99\n"+
                     "99   9999                                          9999   99\n"+
                     "99     9999                                      9999     99\n"+
                     "999999999999999999999999999999999999999999999999999999999999\n"+
@@ -4770,11 +4802,11 @@ class GameMap {
             {
                 name: "Oblivion",
                 author: "Liberal",
-                map: "9 99343545559333559333433343999934333433395533395554534399 9\n"+
-                    " 9945645564595445494446546545995456456444945445954655465499 \n"+
-                    "9999766566579675579765755777    7775575679755769756656679999\n"+
-                    "9599999999999999999999999999    9999999999999999999999999959\n"+
-                    "5579999999999999999999999999    9999999999999999999999999755\n"+
+                map: "9 99343545559333559333433343977934333433395533395554534399 9\n"+
+                    " 9945645564595445494446546547777456456444945445954655465499 \n"+
+                    "999976656657967557976575577777777775575679755769756656679999\n"+
+                    "959999999999999999999999999999999999999999999999999999999959\n"+
+                    "557999999999999999999999999999999999999999999999999999999755\n"+
                     "5669999999999999999                                    99665\n"+
                     "355999999999999999                                     99553\n"+
                     "45699999999999999                                      99654\n"+
@@ -4786,34 +4818,34 @@ class GameMap {
                     "54599999999      999    99       999       999         99545\n"+
                     "4469999999      999     99      999    9    999        99644\n"+
                     "345999999      999      99      99    999    99        99543\n"+
-                    "54599999      999                    99 99   99        99545\n"+
-                    "9999999       99                     9   9             99999\n"+
-                    "556999        9                                        99655\n"+
+                    "54599999      999               99   99 99   99        99545\n"+
+                    "9999999       99                99   9   9             99999\n"+
+                    "556999        9                 99                     99655\n"+
                     "55799      9            9       99                     99755\n"+
                     "55699     99           999      999          99        99655\n"+
                     "45799    999            999      999         99        99754\n"+
                     "54799    99          9   999      999        99        99745\n"+
-                    "34799    99   9     999   999      999       999       99743\n"+
+                    "34799    99   9     999   999      999   99  999       99743\n"+
                     "36799    99   9    999     999      999       999      99763\n"+
                     "46599    99   9   999       999      999       999     99564\n"+
                     "46799    99   9   99         999      999       999    99764\n"+
                     "55699    99   9   99                   999       99    99655\n"+
-                    "         99   9   99                    99   9   99         \n"+
-                    "         99   9   99                    99   9   99         \n"+
-                    "         99   9   99                    99   9   99         \n"+
-                    "         99       99                    99   9   99         \n"+
+                    "77799    99   9   99                    99   9   99    99777\n"+
+                    "77799    99   9   99                    99   9   99    99777\n"+
+                    "77799    99   9   99                    99   9   99    99777\n"+
+                    "77799    99       99                    99   9   99    99777\n"+
                     "55699    999      999                   99   9   99    99655\n"+
                     "46799     999      999      999         99   9   99    99764\n"+
                     "46599      999      999      999       999   9   99    99564\n"+
                     "36799       999      999      999     999    9   99    99763\n"+
-                    "34799        99       999      999   999     9   99    99743\n"+
+                    "34799        99  99   999      999   999     9   99    99743\n"+
                     "54799        99        999      999   9          99    99745\n"+
                     "45799        99         999      999            999    99754\n"+
                     "55699        99          999      999           99     99655\n"+
                     "55799                     99       9            9      99755\n"+
-                    "55699                                        9        999655\n"+
-                    "99999             9   9                     99       9999999\n"+
-                    "54599        99   99 99                    999      99999545\n"+
+                    "55699                     99                 9        999655\n"+
+                    "99999             9   9   99                99       9999999\n"+
+                    "54599        99   99 99   99               999      99999545\n"+
                     "34599        99    999    99      99      999      999999543\n"+
                     "44699        999    9    999      99     999      9999999644\n"+
                     "54599         999       999       99    999      99999999545\n"+
@@ -4825,11 +4857,11 @@ class GameMap {
                     "45699                                      99999999999999654\n"+
                     "35599                                     999999999999999553\n"+
                     "56699                                    9999999999999999665\n"+
-                    "5579999999999999999999999999    9999999999999999999999999755\n"+
-                    "9599999999999999999999999999    9999999999999999999999999959\n"+
-                    "9999766566579675579765755777    7775575679755769756656679999\n"+
-                    " 9945645564595445494446546545995456456444945445954655465499 \n"+
-                    "9 99343545559333559333433343999934333433395533395554534399 9",
+                    "557999999999999999999999999999999999999999999999999999999755\n"+
+                    "959999999999999999999999999999999999999999999999999999999959\n"+
+                    "999976656657967557976575577777777775575679755769756656679999\n"+
+                    " 9945645564595445494446546547777456456444945445954655465499 \n"+
+                    "9 99343545559333559333433343977934333433395533395554534399 9",
                 flags: [{
                     x: -95,
                     y: -120
