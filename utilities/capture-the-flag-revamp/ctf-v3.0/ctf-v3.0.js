@@ -99,9 +99,6 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            FLAGHOLDER_DROP: 5400,
-            FLAG_DESPAWN: 5400,
-
             WAIT: 7200,
             ROUND: 28800,
             BETWEEN: 360
@@ -563,7 +560,7 @@ class Game {
                     for (let i = 0; i < this.teams.length; i++) {
                         let oppTeam = this.getOppTeam(this.teams[i]);
                         if (this.teams[i].flag && this.teams[i].flagHolder) {
-                            if (game.step - this.teams[i].flagHolder.flagTime > Game.C.TICKS.FLAGHOLDER_DROP) {
+                            if (game.step - this.teams[i].flagHolder.flagTime > Obj.C.OBJS.FLAG.DROP) {
                                 this.teams[i].flagHolder.flagTime = -1;
                                 this.teams[i].flagHolder.setType(this.teams[i].flagHolder.chosenType == 0 ? this.teams[i].flagHolder.ship.type - this.shipGroup.normalShips.length : this.teams[i].flagHolder.chosenType);
                                 this.teams[i].flagHolder.setMaxStats();
@@ -580,7 +577,7 @@ class Game {
 
                         if (this.teams[i].flag && !this.teams[i].flagHidden) {
                             if (this.teams[i].flag.despawn != -1) {
-                                if (game.step - this.teams[i].flag.despawn > Game.C.TICKS.FLAG_DESPAWN) {
+                                if (game.step - this.teams[i].flag.despawn > Obj.C.OBJS.FLAG.DESPAWN) {
                                     this.teams[i].flag.reset();
                                 }
                             }
@@ -855,7 +852,7 @@ class Game {
                         ship.setCollider(true);
                         if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                            bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Game.C.TICKS.FLAGHOLDER_DROP - (game.step - ship.flagTime)));
+                            bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
                             ship.sendUI(bottomMessage);
 
                             if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
@@ -872,6 +869,14 @@ class Game {
                             }
                             if (ship.ship.hue != ship.team.hue) {
                                 ship.setHue(ship.team.hue);
+                            }
+                        }
+
+                        if (this.map && this.map.spawns.length == 2 && ship.team) {
+                            if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                                ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
+                            } else {
+                                ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
                             }
                         }
 
@@ -924,21 +929,22 @@ class Game {
                             }
                         } else {
                             if (ship.choosingShip) {
+                                if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
+                                    this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                                }
+
                                 if (ship.chosenType == 0) {
                                     ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
                                     ship.setType(ship.chosenType);
                                     ship.fillUp();
                                     ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
                                 }
+                                ship.setMaxStats();
                                 ship.setCollider(true);
                                 ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
                                 ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                                 ship.choosingShip = false;
                                 ship.chooseShipTime = -1;
-
-                                if (this.map && this.map.spawns.length == 2 && ship.team) {
-                                    this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
-                                }
                             }
                         }
 
@@ -1413,12 +1419,12 @@ class Game {
             } else {
                 if (this.map && this.map.spawns.length == 2 && ship.team) {
                     ship.setPosition(this.map.spawns[ship.team.team]);
+                    if (ship.chosenType != 0) {
+                        this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                    }
                 }
                 ship.setVelocity(new Vector2(0, 0));
-                if (this.betweenTime == -1) {
-                    ship.sendTimedUI(UIComponent.C.UIS.CHANGE_SHIP);
-                    ship.fillUp();
-                }
+                ship.fillUp();
             }
         }
     }
@@ -1454,16 +1460,19 @@ class Game {
                         this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
                     }
 
-                    ship.chosenType = this.shipGroup.chosenTypes[parseInt(id.split('-')[1])];
-                    ship.setType(ship.chosenType);
-                    ship.fillUp();
+                    let chosenType = this.shipGroup.chosenTypes[parseInt(id.split('-')[1])];
+                    ship.setType(chosenType);
+                    if (ship.chosenType == 0) {
+                        ship.fillUp();
+                        ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
+                    }
+                    ship.chosenType = chosenType;
+                    ship.setMaxStats();
                     ship.setCollider(true);
-                    ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
                     ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
                     ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                     ship.chooseShipTime = -1;
                     ship.choosingShip = false;
-                    ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
                 }
             }
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
@@ -2486,7 +2495,8 @@ class Obj {
                     id: 'spawn',
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.obj',
                     transparent: false,
-                }
+                },
+                CHOOSE_SHIP_DISTANCE: 5
             },
             FLAG: {
                 id: 'flag',
@@ -2512,7 +2522,9 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
                     transparent: false,
                 },
-                DISTANCE: 8
+                DISTANCE: 8,
+                DESPAWN: 5400,
+                DROP: 5400
             },
             FLAGSTAND: {
                 id: 'flagstand',
