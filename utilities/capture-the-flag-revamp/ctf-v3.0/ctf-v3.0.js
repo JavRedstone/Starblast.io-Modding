@@ -5847,7 +5847,8 @@ class ShipGroup {
     static C = {
         NUM_SHIPS: 3,
         FLAG: {
-            FLAG_WEIGHT: 1.2,
+            FLAG_SPEED_REDUCTION: 0.75,
+            FLAG_MASS_MULTIPLIER: 1.1,
             FLAG_OBJ: {
                 section_segments: [44, 45, 46, 135, 225, 310, 315, 320],
                 offset: { x: 0, y: 25, z: 65 },
@@ -6037,10 +6038,10 @@ class ShipGroup {
                 jship.typespec.model = jship.model;
                 jship.typespec.code = jship.level * 100 + jship.model;
 
-                jship.typespec.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
-                jship.specs.ship.speed[1] /= ShipGroup.C.FLAG.FLAG_WEIGHT;
-                jship.typespec.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_WEIGHT;
-                jship.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_WEIGHT;
+                jship.typespec.specs.ship.speed[1] *= ShipGroup.C.FLAG.FLAG_SPEED_REDUCTION;
+                jship.specs.ship.speed[1] *= ShipGroup.C.FLAG.FLAG_SPEED_REDUCTION;
+                jship.typespec.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_MASS_MULTIPLIER;
+                jship.specs.ship.mass *= ShipGroup.C.FLAG.FLAG_MASS_MULTIPLIER;
 
                 let flagShip = JSON.stringify(jship);
                 this.flagShips.push(flagShip);
