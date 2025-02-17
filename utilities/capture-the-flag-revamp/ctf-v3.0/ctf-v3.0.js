@@ -440,6 +440,7 @@ class Game {
                     ship.hideAllUIs();
                 } else {
                     ship.chooseShipTime = game.step;
+                    ship.portalTime = -1;
                 }
                 ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
                 ship.isResetting = false;
@@ -1036,25 +1037,30 @@ class Game {
                         for (let i = 0; i < this.map.portals.length; i++) {
                             let portal = this.map.portals[i];
 
+                            let portalColor = '#00ff00';
+                            if (ship.portalTime != -1 && game.step - ship.portalTime < Ship.C.PORTAL_TIME) {
+                                portalColor = '#808080';
+                            }
+
                             radarBackground.components.push({
                                 type: 'text',
                                 position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(120, 120)),
                                 value: '⬡',
-                                color: '#00ff0080'
+                                color: portalColor + '80'
                             });
 
                             radarBackground.components.push({
                                 type: 'text',
                                 position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(80, 80)),
                                 value: '⬡',
-                                color: '#00ff0060'
+                                color: portalColor + '60'
                             });
 
                             radarBackground.components.push({
                                 type: 'text',
                                 position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(40, 40)),
                                 value: '⬡',
-                                color: '#00ff0040'
+                                color: portalColor + '40'
                             });
                         }
                     }
