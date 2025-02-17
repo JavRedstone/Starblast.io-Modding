@@ -398,54 +398,47 @@ class Game {
     }
     
     resetShipNext(ship, newRound = false) {
-        if (this.waiting) {
-            echo('9.0');
-            ship.setHue(Helper.getRandomHue());
-            ship.setTeamDefault(this.ships.length % 2);
-            echo('9.1');
-        } else {
-            echo('10.0');
-            if (this.teams.length == 2) {
-                if (this.teams[0].ships.length < this.teams[1].ships.length) {
+        echo('9.0');
+        if (this.teams.length == 2) {
+            if (this.teams[0].ships.length < this.teams[1].ships.length) {
+                ship.setTeam(this.teams[0]);
+                this.teams[1].removeShip(ship);
+            }
+            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
+                ship.setTeam(this.teams[1]);
+                this.teams[0].removeShip(ship);
+            } else {
+                if (this.teams[0].score < this.teams[1].score) {
                     ship.setTeam(this.teams[0]);
                     this.teams[1].removeShip(ship);
-                }
-                else if (this.teams[1].ships.length < this.teams[0].ships.length) {
+                } else if (this.teams[1].score < this.teams[0].score) {
                     ship.setTeam(this.teams[1]);
                     this.teams[0].removeShip(ship);
                 } else {
-                    if (this.teams[0].score < this.teams[1].score) {
-                        ship.setTeam(this.teams[0]);
-                        this.teams[1].removeShip(ship);
-                    } else if (this.teams[1].score < this.teams[0].score) {
-                        ship.setTeam(this.teams[1]);
-                        this.teams[0].removeShip(ship);
-                    } else {
-                        ship.setTeam(this.teams[Helper.getRandomInt(0, 1)]);
-                    }
+                    ship.setTeam(this.teams[Helper.getRandomInt(0, 1)]);
                 }
             }
-            echo('10.1');
         }
+        echo('9.1');
 
         ship.timeouts.push(new TimeoutCreator(() => {
             if (this.waiting) {
-                echo('11.0');
+                echo('10.0');
                 ship.setPosition(new Vector2(0, 0));
                 if (this.shipGroup) {
                     ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
                     ship.fillUp();
                 }
-                echo('11.1');
+                echo('10.1');
             } else {
-                echo('12.0');
+                echo('11.0');
                 if (this.map && this.map.spawns.length == 2 && ship.team) {
                     ship.setPosition(this.map.spawns[ship.team.team])
                 }
-                echo('12.1');
+                echo('11.1');
             }
             ship.timeouts.push(new TimeoutCreator(() => {
-                echo('13.0');
+                echo('12.0');
                 if (!newRound) {
                     ship.hideAllUIs();
                 } else {
@@ -453,7 +446,7 @@ class Game {
                 }
                 ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
                 ship.isResetting = false;
-                echo('13.1');
+                echo('12.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }, Game.C.TICKS.RESET_STAGGER).start());
     }
