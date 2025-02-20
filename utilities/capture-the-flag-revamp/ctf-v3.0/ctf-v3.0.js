@@ -108,6 +108,7 @@ class Game {
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
+        DISABLED_GAP: 2,
         TEAM_PLAYER_DEFICIT: 2,
         TEAM_SCORE_DEFICIT: 2
     }
@@ -779,6 +780,31 @@ class Game {
 
     manageShips() {
         if (game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
+            let disabledIdxs = [];
+            let chosenTypeFreqs = Array(this.shipGroup.chosenTypes.length).fill(0);
+            if (!this.waiting && this.betweenTime == -1) {
+                for (let ship of this.ships) {
+                    if (ship.chosenType != 0 && this.shipGroup) {
+                        let idx = this.shipGroup.chosenTypes.indexOf(ship.chosenType);
+                        if (idx != -1) {
+                            chosenTypeFreqs[idx]++;
+                        }
+                    }
+                }
+                let maxFreq = Math.max(...chosenTypeFreqs);
+                let remaining = chosenTypeFreqs.filter((freq, idx) => freq != maxFreq);
+                if (remaining.length > 0) {
+                    let nextHighest = Math.max(...remaining);
+                    if (maxFreq - nextHighest >= Game.C.DISABLED_GAP) {
+                        for (let i = 0; i < chosenTypeFreqs.length; i++) {
+                            if (chosenTypeFreqs[i] == maxFreq) {
+                                disabledIdxs.push(i);
+                            }
+                        }
+                    }
+                }
+            }
+
             for (let ship of this.ships) {
                 if (!ship.done) {
                     this.resetShip(ship);
@@ -885,8 +911,10 @@ class Game {
                             ship.choosingShip = true;
 
                             for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+                                let isDisabled = disabledIdxs.includes(i);
                                 let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
-                                chooseShip.shortcut = `${i + 1}`;
+                                chooseShip.clickable = !isDisabled;
+                                chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
                                 chooseShip.id += '-' + i;
                                 let separation = 100 / (ShipGroup.C.NUM_SHIPS + 2);
                                 let width = separation * 4 / 5;
@@ -908,6 +936,22 @@ class Game {
                                 } else {
                                     chooseShip.components[0].fill = '#00ffff80';
                                     chooseShip.components[2].fill = '#00222280';
+                                }
+                                if (isDisabled) {
+                                    chooseShip.components[0].fill = '#8B8B8B40';
+                                    chooseShip.components[2].fill = '#22222240';
+
+                                    for (let component of chooseShip.components) {
+                                        if (component.type == 'text') {
+                                            if (component.color.length == 9) {
+                                                component.color = component.color.substring(0, 7) + '60';
+                                            } else if (component.color.length == 7) {
+                                                component.color += '80';
+                                            }
+                                        } else if (component.type == 'box' && component.position[3] == 0) {
+                                            component.fill += '80';
+                                        }
+                                    }
                                 }
                                 chooseShip.components[1].value = i + 1;
                                 chooseShip.components[5].value = this.shipGroup.chosenNames[i];
@@ -935,7 +979,7 @@ class Game {
                                 }
 
                                 if (ship.chosenType == 0) {
-                                    ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
+                                    ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes.filter((type, idx) => !disabledIdxs.includes(idx)));
                                     ship.setType(ship.chosenType);
                                     ship.fillUp();
                                     ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
