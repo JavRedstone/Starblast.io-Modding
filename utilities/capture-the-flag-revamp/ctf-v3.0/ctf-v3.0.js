@@ -99,13 +99,13 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 7200,
+            WAIT: 600,
             ROUND: 36000,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        MIN_PLAYERS: 2,
+        MIN_PLAYERS: 1,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
         TEAM_PLAYER_DEFICIT: 2,
@@ -267,8 +267,7 @@ class Game {
     }
 
     setMap() {
-        // let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        let newMap = GameMap.C.MAPS[GameMap.C.MAPS.length - 1];
+        let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
@@ -2585,7 +2584,6 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
                     transparent: false
                 },
-                MAIN_SCALE: 3,
                 TELEPORT_FACTOR: 0.5
             },
             GRAVITY_WELL: {
@@ -2601,21 +2599,19 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 30,
-                    y: 30,
-                    z: 30
+                    x: 20,
+                    y: 20,
+                    z: 20
                 },
                 type: {
                     id: 'gravity',
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/gravity.obj',
                     transparent: false
                 },
-                MAIN_SCALE: 12,
-                MAIN_INTENSITY: 2,
                 MAX_VELOCITY: 1,
                 VELOCITY_FACTOR: 0.5,
                 INTENSITY: 0.5,
-                SUCK_FACTOR: 3
+                SUCK_FACTOR: 2
             },
             SHIP_BEACON: {
                 id: 'ship_beacon',
