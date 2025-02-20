@@ -99,13 +99,13 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 600,
+            WAIT: 7200,
             ROUND: 36000,
             BETWEEN: 360
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        MIN_PLAYERS: 1,
+        MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
         TEAM_PLAYER_DEFICIT: 2,
