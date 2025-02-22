@@ -1133,85 +1133,45 @@ class Game {
                     let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
                     scoreboard.components[0].fill = this.teams[0].hex + 'BF';
                     scoreboard.components[2].fill = this.teams[1].hex + 'BF';
-                    scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} TEAM (${this.teams[0].ships.length} player${this.teams[0].ships.length == 1 ? '' : 's'})`;
+                    scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} (${this.teams[0].ships.length} 🙮)`;
                     if (this.teams[0].color == 'Yellow' || this.teams[0].color == 'Cyan') {
                         scoreboard.components[1].color = '#000000';
                     }
-                    scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} TEAM (${this.teams[1].ships.length} player${this.teams[1].ships.length == 1 ? '' : 's'})`;
+                    scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} (${this.teams[1].ships.length} 🙮)`;
                     if (this.teams[1].color == 'Yellow' || this.teams[1].color == 'Cyan') {
                         scoreboard.components[3].color = '#000000';
                     }
-                    let players1 = [];
-                    let players2 = [];
-                    for (let ship of this.ships) {
-                        if (ship.team != null) {
-                            if (ship.team.team == 0) {
-                                players1.push(ship);
-                            }
-                            else if (ship.team.team == 1) {
-                                players2.push(ship);
-                            }
-                        }
-                    }
-                    players1.sort((a, b) => b.score - a.score);
-                    players2.sort((a, b) => b.score - a.score);
-                    for (let i = 0; i < 5; i++) {
-                        if (players1[i]) {
-                            if (players1[i].ship.id == ship.ship.id) {
+
+                    for (let i = 0; i < teams.length; i++) {
+                        let team = teams[i];
+                        if (team.ships) {
+                            let players = Helper.deepCopy(team.ships).sort((a, b) => b.score - a.score);
+                            for (let j = 0; j < players.length; j++) {
+                                let player = players[i];
+                                if (player.id == ship.ship.id) {
+                                    scoreboard.components.push({
+                                        type: 'box',
+                                        position: [i * 50, (j + 1) * 10, 50, 10],
+                                        fill: '#ffffff20'
+                                    });
+                                }
                                 scoreboard.components.push({
-                                    type: 'box',
-                                    position: [0, (i + 1) * 100 / 12, 100, 100 / 12],
-                                    fill: '#ffffff20'
+                                    type: 'player',
+                                    position: [i * 50, (j + 1) * 10, 45, 10],
+                                    id: player.ship.id,
+                                    color: '#ffffff',
+                                    align: 'left'
+                                },
+                                {
+                                    type: 'text',
+                                    position: [i * 50 + 45, (j + 1) * 10, 5, 10],
+                                    value: player.score,
+                                    color: '#ffffff',
+                                    align: 'right'
                                 });
                             }
-                            scoreboard.components.push({
-                                type: 'player',
-                                position: [0, (i + 1) * 100 / 12, 85, 100 / 12],
-                                id: players1[i].ship.id,
-                                color: '#ffffff',
-                                align: 'left'
-                            },
-                            {
-                                type: 'text',
-                                position: [87.5, (i + 1) * 100 / 12, 10, 100 / 12],
-                                value: players1[i].score,
-                                color: '#ffffff',
-                                align: 'right'
-                            });
-                        }
-                        else {
-                            break;
                         }
                     }
-                    for (let i = 0; i < 5; i++) {
-                        if (players2[i]) {
-                            if (players2[i].ship.id == ship.ship.id) {
-                                scoreboard.components.push({
-                                    type: 'box',
-                                    position: [0, 50 + (i + 1) * 100 / 12, 100, 100 / 12],
-                                    fill: '#ffffff20'
-                                });
-                            }
-                            scoreboard.components.push({
-                                type: 'player',
-                                position: [0, 50 + (i + 1) * 100 / 12, 85, 100 / 12],
-                                id: players2[i].ship.id,
-                                color: '#ffffff',
-                                align: 'left'
-                            },
-                            {
-                                type: 'text',
-                                position: [87.5, 50 + (i + 1) * 100 / 12, 10, 100 / 12],
-                                value: players2[i].score,
-                                color: '#ffffff',
-                                align: 'right'
-                            });
-                        }
-                        else {
-                            break;
-                        }
-                    }
-                    ship.sendUI(scoreboard);
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
@@ -3028,25 +2988,23 @@ class UIComponent {
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 100, 100 / 12],
+                        position: [0, 0, 50, 10],
                         fill: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [0, 0, 100, 100 / 12],
+                        position: [0, 0, 50, 10],
                         color: '#ffffff',
-                        value: 'Team Name'
                     },
                     {
                         type: 'box',
-                        position: [0, 50, 100, 100 / 12],
+                        position: [50, 0, 50, 10],
                         fill: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [0, 50, 100, 100 / 12],
+                        position: [50, 0, 50, 10],
                         color: '#ffffff',
-                        value: 'Team Name'
                     }
                 ]
             },
