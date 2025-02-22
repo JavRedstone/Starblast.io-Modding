@@ -994,7 +994,7 @@ class Game {
 
                                 this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
                             }
-                            if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                            if (!oppTeam.flagHolder && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
                                 ship.team.flagHolder = null;
                                 oppTeam.flag.reset();
 
@@ -1047,6 +1047,16 @@ class Game {
                                     position: Helper.getRadarSpotPosition(this.teams[i].flag.flagPos, new Vector2(50, 50)),
                                     value: '⚐',
                                     color: this.teams[i].hex
+                                });
+                            }
+
+                            let oppTeam = this.getOppTeam(this.teams[i]);
+                            if (oppTeam && this.teams[i].flagHolder) {
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(this.teams[i].flagHolder.ship.x, this.teams[i].flagHolder.ship.y), new Vector2(50, 50)),
+                                    value: '⚐',
+                                    color: oppTeam.hex
                                 });
                             }
                         }
@@ -1179,6 +1189,11 @@ class Game {
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
                         topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        let oppTeam = this.getOppTeam(ship.team);
+                        if (oppTeam && oppTeam.flagHolder) {
+                            topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to score!`;
+                            topMessage.components[0].fill = '#8B000080';
+                        }
                         ship.sendUI(topMessage);
 
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
