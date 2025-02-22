@@ -27,6 +27,7 @@ class Game {
 
     spawns = [];
     shipBeacons = [];
+    warningRules = [];
     beacons = [];
     portals = [];
     gravityWells = [];
@@ -102,7 +103,7 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 7200,
+            WAIT: 180,
             ROUND: 36000,
             BETWEEN: 360
         },
@@ -228,6 +229,9 @@ class Game {
             shipBeacon.destroySelf();
         }
         this.shipBeacons = [];
+        for (let warningRule of this.warningRules) {
+            warningRule.destroySelf();
+        }
     }
 
     deleteFlags() {
@@ -588,6 +592,29 @@ class Game {
                             }
                         }
                     }
+
+                    if (this.map) {
+                        if (this.teams[0].flagHolder && this.teams[1].flagHolder) {
+                                if (this.warningRules.length == 0) {
+                                for (let i = 0; i < 2; i++) {
+                                    this.warningRules.push(new Obj(
+                                        Obj.C.OBJS.WARNING_RULE.id,
+                                        Obj.C.OBJS.WARNING_RULE.type,
+                                        new Vector3(this.map.flags[i].x + Obj.C.OBJS.WARNING_RULE.position.x, this.map.flags[i].y + Obj.C.OBJS.WARNING_RULE.position.y, Obj.C.OBJS.WARNING_RULE.position.z),
+                                        new Vector3(Obj.C.OBJS.WARNING_RULE.rotation.x, Obj.C.OBJS.WARNING_RULE.rotation.y, Obj.C.OBJS.WARNING_RULE.rotation.z),
+                                        new Vector3(Obj.C.OBJS.WARNING_RULE.scale.x, Obj.C.OBJS.WARNING_RULE.scale.y, Obj.C.OBJS.WARNING_RULE.scale.z),
+                                        true,
+                                        false
+                                    ).update());
+                                }
+                            }
+                        } else {
+                            for (let warningRule of this.warningRules) {
+                                warningRule.destroySelf();
+                            }
+                            this.warningRules = [];
+                        }
+                    }
                 }
             }
         }
@@ -860,6 +887,7 @@ class Game {
                         ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
                     } else {
                         ship.setCollider(true);
+                        let oppTeam = this.getOppTeam(ship.team);
                         if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
@@ -977,7 +1005,6 @@ class Game {
                         }
 
                         if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
-                            let oppTeam = this.getOppTeam(ship.team);
                             if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
                                 ship.team.flagHolder = ship;
                                 oppTeam.flag.hide();
@@ -1211,11 +1238,6 @@ class Game {
                         roundScore.components[3].value = this.teams[1].score;
                         roundScore.components[3].color = this.teams[1].hex;
                         ship.sendUI(roundScore);
-
-                        let totalScore = Helper.deepCopy(UIComponent.C.UIS.TOTAL_SCORES);
-                        totalScore.components[1].value = this.totalScores[0];
-                        totalScore.components[3].value = this.totalScores[1];
-                        ship.sendUI(totalScore);
 
                         if (this.betweenTime == -1) {
                             let portalCooldown = Helper.deepCopy(UIComponent.C.UIS.PORTAL_COOLDOWN);
@@ -1524,10 +1546,14 @@ class Game {
                 }
             }
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
-                if (ship.chooseShipTime == -1) {
-                    ship.chooseShipTime = game.step;
-                } else {
-                    ship.chooseShipTime = -1;
+                if (this.map && this.map.spawns.length == 2 && ship.team) {
+                    if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                        if (ship.chooseShipTime == -1) {
+                            ship.chooseShipTime = game.step;
+                        } else {
+                            ship.chooseShipTime = -1;
+                        }
+                    }
                 }
             }
         }
@@ -1562,48 +1588,48 @@ class Team {
                     COLOR: 'Red',
                     HEX: '#ff0000',
                     HUE: 0,
-                    FLAGGED: 40
+                    FLAGGED: 60
                 },
                 {
                     TEAM: 1,
                     COLOR: 'Blue',
                     HEX: '#0000ff',
                     HUE: 240,
-                    FLAGGED: 180
-                }
-            ],
-            [
-                {
-                    TEAM: 0,
-                    COLOR: 'Yellow',
-                    HEX: '#ffff00',
-                    HUE: 60,
-                    FLAGGED: 100
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Purple',
-                    HEX: '#ff00ff',
-                    HUE: 300,
-                    FLAGGED: 260
-                }
-            ],
-            [
-                {
-                    TEAM: 0,
-                    COLOR: 'Cyan',
-                    HEX: '#00ffff',
-                    HUE: 180,
                     FLAGGED: 120
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Orange',
-                    HEX: '#ff8000',
-                    HUE: 30,
-                    FLAGGED: 0
                 }
-            ]
+            ],
+            // [
+            //     {
+            //         TEAM: 0,
+            //         COLOR: 'Yellow',
+            //         HEX: '#ffff00',
+            //         HUE: 60,
+            //         FLAGGED: 100
+            //     },
+            //     {
+            //         TEAM: 1,
+            //         COLOR: 'Purple',
+            //         HEX: '#ff00ff',
+            //         HUE: 300,
+            //         FLAGGED: 260
+            //     }
+            // ],
+            // [
+            //     {
+            //         TEAM: 0,
+            //         COLOR: 'Cyan',
+            //         HEX: '#00ffff',
+            //         HUE: 180,
+            //         FLAGGED: 120
+            //     },
+            //     {
+            //         TEAM: 1,
+            //         COLOR: 'Orange',
+            //         HEX: '#ff8000',
+            //         HUE: 30,
+            //         FLAGGED: 0
+            //     }
+            // ]
         ]
     }
 
@@ -1703,7 +1729,7 @@ class Ship {
         INVULNERABLE_TIME: 360,
         CHOOSE_SHIP_TIME: 600,
         CHOOSE_SHIP_TIMEOUT: 15,
-        PORTAL_TIME: 7200
+        PORTAL_TIME: 3600
     }
 
     constructor(ship) {
@@ -2526,6 +2552,29 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/logo_waiting.png',
                 }
             },
+            WARNING_RULE: {
+                id: 'warning_rule',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: Math.PI,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 50,
+                    y: 50,
+                    z: 0
+                },
+                type: {
+                    id: 'warning_rule',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/warning_rule.png',
+                }
+            },
             GRID: {
                 id: 'grid',
                 position: {
@@ -2599,7 +2648,7 @@ class Obj {
                 },
                 DISTANCE: 8,
                 DESPAWN: 5400,
-                DROP: 5400
+                DROP: 3600
             },
             FLAGSTAND: {
                 id: 'flagstand',
@@ -2720,7 +2769,7 @@ class Obj {
                 },
                 scale: {
                     x: 1,
-                    y: 1e4,
+                    y: 1e3,
                     z: 1
                 },
                 type: {
@@ -3329,35 +3378,6 @@ class UIComponent {
                     {
                         type: "text",
                         position: [70, 0, 25, 100],
-                    }
-                ]
-            },
-            TOTAL_SCORES: {
-                id: "total_scores",
-                position: [45, 17.5, 10, 10],
-                visible: true,
-                components: [
-                    {
-                        type: "text",
-                        position: [0, 0, 100, 25],
-                        value: "TOTAL",
-                        color: "#ffffffBF"
-                    },
-                    {
-                        type: "text",
-                        position: [0, 0, 25, 100],
-                        color: "#ffffffBF"
-                    },
-                    {
-                        type: "text",
-                        position: [25, 0, 50, 100],
-                        value: "-",
-                        color: "#ffffff80"
-                    },
-                    {
-                        type: "text",
-                        position: [75, 0, 25, 100],
-                        color: "#ffffffBF"
                     }
                 ]
             },
