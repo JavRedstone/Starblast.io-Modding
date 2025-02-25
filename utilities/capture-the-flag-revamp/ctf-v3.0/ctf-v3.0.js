@@ -1688,7 +1688,7 @@ class Ship {
     isResetting = false;
 
     static C = {
-        INVULNERABLE_TIME: 360,
+        INVULNERABLE_TIME: 180,
         CHOOSE_SHIP_TIME: 600,
         CHOOSE_SHIP_TIMEOUT: 15,
         PORTAL_TIME: 3600
