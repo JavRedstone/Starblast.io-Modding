@@ -39,7 +39,6 @@ class Game {
     roundTime = -1;
     timesUp = false;
     betweenTime = -1;
-    totalScores = [0, 0];
     numRounds = 0;
 
     static C = {
@@ -86,7 +85,7 @@ class Game {
                 { text: "Follow", icon: "\u0050", key: "F" },
                 { text: "Love", icon: "\u0024", key: "L" },
                 { text: "Base", icon: "\u0034", key: "B" },
-                { text: "Flag", icon: "🏳️", key: "I" },
+                { text: "Flag", icon: "⚑", key: "I" },
                 { text: "Bruh", icon: "˙ ͜ʟ˙", key: "M" },
                 { text: "WTF", icon: "ಠ_ಠ", key: "W" }
             ],
@@ -103,7 +102,7 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 180,
+            WAIT: 7200,
             ROUND: 36000,
             BETWEEN: 360
         },
@@ -545,11 +544,7 @@ class Game {
                         this.roundTime = -1;
                         if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
                             this.betweenTime = -1;
-                            let winningTeam = this.getWinningTeam();
-                            if (winningTeam != null) {
-                                this.totalScores[winningTeam.team]++;
-                            }
-        
+
                             this.teams[0].setScore(0);
                             this.teams[1].setScore(0);
         
@@ -1072,7 +1067,7 @@ class Game {
                                 radarBackground.components.push({
                                     type: 'text',
                                     position: Helper.getRadarSpotPosition(this.teams[i].flag.flagPos, new Vector2(50, 50)),
-                                    value: '⚐',
+                                    value: '⚑',
                                     color: this.teams[i].hex
                                 });
                             }
@@ -1082,7 +1077,7 @@ class Game {
                                 radarBackground.components.push({
                                     type: 'text',
                                     position: Helper.getRadarSpotPosition(new Vector2(this.teams[i].flagHolder.ship.x, this.teams[i].flagHolder.ship.y), new Vector2(50, 50)),
-                                    value: '⚐',
+                                    value: '⚑',
                                     color: oppTeam.hex
                                 });
                             }
@@ -1133,52 +1128,82 @@ class Game {
                     let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
                     scoreboard.components[0].fill = this.teams[0].hex + 'BF';
                     scoreboard.components[2].fill = this.teams[1].hex + 'BF';
-                    scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} (${this.teams[0].ships.length} 🙮)`;
+                    scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} (${this.teams[0].ships.length}♟)`;
                     if (this.teams[0].color == 'Yellow' || this.teams[0].color == 'Cyan') {
                         scoreboard.components[1].color = '#000000';
                     }
-                    scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} (${this.teams[1].ships.length} 🙮)`;
+                    scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} (${this.teams[1].ships.length}♟)`;
                     if (this.teams[1].color == 'Yellow' || this.teams[1].color == 'Cyan') {
                         scoreboard.components[3].color = '#000000';
                     }
 
-                    for (let i = 0; i < teams.length; i++) {
-                        let team = teams[i];
+                    for (let i = 0; i < this.teams.length; i++) {
+                        let team = this.teams[i];
                         if (team.ships) {
-                            let players = Helper.deepCopy(team.ships).sort((a, b) => b.score - a.score);
+                            let players = team.ships.sort((a, b) => b.score - a.score);
+                            let flagHolder = team.flagHolder;
+                            if (flagHolder) {
+                                Helper.deleteFromArray(players, flagHolder);
+                                players.unshift(flagHolder);
+                            }
                             for (let j = 0; j < players.length; j++) {
-                                let player = players[i];
-                                if (player.id == ship.ship.id) {
+                                let player = players[j];
+                                let start = 8;
+                                let amount = 6;
+                                let color = '#ffffff';
+                                if (flagHolder && flagHolder.ship.id == player.ship.id) {
+                                    if (ship.team.team == team.team) {
+                                        color = '#00ff00';
+                                    } else {
+                                        color = '#ff0000';
+                                    }
+
                                     scoreboard.components.push({
                                         type: 'box',
-                                        position: [i * 50, (j + 1) * 10, 50, 10],
+                                        position: [i * 50, start + j * amount, 50, 6],
+                                        fill: color + '40'
+                                    });
+                                }
+                                else if (player.ship.id == ship.ship.id) {
+                                    scoreboard.components.push({
+                                        type: 'box',
+                                        position: [i * 50, start + j * amount, 50, 6],
                                         fill: '#ffffff20'
                                     });
                                 }
                                 scoreboard.components.push({
-                                    type: 'player',
-                                    position: [i * 50, (j + 1) * 10, 45, 10],
-                                    id: player.ship.id,
+                                    type: 'text',
+                                    position: [i * 50, start + j * amount, 50, 6],
+                                    value: '',
                                     color: '#ffffff',
                                     align: 'left'
                                 },
                                 {
+                                    type: 'player',
+                                    position: [i * 50, start + j * amount, 50, 6],
+                                    id: player.ship.id,
+                                    color: color,
+                                    align: 'left'
+                                },
+                                {
                                     type: 'text',
-                                    position: [i * 50 + 45, (j + 1) * 10, 5, 10],
-                                    value: player.score,
-                                    color: '#ffffff',
+                                    position: [i * 50, start + j * amount, 50, 6],
+                                    value: `${flagHolder && flagHolder.ship.id == player.ship.id ? '⚑ ' : ''}${player.score}`,
+                                    color: color,
                                     align: 'right'
                                 });
                             }
                         }
                     }
 
+                    ship.sendUI(scoreboard);
+
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
                         topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
                         let oppTeam = this.getOppTeam(ship.team);
                         if (oppTeam && oppTeam.flagHolder) {
-                            topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to score!`;
+                            topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to be able to score!`;
                             topMessage.components[0].fill = '#8B000080';
                         }
                         ship.sendUI(topMessage);
@@ -1193,10 +1218,18 @@ class Game {
                             roundScore.components[0].value = winningTeam.color.toUpperCase();
                             roundScore.components[0].color = winningTeam.hex;
                         }
-                        roundScore.components[1].value = this.teams[0].score;
-                        roundScore.components[1].color = this.teams[0].hex;
-                        roundScore.components[3].value = this.teams[1].score;
-                        roundScore.components[3].color = this.teams[1].hex;
+                        if (this.teams[0].flagHolder) {
+                            roundScore.components[1].value = '⚑';
+                            roundScore.components[1].color = this.teams[0].hex;
+                        }
+                        if (this.teams[1].flagHolder) {
+                            roundScore.components[5].value = '⚑';
+                            roundScore.components[5].color = this.teams[1].hex;
+                        }
+                        roundScore.components[2].value = this.teams[0].score;
+                        roundScore.components[2].color = this.teams[0].hex;
+                        roundScore.components[4].value = this.teams[1].score;
+                        roundScore.components[4].color = this.teams[1].hex;
                         ship.sendUI(roundScore);
 
                         if (this.betweenTime == -1) {
@@ -1558,38 +1591,6 @@ class Team {
                     FLAGGED: 120
                 }
             ],
-            // [
-            //     {
-            //         TEAM: 0,
-            //         COLOR: 'Yellow',
-            //         HEX: '#ffff00',
-            //         HUE: 60,
-            //         FLAGGED: 100
-            //     },
-            //     {
-            //         TEAM: 1,
-            //         COLOR: 'Purple',
-            //         HEX: '#ff00ff',
-            //         HUE: 300,
-            //         FLAGGED: 260
-            //     }
-            // ],
-            // [
-            //     {
-            //         TEAM: 0,
-            //         COLOR: 'Cyan',
-            //         HEX: '#00ffff',
-            //         HUE: 180,
-            //         FLAGGED: 120
-            //     },
-            //     {
-            //         TEAM: 1,
-            //         COLOR: 'Orange',
-            //         HEX: '#ff8000',
-            //         HUE: 30,
-            //         FLAGGED: 0
-            //     }
-            // ]
         ]
     }
 
@@ -1732,16 +1733,17 @@ class Ship {
     sendUI(ui, hideMode = false) {
         if (this.ship != null) {
             let cUI = this.convertUIHexToHsla(Helper.deepCopy(ui));
-
-            this.ship.setUIComponent(cUI);
+            let removedUIs = [];
+            for (let u of this.allUIs) {
+                if (u.id == cUI.id) {
+                    removedUIs.push(u);
+                }
+            }
+            if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
+                this.ship.setUIComponent(cUI);
+            }
 
             if (!hideMode) {
-                let removedUIs = [];
-                for (let u of this.allUIs) {
-                    if (u.id == cUI.id) {
-                        removedUIs.push(u);
-                    }
-                }
                 for (let u of removedUIs) {
                     Helper.deleteFromArray(this.allUIs, u);
                 }
@@ -1768,7 +1770,9 @@ class Ship {
             Helper.deleteFromArray(this.allUIs, u);
         }
 
-        this.sendUI(cUI, true);
+        if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
+            this.sendUI(cUI, true);
+        }
     }
 
     hideUIsIncludingID(ui) {
@@ -2988,22 +2992,22 @@ class UIComponent {
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 50, 10],
+                        position: [0, 0, 50, 8],
                         fill: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [0, 0, 50, 10],
+                        position: [0, 0, 50, 8],
                         color: '#ffffff',
                     },
                     {
                         type: 'box',
-                        position: [50, 0, 50, 10],
+                        position: [50, 0, 50, 8],
                         fill: '#ffffff'
                     },
                     {
                         type: 'text',
-                        position: [50, 0, 50, 10],
+                        position: [50, 0, 50, 8],
                         color: '#ffffff',
                     }
                 ]
@@ -3113,7 +3117,7 @@ class UIComponent {
                     {
                         type: "text",
                         position: [30, 42.5, 40, 17.5],
-                        value: "⚐ Capture The Flag ⚐",
+                        value: "⚑ Capture The Flag ⚑",
                         color: "#ffffff"
                     },
                     {
@@ -3316,7 +3320,7 @@ class UIComponent {
             },
             ROUND_SCORES: {
                 id: "round_scores",
-                position: [40, 5, 20, 15],
+                position: [35, 5, 30, 15],
                 visible: true,
                 components: [
                     {
@@ -3325,17 +3329,33 @@ class UIComponent {
                     },
                     {
                         type: "text",
-                        position: [5, 0, 25, 100],
+                        position: [10, 0, 10, 100],
+                        value: '',
+                        align: "right"
                     },
                     {
                         type: "text",
-                        position: [25, 0, 50, 100],
+                        position: [20, 0, 20, 100],
+                        value: '',
+                        align: "right"
+                    },
+                    {
+                        type: "text",
+                        position: [40, 0, 20, 100],
                         value: "-",
                         color: "#ffffffBF"
                     },
                     {
                         type: "text",
-                        position: [70, 0, 25, 100],
+                        position: [60, 0, 20, 100],
+                        value: '',
+                        align: "left"
+                    },
+                    {
+                        type: "text",
+                        position: [80, 0, 10, 100],
+                        value: '',
+                        align: "left"
                     }
                 ]
             },
@@ -6512,6 +6532,10 @@ class Helper {
 
     static deepCopy(object) {
         return JSON.parse(JSON.stringify(object));
+    }
+
+    static areObjectsEqual(obj1, obj2) {
+        return JSON.stringify(obj1) === JSON.stringify(obj2);
     }
 
     static deleteFromArray(array, element) {
