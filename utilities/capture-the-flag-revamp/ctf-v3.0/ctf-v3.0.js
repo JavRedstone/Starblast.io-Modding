@@ -1181,7 +1181,7 @@ class Game {
                                 },
                                 {
                                     type: 'player',
-                                    position: pos,
+                                    position: [pos[0], pos[1], pos[2]-10, pos[3]],
                                     id: player.ship.id,
                                     color: color,
                                     align: 'left'
