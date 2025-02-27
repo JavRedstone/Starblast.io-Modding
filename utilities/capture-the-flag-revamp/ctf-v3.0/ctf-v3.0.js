@@ -98,7 +98,7 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
-            RESET_STAGGER: 10,
+            RESET_STAGGER: 5,
 
             GAME_MANAGER: 30,
 
@@ -405,21 +405,23 @@ class Game {
         echo('9.0');
         if (this.teams.length == 2) {
             if (this.teams[0].ships.length < this.teams[1].ships.length) {
-                ship.setTeam(this.teams[0]);
                 this.teams[1].removeShip(ship);
+                ship.setTeam(this.teams[0]);
             }
             else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-                ship.setTeam(this.teams[1]);
                 this.teams[0].removeShip(ship);
+                ship.setTeam(this.teams[1]);
             } else {
                 if (this.teams[0].score < this.teams[1].score) {
-                    ship.setTeam(this.teams[0]);
                     this.teams[1].removeShip(ship);
+                    ship.setTeam(this.teams[0]);
                 } else if (this.teams[1].score < this.teams[0].score) {
-                    ship.setTeam(this.teams[1]);
                     this.teams[0].removeShip(ship);
+                    ship.setTeam(this.teams[1]);
                 } else {
-                    ship.setTeam(this.teams[Helper.getRandomInt(0, 1)]);
+                    let randTeam = this.teams[Helper.getRandomInt(0, 1)];
+                    this.teams[(randTeam.team + 1) % 2].removeShip(ship);
+                    ship.setTeam(randTeam);
                 }
             }
         }
