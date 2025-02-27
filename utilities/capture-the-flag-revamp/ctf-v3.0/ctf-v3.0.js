@@ -160,7 +160,7 @@ class Game {
         }
     }
 
-    reset(newRound = false) {
+    reset(newRound = false, resetUIs = false) {
         echo('1.0');
         this.deleteEverything();
         this.resetContainers();
@@ -179,7 +179,7 @@ class Game {
                 echo('3.1');
                 this.timeouts.push(new TimeoutCreator(() => {
                     echo('4.0');
-                    this.resetShips(newRound);
+                    this.resetShips(newRound, resetUIs);
                     if (newRound) {
                         this.numRounds++;
                     }
@@ -370,16 +370,16 @@ class Game {
         }
     }
 
-    resetShips(newRound = false) {
+    resetShips(newRound = false, resetUIs = false) {
         echo('5.0');
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
-            this.resetShip(ship, false, newRound);
+            this.resetShip(ship, false, newRound, resetUIs);
         }
         echo('5.1');
     }
 
-    resetShip(ship, fast = false, newRound = false) {
+    resetShip(ship, fast = false, newRound = false, resetUIs = false) {
         echo('6.0');
         ship.isResetting = true;
 
@@ -395,13 +395,13 @@ class Game {
         } else {
             ship.timeouts.push(new TimeoutCreator(() => {
                 echo('8.0');
-                this.resetShipNext(ship, newRound);
+                this.resetShipNext(ship, newRound, resetUIs);
                 echo('8.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
     
-    resetShipNext(ship, newRound = false) {
+    resetShipNext(ship, newRound = false, resetUIs = false) {
         echo('9.0');
         if (this.teams.length == 2) {
             if (this.teams[0].ships.length < this.teams[1].ships.length) {
@@ -445,7 +445,7 @@ class Game {
             }
             ship.timeouts.push(new TimeoutCreator(() => {
                 echo('12.0');
-                if (!newRound) {
+                if (resetUIs) {
                     ship.hideAllUIs();
                 } else {
                     ship.chooseShipTime = game.step;
@@ -487,7 +487,7 @@ class Game {
                 if (!this.waiting || this.waitTimer == -2) {
                     this.waiting = true;
                     this.waitTimer = -1;
-                    this.reset();
+                    this.reset(false, true);
 
                     this.logoWaiting = new Obj(
                         Obj.C.OBJS.LOGO_WAITING.id,
@@ -532,6 +532,7 @@ class Game {
                                 this.teams[opp].flag.reset();
                             }
                             this.resetShip(randShip, true);
+                            randShip.chosenType = 0;
                             randShip.chooseShipTime = game.step;
                             let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                             bottomMessage.components[1].value = `You have been moved to the ${this.teams[opp].color.toUpperCase()} team due to team player imbalance.`;
@@ -1591,7 +1592,7 @@ class Team {
                     COLOR: 'Blue',
                     HEX: '#0000ff',
                     HUE: 240,
-                    FLAGGED: 300
+                    FLAGGED: 180
                 }
             ],
         ]
