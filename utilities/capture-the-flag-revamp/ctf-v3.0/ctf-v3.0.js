@@ -98,7 +98,7 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
-            RESET_STAGGER: 5,
+            RESET_STAGGER: 15,
 
             GAME_MANAGER: 30,
 
