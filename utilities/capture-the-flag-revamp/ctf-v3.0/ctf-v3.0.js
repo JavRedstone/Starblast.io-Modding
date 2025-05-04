@@ -161,29 +161,29 @@ class Game {
     }
 
     reset(newRound = false, resetUIs = false) {
-        echo('1.0');
+        // echo('1.0');
         this.deleteEverything();
         this.resetContainers();
         this.selectRandomTeams();
-        echo('1.1');
+        // echo('1.1');
         this.timeouts.push(new TimeoutCreator(() => {
-            echo('2.0');
+            // echo('2.0');
             this.setMap();
             this.setShipGroup();
-            echo('2.1');
+            // echo('2.1');
             this.timeouts.push(new TimeoutCreator(() => {
-                echo('3.0');
+                // echo('3.0');
                 this.spawnSpawns();
                 this.spawnFlags();
                 this.spawnPortals();
-                echo('3.1');
+                // echo('3.1');
                 this.timeouts.push(new TimeoutCreator(() => {
-                    echo('4.0');
+                    // echo('4.0');
                     this.resetShips(newRound, resetUIs);
                     if (newRound) {
                         this.numRounds++;
                     }
-                    echo('4.1');
+                    // echo('4.1');
                 }
                 , Game.C.TICKS.RESET_STAGGER).start());
             }
@@ -371,38 +371,40 @@ class Game {
     }
 
     resetShips(newRound = false, resetUIs = false) {
-        echo('5.0');
+        // echo('5.0');
         this.ships = Helper.shuffleArray(this.ships);
         for (let ship of this.ships) {
-            this.resetShip(ship, false, newRound, resetUIs);
+            ship.timeouts.push(new TimeoutCreator(() => {
+                this.resetShip(ship, false, newRound, resetUIs);                
+            }, Game.C.TICKS.RESET_STAGGER * (1 + Math.random())).start())
         }
-        echo('5.1');
+        // echo('5.1');
     }
 
     resetShip(ship, fast = false, newRound = false, resetUIs = false) {
-        echo('6.0');
+        // echo('6.0');
         ship.isResetting = true;
 
         ship.reset();
         
         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-        echo('6.1');
+        // echo('6.1');
 
         if (fast) {
-            echo('7.0');
+            // echo('7.0');
             this.resetShipNext(ship, newRound);
-            echo('7.1');
+            // echo('7.1');
         } else {
             ship.timeouts.push(new TimeoutCreator(() => {
-                echo('8.0');
+                // echo('8.0');
                 this.resetShipNext(ship, newRound, resetUIs);
-                echo('8.1');
+                // echo('8.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
     
     resetShipNext(ship, newRound = false, resetUIs = false) {
-        echo('9.0');
+        // echo('9.0');
         if (this.teams.length == 2) {
             if (this.teams[0].ships.length < this.teams[1].ships.length) {
                 this.teams[1].removeShip(ship);
@@ -425,26 +427,26 @@ class Game {
                 }
             }
         }
-        echo('9.1');
+        // echo('9.1');
 
         ship.timeouts.push(new TimeoutCreator(() => {
             if (this.waiting) {
-                echo('10.0');
+                // echo('10.0');
                 ship.setPosition(new Vector2(0, 0));
                 if (this.shipGroup) {
                     ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
                     ship.fillUp();
                 }
-                echo('10.1');
+                // echo('10.1');
             } else {
-                echo('11.0');
+                // echo('11.0');
                 if (this.map && this.map.spawns.length == 2 && ship.team) {
                     ship.setPosition(this.map.spawns[ship.team.team])
                 }
-                echo('11.1');
+                // echo('11.1');
             }
             ship.timeouts.push(new TimeoutCreator(() => {
-                echo('12.0');
+                // echo('12.0');
                 if (resetUIs) {
                     ship.hideAllUIs();
                 } else {
@@ -453,7 +455,7 @@ class Game {
                 }
                 ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
                 ship.isResetting = false;
-                echo('12.1');
+                // echo('12.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }, Game.C.TICKS.RESET_STAGGER).start());
     }
