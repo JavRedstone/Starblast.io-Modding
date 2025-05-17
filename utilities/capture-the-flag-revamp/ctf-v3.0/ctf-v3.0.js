@@ -6604,13 +6604,16 @@ this.options = {
 let g = null;
 
 this.tick = function () {
-    if (g != null) {
-        g.tick();
-    }
-    else {
+    if (g == null) {
         g = new Game();
     }
-}
+    if (g != null) {
+        // This overwrites the `this.tick` function with just `g.tick();`
+        (this.tick = function () {
+            g.tick();
+        })();
+    }
+};
 
 this.event = function (event) {
     let gameShip = event.ship;
