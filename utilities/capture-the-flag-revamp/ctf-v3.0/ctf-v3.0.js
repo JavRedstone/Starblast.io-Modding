@@ -7,7 +7,6 @@
     Made in 2025
 
     Special thanks to Nanoray (Halycon), EDEN, and 5470p3_ for the continual support in this project, as well as countless others in the Starblast Test Games and the Capture the Flag Discord servers for aiding with testing and debugging the mod
-    Thanks to F14DSupertomcat for helping me in map design
 
     Ships from Vanilla Revamp (V3) and MCST
 */
@@ -39,6 +38,7 @@ class Game {
     waiting = true;
     waitTimer = -2;
 
+    isResetting = false;
     roundTime = -1;
     timesUp = false;
     betweenTime = -1;
@@ -164,35 +164,23 @@ class Game {
     }
 
     reset(newRound = false, resetUIs = false) {
-        // echo('1.0');
+        this.isResetting = true;
         this.deleteEverything();
         this.resetContainers();
-        this.selectRandomTeams();
-        // echo('1.1');
         this.timeouts.push(new TimeoutCreator(() => {
-            // echo('2.0');
+            this.selectRandomTeams();
             this.setMap();
             this.setShipGroup();
-            // echo('2.1');
+            this.spawnSpawns();
+            this.spawnFlags();
+            this.spawnPortals();
             this.timeouts.push(new TimeoutCreator(() => {
-                // echo('3.0');
-                this.spawnSpawns();
-                this.spawnFlags();
-                this.spawnPortals();
-                // echo('3.1');
-                this.timeouts.push(new TimeoutCreator(() => {
-                    // echo('4.0');
-                    this.resetShips(newRound, resetUIs);
-                    if (newRound) {
-                        this.numRounds++;
-                    }
-                    // echo('4.1');
+                this.resetShips(newRound, resetUIs);
+                if (newRound) {
+                    this.numRounds++;
                 }
-                , Game.C.TICKS.RESET_STAGGER).start());
-            }
-            , Game.C.TICKS.RESET_STAGGER).start());
-        },
-        Game.C.TICKS.RESET_STAGGER).start());
+            }, Game.C.TICKS.RESET_STAGGER).start());
+        }, Game.C.TICKS.RESET_STAGGER).start());
     }
 
     deleteEverything() {
@@ -374,40 +362,35 @@ class Game {
     }
 
     resetShips(newRound = false, resetUIs = false) {
-        // echo('5.0');
         this.ships = Helper.shuffleArray(this.ships);
-        for (let ship of this.ships) {
+        for (let i = 0; i < this.ships.length; i++) {
+            let ship = this.ships[i];
             ship.timeouts.push(new TimeoutCreator(() => {
                 this.resetShip(ship, false, newRound, resetUIs);                
-            }, Game.C.TICKS.RESET_STAGGER * (1 + Math.random())).start())
+            }, Game.C.TICKS.RESET_STAGGER * i).start())
         }
-        // echo('5.1');
+        this.timeouts.push(new TimeoutCreator(() => {
+            this.isResetting = false;
+        }, Game.C.TICKS.RESET_STAGGER * this.ships.length).start());
     }
 
     resetShip(ship, fast = false, newRound = false, resetUIs = false) {
-        // echo('6.0');
         ship.isResetting = true;
 
         ship.reset();
         
         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-        // echo('6.1');
 
         if (fast) {
-            // echo('7.0');
             this.resetShipNext(ship, newRound);
-            // echo('7.1');
         } else {
             ship.timeouts.push(new TimeoutCreator(() => {
-                // echo('8.0');
                 this.resetShipNext(ship, newRound, resetUIs);
-                // echo('8.1');
             }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
     
     resetShipNext(ship, newRound = false, resetUIs = false) {
-        // echo('9.0');
         if (this.teams.length == 2) {
             if (this.teams[0].ships.length < this.teams[1].ships.length) {
                 this.teams[1].removeShip(ship);
@@ -430,37 +413,25 @@ class Game {
                 }
             }
         }
-        // echo('9.1');
-
-        ship.timeouts.push(new TimeoutCreator(() => {
-            if (this.waiting) {
-                // echo('10.0');
-                ship.setPosition(new Vector2(0, 0));
-                if (this.shipGroup) {
-                    ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
-                    ship.fillUp();
-                }
-                // echo('10.1');
-            } else {
-                // echo('11.0');
-                if (this.map && this.map.spawns.length == 2 && ship.team) {
-                    ship.setPosition(this.map.spawns[ship.team.team])
-                }
-                // echo('11.1');
+        if (this.waiting) {
+            ship.setPosition(new Vector2(0, 0));
+            if (this.shipGroup) {
+                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+                ship.fillUp();
             }
-            ship.timeouts.push(new TimeoutCreator(() => {
-                // echo('12.0');
-                if (resetUIs) {
-                    ship.hideAllUIs();
-                } else {
-                    ship.chooseShipTime = game.step;
-                    ship.portalTime = -1;
-                }
-                ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
-                ship.isResetting = false;
-                // echo('12.1');
-            }, Game.C.TICKS.RESET_STAGGER).start());
-        }, Game.C.TICKS.RESET_STAGGER).start());
+        } else {
+            if (this.map && this.map.spawns.length == 2 && ship.team) {
+                ship.setPosition(this.map.spawns[ship.team.team])
+            }
+        }
+        if (resetUIs) {
+            ship.hideAllUIs();
+        } else {
+            ship.chooseShipTime = game.step;
+            ship.portalTime = -1;
+        }
+        ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
+        ship.isResetting = false;
     }
 
     gameOver() {
@@ -484,6 +455,7 @@ class Game {
     }
 
     manageGameState() {
+        if (this.isResetting) return;
         if (this.map) {
             this.map.tick();
         }
@@ -660,15 +632,6 @@ class Game {
 
                             if (closestShip && new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y)) < Obj.C.OBJS.LASER.DISTANCE) {
                                 this.spawnLaser(corners[j], closestShip, team.hex);
-                                // let asteroid = new Asteroid(
-                                //     new Vector2(closestShip.ship.x, closestShip.ship.y),
-                                //     new Vector2(0, 0),
-                                //     closestShip.getLevel() * Obj.C.OBJS.LASER.ASTEROID_SIZE_LEVEL
-                                // );
-                                // this.asteroids.push(asteroid);
-                                // // this.timedAsteroids.push(
-                                // //     new TimedAsteroid(asteroid, Obj.C.OBJS.LASER.ASTEROID_TIME)
-                                // // );
                                 closestShip.takeDamage(closestShip.getLevel() * Obj.C.OBJS.LASER.DAMAGE_LEVEL);
                             }
                         }
@@ -819,6 +782,10 @@ class Game {
                 }
             }
             for (let ship of this.ships) {
+                if (this.isResetting) {
+                    ship.tick();
+                    continue;
+                }
                 if (!ship.done) {
                     this.resetShip(ship);
                     ship.done = true;
