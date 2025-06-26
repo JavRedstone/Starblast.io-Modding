@@ -18,10 +18,10 @@ return model =
       acceleration: [150,150]
       dash:
         rate: 10
-        burst_speed: [450,450]
+        burst_speed: [15,15]
         speed: [15,15]
         acceleration: [150,150]
-        initial_energy: [15,15]
+        initial_energy: [450,450]
         energy: [-225,-225]
   bodies:
     main:
