@@ -101,7 +101,7 @@ class Game {
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
 
-            RESET_STAGGER: 15,
+            RESET_STAGGER: 5,
 
             GAME_MANAGER: 30,
 
@@ -775,6 +775,12 @@ class Game {
     }
 
     manageShips() {
+        if (this.isResetting) {
+            for (let ship of this.ships) {
+                ship.tick();
+            }
+            return;
+        }
         if (game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
             if (!this.waiting && this.betweenTime == -1) {
                 for (let team of this.teams) {
@@ -782,10 +788,6 @@ class Game {
                 }
             }
             for (let ship of this.ships) {
-                if (this.isResetting) {
-                    ship.tick();
-                    continue;
-                }
                 if (!ship.done) {
                     this.resetShip(ship);
                     ship.done = true;
