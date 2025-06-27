@@ -220,19 +220,19 @@ model =
   level: 6
   model: 10
   size: 1,
-  designer: 'Stealth'
+  designer: 'Stealth (+pul)'
   specs:
     shield:
-      capacity: [100,120]
-      reload: [10,12]
+      capacity: [300,300]
+      reload: [15,15]
     generator:
-      capacity: [80,140] 
-      reload: [35,50]
+      capacity: [10,10] 
+      reload: [5,5]
     ship:
-      mass: 400
+      mass: 690
       speed: [150,150]
       rotation: [150,150]
-      acceleration: [100,100]
+      acceleration: [300,300]
   bodies:
     side_propulsors:
       section_segments: [45,135,225,255,285,315]
