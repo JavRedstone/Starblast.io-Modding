@@ -16,6 +16,7 @@ class Game {
     shipGroup = null;
 
     timeouts = [];
+    conditions = [];
 
     ships = [];
     leftShips = [];
@@ -50,7 +51,7 @@ class Game {
             MAP_SIZE: 60,
             MAP: null,
             ASTEROIDS_STRENGTH: 1e6,
-            RELEASE_CRYSTAL: false,
+            RELEASE_CRYSTAL: true,
             CRYSTAL_DROP: 0.5,
             CRYSTAL_VALUE: 0,
 
@@ -136,6 +137,7 @@ class Game {
 
     tick() {
         this.manageTimeouts();
+        this.manageConditions();
 
         this.manageGameState();
 
@@ -160,6 +162,21 @@ class Game {
         }
         for (let timeout of removedTimeouts) {
             Helper.deleteFromArray(this.timeouts, timeout);
+        }
+    }
+
+    manageConditions() {
+        let removedConditions = [];
+        for (let i = 0; i < this.conditions.length; i++) {
+            let condition = this.conditions[i];
+            if (condition.running) {
+                condition.tick();
+            } else {
+                removedConditions.push(condition);
+            }
+        }
+        for (let condition of removedConditions) {
+            Helper.deleteFromArray(this.conditions, condition);
         }
     }
 
@@ -503,18 +520,20 @@ class Game {
                             let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                             let t = diff > 0 ? 0 : 1;
                             let opp = t + 1 % 2;
-                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships);
-                            if (this.teams[t].flag && this.teams[t].flagHolder && this.teams[t].flagHolder.id == randShip.ship.id) {
-                                this.teams[t].flagHolder = null;
-                                this.teams[opp].flag.reset();
+                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101));
+                            if (randShip) {
+                                if (this.teams[t].flag && this.teams[t].flagHolder && this.teams[t].flagHolder.id == randShip.ship.id) {
+                                    this.teams[t].flagHolder = null;
+                                    this.teams[opp].flag.reset();
+                                }
+                                this.resetShip(randShip, true);
+                                randShip.chosenType = 0;
+                                randShip.chooseShipTime = game.step;
+                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                bottomMessage.components[1].value = `You have been moved to the ${this.teams[opp].color.toUpperCase()} team due to team player imbalance.`;
+                                bottomMessage.components[0].fill = '#8B8B0080';
+                                randShip.sendTimedUI(bottomMessage);
                             }
-                            this.resetShip(randShip, true);
-                            randShip.chosenType = 0;
-                            randShip.chooseShipTime = game.step;
-                            let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                            bottomMessage.components[1].value = `You have been moved to the ${this.teams[opp].color.toUpperCase()} team due to team player imbalance.`;
-                            bottomMessage.components[0].fill = '#8B8B0080';
-                            randShip.sendTimedUI(bottomMessage);
                         }
                     }
                 }
@@ -1643,6 +1662,7 @@ class Ship {
     ship = null;
 
     timeouts = [];
+    conditions = [];
 
     allUIs = [];
     timedUIs = [];
@@ -1808,6 +1828,7 @@ class Ship {
 
     tick() {
         this.tickTimeouts();
+        this.tickConditions();
         this.tickTimedUIs();
     }
 
@@ -1822,6 +1843,20 @@ class Ship {
         }
         for (let timeout of removeTimeouts) {
             Helper.deleteFromArray(this.timeouts, timeout);
+        }
+    }
+
+    tickConditions() {
+        let removeConditions = [];
+        for (let condition of this.conditions) {
+            if (condition.running) {
+                condition.tick();
+            } else {
+                removeConditions.push(condition);
+            }
+        }
+        for (let condition of removeConditions) {
+            Helper.deleteFromArray(this.conditions, condition);
         }
     }
 
@@ -6329,6 +6364,32 @@ class TimeoutCreator {
     }
 }
 
+class ConditionCreator {
+    condition = null;
+    callback = null;
+    running = false;
+
+    constructor(condition, callback) {
+        this.condition = condition;
+        this.callback = callback;
+    }
+
+    start() {
+        this.running = true;
+        return this;
+    }
+
+    tick() {
+        if (this.running) {
+            if (this.condition()) {
+                this.callback();
+                this.running = false;
+            }
+        }
+        return this;
+    }
+}
+
 class Helper {
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -6547,7 +6608,7 @@ this.options = {
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
     asteroids_strength: Game.C.OPTIONS.ASTEROIDS_STRENGTH,
-    release_crystals: Game.C.OPTIONS.RELEASE_CRYSTAL,
+    release_crystal: Game.C.OPTIONS.RELEASE_CRYSTAL,
     crystal_drop: Game.C.OPTIONS.CRYSTAL_DROP,
     crystal_value: Game.C.OPTIONS.CRYSTAL_VALUE,
 
