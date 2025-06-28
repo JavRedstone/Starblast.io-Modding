@@ -37,7 +37,7 @@ class Game {
     gravityWells = [];
     lasers = [];
 
-    waiting = true;
+    isWaiting = true;
     waitTimer = -2;
 
     isResetting = false;
@@ -288,7 +288,7 @@ class Game {
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
-        if (this.waiting) {
+        if (this.isWaiting) {
             newMap = GameMap.C.WAITING_MAP
         }
         this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.flags, newMap.portals, newMap.spawns, newMap.tiers, newMap.asteroids).spawn();
@@ -432,7 +432,7 @@ class Game {
                 }
             }
         }
-        if (this.waiting) {
+        if (this.isWaiting) {
             ship.setPosition(new Vector2(0, 0));
             if (this.shipGroup) {
                 ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
@@ -447,7 +447,7 @@ class Game {
         if (resetUIs) {
             ship.hideAllUIs();
         } else {
-            if (!this.waiting) {
+            if (!this.isWaiting) {
                 ship.chooseShipTime = game.step;
             }
             ship.portalTime = -1;
@@ -485,8 +485,8 @@ class Game {
         }
         if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
             if (this.ships.length < Game.C.MIN_PLAYERS) {
-                if (!this.waiting || this.waitTimer == -2) {
-                    this.waiting = true;
+                if (!this.isWaiting || this.waitTimer == -2) {
+                    this.isWaiting = true;
                     this.waitTimer = -1;
                     this.reset(false, true);
 
@@ -499,17 +499,17 @@ class Game {
                         true,
                         false
                     ).update();
-                } else if (this.waiting && this.waitTimer != -1) {
+                } else if (this.isWaiting && this.waitTimer != -1) {
                     this.waitTimer = -1
                 }
-            } else if (this.waiting && this.waitTimer == -1 || game.step - this.waitTimer < Game.C.TICKS.WAIT) {
+            } else if (this.isWaiting && this.waitTimer == -1 || game.step - this.waitTimer < Game.C.TICKS.WAIT) {
                 if (this.waitTimer == -1) {
                     this.waitTimer = game.step;
                 }
             } else {
-                if (this.waiting) {
+                if (this.isWaiting) {
                     this.waitTimer = -1;
-                    this.waiting = false;
+                    this.isWaiting = false;
                     if (this.logoWaiting) {
                         this.logoWaiting.destroySelf();
                         this.logoWaiting = null;
@@ -640,7 +640,7 @@ class Game {
             }
         }
 
-        if (this.waiting) {
+        if (this.isWaiting) {
             if (this.map && game.step % Obj.C.OBJS.BEACON.SPAWN_RATE == 0) {
                 for (let i = 0; i < Obj.C.OBJS.BEACON.SPAWN_AMOUNT; i++) {
                     let randPos = Helper.getRandomArrayElement(this.map.spawnArea);
@@ -824,14 +824,8 @@ class Game {
     }
 
     manageShips() {
-        if (this.isResetting) {
-            for (let ship of this.ships) {
-                ship.tick();
-            }
-            return;
-        }
-        if (game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
-            if (!this.waiting && this.betweenTime == -1) {
+        if (!this.isResetting && game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
+            if (!this.isWaiting && this.betweenTime == -1) {
                 for (let team of this.teams) {
                     team.setDisabledIdxs(this.shipGroup);
                 }
@@ -843,12 +837,12 @@ class Game {
 
                     ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
 
-                    if (!this.waiting) {
+                    if (!this.isWaiting) {
                         ship.chooseShipTime = game.step;
                     }
                 }
 
-                if (this.waiting) {
+                if (this.isWaiting) {
                     ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                     bottomMessage.components[1].value = "Waiting for more players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
@@ -1194,68 +1188,84 @@ class Game {
                 }
 
                 if (ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
-                    ship.choosingShip = true;
-
-                    if (this.map && this.map.spawns.length == 2 && ship.team) {
-                        if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) >= Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
-                            ship.chooseShipTime = -1;
+                    if (!ship.loadingChooseShip) {
+                        if (!ship.choosingShip && !ship.loadingChooseShip) {
+                            ship.loadingChooseShip = true;
                         }
-                    }
+                        ship.choosingShip = true;
 
-                    for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
-                        let isDisabled = false;
-                        if (ship.team && !this.waiting) {
-                            isDisabled = ship.team.disabledIdxs.includes(i);
-                        }
-                        let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
-                        chooseShip.clickable = !isDisabled;
-                        chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
-                        chooseShip.id += '-' + i;
-                        let separation = 100 / (ShipGroup.C.NUM_SHIPS + 2);
-                        let width = separation * 4 / 5;
-                        let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
-                        chooseShip.position[0] = start + separation * i;
-                        chooseShip.position[2] = width;
-                        if (i == 0) {
-                            chooseShip.components[0].fill = '#ff000080';
-                            chooseShip.components[2].fill = '#22000080';
-                        } else if (i == 1) {
-                            chooseShip.components[0].fill = '#00ff0080';
-                            chooseShip.components[2].fill = '#00220080';
-                        } else if (i == 2) {
-                            chooseShip.components[0].fill = '#0000ff80';
-                            chooseShip.components[2].fill = '#00002280';
-                        } else if (i == 3) {
-                            chooseShip.components[0].fill = '#ff00ff80';
-                            chooseShip.components[2].fill = '#22002280';
-                        } else {
-                            chooseShip.components[0].fill = '#00ffff80';
-                            chooseShip.components[2].fill = '#00222280';
-                        }
-                        if (isDisabled) {
-                            chooseShip.components[0].fill = '#8B8B8B40';
-                            chooseShip.components[2].fill = '#22222240';
-
-                            for (let component of chooseShip.components) {
-                                if (component.type == 'text') {
-                                    if (component.color.length == 9) {
-                                        component.color = component.color.substring(0, 7) + '60';
-                                    } else if (component.color.length == 7) {
-                                        component.color += '80';
-                                    }
-                                } else if (component.type == 'box' && component.position[3] == 0) {
-                                    component.fill += '80';
-                                }
+                        if (this.map && this.map.spawns.length == 2 && ship.team) {
+                            if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) >= Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                                ship.chooseShipTime = -1;
                             }
                         }
-                        chooseShip.components[1].value = i + 1;
-                        chooseShip.components[5].value = this.shipGroup.chosenNames[i];
-                        chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
-                        ship.sendUI(chooseShip);
+
+                        for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+                            let isDisabled = false;
+                            if (ship.team && !this.isWaiting) {
+                                isDisabled = ship.team.disabledIdxs.includes(i);
+                            }
+                            let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
+                            chooseShip.clickable = !isDisabled;
+                            chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
+                            chooseShip.id += '-' + i;
+                            let separation = 100 / (ShipGroup.C.NUM_SHIPS + 4);
+                            let width = separation * 9 / 10;
+                            let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
+                            chooseShip.position[0] = start + separation * i;
+                            chooseShip.position[2] = width;
+                            let opacity = 'BF';
+                            let disabledOpacity = '80';
+                            const colorPalette = [
+                                { fill: '#e74c3c', accent: '#c0392b' },   // Red
+                                { fill: '#27ae60', accent: '#145a32' },   // Green
+                                { fill: '#2980b9', accent: '#154360' },   // Blue
+                                { fill: '#f1c40f', accent: '#b7950b' },   // Yellow
+                                { fill: '#9b59b6', accent: '#512e5f' },   // Purple
+                                { fill: '#e67e22', accent: '#784212' },   // Orange
+                                { fill: '#16a085', accent: '#0e6251' },   // Teal
+                                { fill: '#34495e', accent: '#212f3c' },   // Navy
+                                { fill: '#fd79a8', accent: '#6c3483' },   // Pink
+                                { fill: '#95a5a6', accent: '#566573' }    // Gray
+                            ];
+                            const palette = colorPalette[i % colorPalette.length];
+                            chooseShip.components[0].fill = palette.fill + opacity;
+                            chooseShip.components[2].fill = palette.accent + opacity;
+                            if (isDisabled) {
+                                chooseShip.components[0].fill = '#8B8B8B' + disabledOpacity;
+                                chooseShip.components[2].fill = '#222222' + disabledOpacity;
+
+                                for (let component of chooseShip.components) {
+                                    if (component.type == 'text') {
+                                        if (component.color.length == 9) {
+                                            component.color = component.color.substring(0, 7) + '60';
+                                        } else if (component.color.length == 7) {
+                                            component.color += '80';
+                                        }
+                                    } else if (component.type == 'box' && component.position[3] == 0) {
+                                        component.fill += '80';
+                                    }
+                                }
+                            }
+                            chooseShip.components[1].value = i + 1;
+                            chooseShip.components[5].value = this.shipGroup.chosenNames[i];
+                            chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
+                            if (ship.loadingChooseShip) {
+                                let distFromMiddle = Math.abs(i - Math.round((ShipGroup.C.NUM_SHIPS - 1) / 2));
+                                ship.timeouts.push(new TimeoutCreator(() => {
+                                    ship.sendUI(chooseShip);
+                                    if (i == ShipGroup.C.NUM_SHIPS - 1) {
+                                        ship.loadingChooseShip = false;
+                                    }
+                                }, distFromMiddle * Ship.C.CHOOSE_SHIP_ANIMATION_TIME).start());
+                            } else {
+                                ship.sendUI(chooseShip);
+                            }
+                        }
                     }
 
                     let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
-                    chooseShipTime.components[0].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
+                    chooseShipTime.components[1].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
                     ship.sendUI(chooseShipTime);
 
                     if (ship.chosenType == 0) {
@@ -1268,13 +1278,13 @@ class Game {
                         ship.setCollider(false);
                     }
                 } else {
-                    if (ship.choosingShip) {
+                    if (ship.choosingShip && !ship.loadingChooseShip) {
                         if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
                             this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
                         }
 
                         if (ship.chosenType == 0) {
-                            if (!ship.team || this.waiting) {
+                            if (!ship.team || this.isWaiting) {
                                 ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
                             } else {
                                 ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes.filter((type, idx) => !ship.team.disabledIdxs.includes(idx)));
@@ -1300,13 +1310,14 @@ class Game {
                     let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
                     ship.sendUI(instructionsNext);
                 }
-
-                ship.tick();
             }
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (!this.waiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101) {
+                for (let ship of this.ships) {
+                    ship.tick();
+                }
+                if (!this.isResetting && !this.isWaiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
@@ -1526,7 +1537,7 @@ class Game {
         }
         else { // on respawn
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
-            if (this.waiting) {
+            if (this.isWaiting) {
                 ship.setPosition(new Vector2(0, 0));
                 ship.fillUp();
             } else {
@@ -1582,10 +1593,7 @@ class Game {
                     ship.chosenType = chosenType;
                     ship.setMaxStats();
                     ship.setCollider(true);
-                    ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
-                    ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
                     ship.chooseShipTime = -1;
-                    ship.choosingShip = false;
                 }
             }
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
@@ -1739,6 +1747,7 @@ class Ship {
 
     chooseShipTime = -1;
     choosingShip = false;
+    loadingChooseShip = false;
 
     flagTime = -1;
 
@@ -1751,6 +1760,7 @@ class Ship {
     static C = {
         INVULNERABLE_TIME: 180,
         CHOOSE_SHIP_TIME: 600,
+        CHOOSE_SHIP_ANIMATION_TIME: 10,
         CHOOSE_SHIP_TIMEOUT: 15,
         PORTAL_TIME: 3600,
         SWITCH_SHIP_TIME: 300,
@@ -1780,6 +1790,7 @@ class Ship {
         this.instructionsStep = -1
 
         this.choosingShip = false;
+        this.loadingChooseShip = false;
         this.chooseShipTime = -1;
         this.chosenType = 0;
         this.score = 0;
@@ -3407,7 +3418,7 @@ class UIComponent {
             },
             CHOOSE_SHIP: {
                 id: "choose_ship",
-                position: [0, 30, 15, 40],
+                position: [0, 30, 15, 30],
                 clickable: true,
                 visible: true,
                 components: [
@@ -3428,13 +3439,13 @@ class UIComponent {
                     {
                         type: "text",
                         position: [10, 30, 80, 10],
-                        value: "Ship Name",
+                        value: "NAME",
                         color: "#ffffff80"
                     },
                     {
                         type: "box",
                         position: [10, 41, 80, 0],
-                        stroke: "#ffffff",
+                        stroke: "#ffffff80",
                         width: 1
                     },
                     {
@@ -3445,13 +3456,13 @@ class UIComponent {
                     {
                         type: "text",
                         position: [10, 70, 80, 10],
-                        value: "Ship Origin",
+                        value: "TREE",
                         color: "#ffffff80"
                     },
                     {
                         type: "box",
                         position: [10, 81, 80, 0],
-                        stroke: "#ffffff",
+                        stroke: "#ffffff80",
                         width: 1
                     },
                     {
@@ -3463,9 +3474,14 @@ class UIComponent {
             },
             CHOOSE_SHIP_TIME: {
                 id: "choose_ship_time",
-                position: [25, 75, 50, 10],
+                position: [40, 65, 20, 10],
                 visible: true,
                 components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                    },
                     {
                         type: "text",
                         position: [0, 0, 100, 100],
