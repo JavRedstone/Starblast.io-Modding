@@ -435,7 +435,8 @@ class Game {
         if (this.waiting) {
             ship.setPosition(new Vector2(0, 0));
             if (this.shipGroup) {
-                ship.setType(Helper.getRandomArrayElement(this.shipGroup.chosenTypes));
+                ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
+                ship.setType(ship.chosenTYpe);
                 ship.fillUp();
             }
         } else {
@@ -446,10 +447,14 @@ class Game {
         if (resetUIs) {
             ship.hideAllUIs();
         } else {
-            ship.chooseShipTime = game.step;
+            if (!this.waiting) {
+                ship.chooseShipTime = game.step;
+            }
             ship.portalTime = -1;
         }
+
         ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
+        ship.sendUI(UIComponent.C.UIS.INSTRUCTIONS_TOGGLE);
         ship.isResetting = false;
     }
 
@@ -838,9 +843,9 @@ class Game {
 
                     ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
 
-                    // if (!this.waiting) {
+                    if (!this.waiting) {
                         ship.chooseShipTime = game.step;
-                    // }
+                    }
                 }
 
                 if (this.waiting) {
@@ -1287,6 +1292,15 @@ class Game {
                     }
                 }
 
+                if (ship.instructionsStep != -1) {
+                    let instructions = Helper.deepCopy(UIComponent.C.UIS.INSTRUCTIONS);
+                    instructions.components[1].value = Ship.C.INSTRUCTIONS[ship.instructionsStep];
+                    instructions.components[2].position[2] = 100 * (ship.instructionsStep + 1) / Ship.C.INSTRUCTIONS.length;
+                    ship.sendUI(instructions);
+                    let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                    ship.sendUI(instructionsNext);
+                }
+
                 ship.tick();
             }
         }
@@ -1577,6 +1591,21 @@ class Game {
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
                 ship.chooseShipTime = ship.chooseShipTime == -1 ? game.step : -1;
             }
+            if (id == UIComponent.C.UIS.INSTRUCTIONS_TOGGLE.id) {
+                ship.instructionsStep = ship.instructionsStep == -1 ? 0 : -1;
+                if (ship.instructionsStep == -1) {
+                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS);
+                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                }
+            }
+            if (id == UIComponent.C.UIS.INSTRUCTIONS_NEXT.id) {
+                ship.instructionsStep++;
+                if (ship.instructionsStep >= Ship.C.INSTRUCTIONS.length) {
+                    ship.instructionsStep = -1;
+                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS);
+                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                }
+            }
         }
     }
 
@@ -1701,6 +1730,8 @@ class Ship {
     left = false;
     done = false;
 
+    instructionsStep = -1
+
     chosenType = 0;
 
     score = 0;
@@ -1722,7 +1753,17 @@ class Ship {
         CHOOSE_SHIP_TIME: 600,
         CHOOSE_SHIP_TIMEOUT: 15,
         PORTAL_TIME: 3600,
-        SWITCH_SHIP_TIME: 300
+        SWITCH_SHIP_TIME: 300,
+        INSTRUCTIONS: [
+            'Welcome to Capture the Flag! In this game, you can choose from a variety of ships, each with unique abilities and stats.',
+            'Your goal is to capture the enemy flag and bring it back to your base. Doing so will earn your team a point.',
+            'Scoring 5 points will allow your team to win the current round. There are 3 rounds in total.',
+            'If both teams have a flagholder, you must kill the enemy flag carrier to be able to score.',
+            'Around the map are green hexagonal portals, which can teleport you to another portal. Use them to your advantage!',
+            'You are able to change your ship on the spawn hexagon. Do note that popular ships become locked for balancing.',
+            'There are collectibles that can help you gain an advantage in the game. Be sure to collect them when you see them!',
+            'Good luck and have fun!'
+        ]
     }
 
     constructor(ship) {
@@ -1735,6 +1776,8 @@ class Ship {
         this.setCollider(true);
         this.setIdle(false);
         this.setScore(0);
+
+        this.instructionsStep = -1
 
         this.choosingShip = false;
         this.chooseShipTime = -1;
@@ -3281,6 +3324,67 @@ class UIComponent {
                     }
                 ]
             },
+            INSTRUCTIONS_TOGGLE: {
+                id: "instructions_toggle",
+                position: [0, 90, 10, 5],
+                clickable: true,
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00d5ff80",
+                    },
+                    {
+                        type: "text",
+                        position: [5, 0, 90, 100],
+                        value: "Instructions",
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            INSTRUCTIONS: {
+                id: "instructions",
+                position: [20, 90, 55, 5],
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00d5ff80",
+                    },
+                    {
+                        type: "text",
+                        position: [5, 5, 90, 90],
+                        value: "",
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "box",
+                        position: [0, 90, 0, 10],
+                        fill: "#ffffff"
+                    }
+                ]
+            },
+            INSTRUCTIONS_NEXT: {
+                id: "instructions_next",
+                position: [75, 90, 5, 5],
+                clickable: true,
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                    },
+                    {
+                        type: "text",
+                        position: [5, 5, 90, 90],
+                        value: ">",
+                        color: "#ffffff"
+                    }
+                ]
+            },
             CHANGE_SHIP: {
                 id: "change_ship",
                 position: [2, 40, 15, 5],
@@ -3650,7 +3754,7 @@ class GameMap {
             flags: [],
             portals: [],
             spawns: [],
-            tiers: [6],
+            tiers: [6, 7],
             asteroids: []
         },
         TEST_MAPS: [
