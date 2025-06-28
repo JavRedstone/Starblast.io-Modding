@@ -1767,7 +1767,7 @@ class Ship {
         INSTRUCTIONS: [
             'Welcome to Capture the Flag! In this game, you can choose from a variety of ships, each with unique abilities and stats.',
             'Your goal is to capture the enemy flag and bring it back to your base. Doing so will earn your team a point.',
-            'Scoring 5 points will allow your team to win the current round. There are 3 rounds in total.',
+            `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the current round. There are ${Game.C.NUM_ROUNDS} rounds in total.`,
             'If both teams have a flagholder, you must kill the enemy flag carrier to be able to score.',
             'Around the map are green hexagonal portals, which can teleport you to another portal. Use them to your advantage!',
             'You are able to change your ship on the spawn hexagon. Do note that popular ships become locked for balancing.',
