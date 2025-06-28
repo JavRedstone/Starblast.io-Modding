@@ -588,7 +588,7 @@ const C = {
             position: [40, 80, 20, 5],
             visible: true,
             clickable: true,
-            shortcut: 'K',
+            shortcut: 'X',
             components: [
                 {
                     type: 'box',
