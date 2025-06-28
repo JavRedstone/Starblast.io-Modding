@@ -299,7 +299,7 @@ class Game {
             for (let shipGroup of Game.shipGroups) {
                 if (this.map.tier == shipGroup.tier) {
                     this.shipGroup = shipGroup;
-                    this.shipGroup.chooseShips(!this.waiting);
+                    this.shipGroup.chooseShips();
                 }
             }
         }
@@ -436,7 +436,7 @@ class Game {
             ship.setPosition(new Vector2(0, 0));
             if (this.shipGroup) {
                 ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
-                ship.setType(ship.chosenTYpe);
+                ship.setType(ship.chosenType);
                 ship.fillUp();
             }
         } else {
