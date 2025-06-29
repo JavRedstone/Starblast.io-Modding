@@ -647,7 +647,7 @@ class Game {
                     this.spawnBeacon(randPos, Helper.getRandomVividHSL());
                 }
             }
-        } else {
+        } else if (this.betweenTime == -1) {
             if (this.map && game.step % Obj.C.OBJS.LASER.SHOOT_RATE == 0) {
                 for (let i = 0; i < this.teams.length; i++) {
                     let team = this.teams[i];
@@ -1187,7 +1187,7 @@ class Game {
                     }
                 }
 
-                if (ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
+                if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
                     if (!ship.loadingChooseShip) {
                         if (!ship.choosingShip && !ship.loadingChooseShip) {
                             ship.loadingChooseShip = true;
@@ -3189,17 +3189,17 @@ class UIComponent {
                     {
                         type: "box",
                         position: [44.5, 5, 3, 35],
-                        fill: "#FFB4BB"
+                        fill: "#FFBBBB"
                     },
                     {
                         type: "box",
                         position: [48.5, 5, 3, 35],
-                        fill: "#FFFFB9"
+                        fill: "#BBBBFF"
                     },
                     {
                         type: "box",
                         position: [52.5, 5, 3, 35],
-                        fill: "#BAE1FF"
+                        fill: "#BBFFBB"
                     },
                     {
                         type: "text",
@@ -3228,7 +3228,7 @@ class UIComponent {
                     {
                         type: "text",
                         position: [30, 62.5, 40, 15],
-                        value: "Version 3.0.0",
+                        value: "Version 3.0",
                         color: "#00ff00"
                     },
                     {
