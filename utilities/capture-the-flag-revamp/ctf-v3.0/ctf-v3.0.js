@@ -46,6 +46,8 @@ class Game {
     betweenTime = -1;
     numRounds = 0;
 
+    isGameOver = false;
+
     static C = {
         OPTIONS: {
             ROOT_MODE: '',
@@ -113,6 +115,7 @@ class Game {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
+        IS_MODDING: true,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
@@ -133,6 +136,11 @@ class Game {
     }
 
     constructor() {
+        if (Game.C.IS_MODDING) {
+            Game.C.TICKS.WAIT = 10800;
+            Game.C.TICKS.ROUND = 43200;
+            Game.C.NUM_ROUNDS = 1;
+        }
         // this.reset();
     }
 
@@ -459,6 +467,7 @@ class Game {
     }
 
     gameOver() {
+        this.isGameOver = true;
         for (let ship of this.ships) {
             ship.gameOver();
         }
@@ -479,6 +488,9 @@ class Game {
     }
 
     manageGameState() {
+        if (this.isGameOver) {
+            this.gameOver();
+        }
         if (this.isResetting) return;
         if (this.map) {
             this.map.tick();
@@ -571,13 +583,15 @@ class Game {
                         if (game.step - this.betweenTime > Game.C.TICKS.BETWEEN) {
                             this.betweenTime = -1;
 
+                            if (this.numRounds >= Game.C.NUM_ROUNDS) {
+                                this.gameOver();
+                            }
+
                             this.teams[0].setScore(0);
                             this.teams[1].setScore(0);
         
                             if (this.numRounds < Game.C.NUM_ROUNDS) {
                                 this.reset(true);
-                            } else {
-                                this.gameOver();
                             }
                         }
                     }
@@ -895,7 +909,11 @@ class Game {
                         if (this.numRounds < Game.C.NUM_ROUNDS) {
                             bottomMessage.components[1].value += "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
                         } else {
-                            bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
+                            if (Game.C.IS_MODDING) {
+                                bottomMessage.components[1].value += 'Good game everyone!';
+                            } else {
+                                bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
+                            }
                         }
                         ship.sendUI(bottomMessage);
 
@@ -1136,13 +1154,20 @@ class Game {
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-                        topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        if (!Game.C.IS_MODDING) {
+                            topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                        }
                         let oppTeam = this.getOppTeam(ship.team);
                         if (oppTeam && oppTeam.flagHolder) {
                             topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to be able to score!`;
                             topMessage.components[0].fill = '#8B000080';
                         }
-                        ship.sendUI(topMessage);
+
+                        if ((Game.C.IS_MODDING && oppTeam && oppTeam.flagHolder) || !Game.C.IS_MODDING) {
+                            ship.sendUI(topMessage);
+                        } else {
+                            ship.hideUI(topMessage);
+                        }
 
                         let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
                         let winningTeam = this.getWinningTeam();
@@ -1767,7 +1792,7 @@ class Ship {
         INSTRUCTIONS: [
             'Welcome to Capture the Flag! In this game, you can choose from a variety of ships, each with unique abilities and stats.',
             'Your goal is to capture the enemy flag and bring it back to your base. Doing so will earn your team a point.',
-            `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the current round. There are ${Game.C.NUM_ROUNDS} rounds in total.`,
+            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the game.` : `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the current round. There are ${Game.C.NUM_ROUNDS} rounds in total.`),
             'If both teams have a flagholder, you must kill the enemy flag carrier to be able to score.',
             'Around the map are green hexagonal portals, which can teleport you to another portal. Use them to your advantage!',
             'You are able to change your ship on the spawn hexagon. Do note that popular ships become locked for balancing.',
@@ -2150,10 +2175,21 @@ class Ship {
 
     gameOver() {
         if (game.ships.includes(this.ship)) {
-            this.ship.gameover({
-                "Congratulations": "Thanks for playing!",
-                "Flags Captured": this.totalScore
-            });
+            if (Game.C.IS_MODDING) {
+                let winningTeam = g.getWinningTeam();
+                this.ship.gameover({
+                    "Good game!": "Thanks for playing!",
+                    "Flags Captured": this.totalScore,
+                    "Team Played": this.team.color,
+                    "Team Score": this.team.score,
+                    "Team Won": winningTeam ? winningTeam.color : "It was a tie!",
+                });
+            } else {
+                this.ship.gameover({
+                    "Good game!": "Thanks for playing!",
+                    "Flags Captured": this.totalScore
+                });
+            }
         }
         return this;
     }
