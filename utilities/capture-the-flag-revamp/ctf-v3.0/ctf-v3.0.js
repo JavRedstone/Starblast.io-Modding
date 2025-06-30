@@ -55,7 +55,7 @@ class Game {
             MAP: null,
             ASTEROIDS_STRENGTH: 1e6,
             RELEASE_CRYSTAL: true,
-            CRYSTAL_DROP: 0.5,
+            CRYSTAL_DROP: 0.9,
             CRYSTAL_VALUE: 0,
 
             FRIENDLY_COLORS: 2,
@@ -539,7 +539,7 @@ class Game {
                             let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                             let t = diff > 0 ? 0 : 1;
                             let opp = t + 1 % 2;
-                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101));
+                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id)));
                             if (randShip && !this.changeTeamShip) {
                                 this.changeTeamShip = randShip;
                                 randShip.changeTeamTime = game.step;
@@ -1570,6 +1570,8 @@ class Game {
                     ship.setPosition(this.map.spawns[ship.team.team]);
                     if (ship.chosenType != 0) {
                         this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                    } else {
+                        ship.chooseShipTime = game.step;
                     }
                 }
                 ship.setVelocity(new Vector2(0, 0));
