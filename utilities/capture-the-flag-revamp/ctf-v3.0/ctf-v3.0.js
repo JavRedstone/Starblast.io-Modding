@@ -4,7 +4,7 @@
     @author JavRedstone
     @version 3.0.0
 
-    Made in 2025
+    Developed in 2025
 
     Special thanks to Nanoray (Halycon), EDEN, and 5470p3_ for the continual support in this project, as well as countless others in the Starblast Test Games and the Capture the Flag Discord servers for aiding with testing and debugging the mod
 
@@ -109,7 +109,7 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 7200,
+            WAIT: 10800,
             ROUND: 36000,
             BETWEEN: 360
         },
@@ -462,7 +462,7 @@ class Game {
         }
 
         ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
-        ship.sendUI(UIComponent.C.UIS.INSTRUCTIONS_TOGGLE);
+        ship.sendUI(UIComponent.C.UIS.RULES_TOGGLE);
         ship.isResetting = false;
     }
 
@@ -1328,11 +1328,11 @@ class Game {
                 }
 
                 if (ship.instructionsStep != -1) {
-                    let instructions = Helper.deepCopy(UIComponent.C.UIS.INSTRUCTIONS);
-                    instructions.components[1].value = Ship.C.INSTRUCTIONS[ship.instructionsStep];
-                    instructions.components[2].position[2] = 100 * (ship.instructionsStep + 1) / Ship.C.INSTRUCTIONS.length;
+                    let instructions = Helper.deepCopy(UIComponent.C.UIS.RULES);
+                    instructions.components[1].value = Ship.C.RULES[ship.instructionsStep];
+                    instructions.components[2].position[2] = 100 * (ship.instructionsStep + 1) / Ship.C.RULES.length;
                     ship.sendUI(instructions);
-                    let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                    let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.RULES_NEXT);
                     ship.sendUI(instructionsNext);
                 }
             }
@@ -1626,19 +1626,19 @@ class Game {
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
                 ship.chooseShipTime = ship.chooseShipTime == -1 ? game.step : -1;
             }
-            if (id == UIComponent.C.UIS.INSTRUCTIONS_TOGGLE.id) {
+            if (id == UIComponent.C.UIS.RULES_TOGGLE.id) {
                 ship.instructionsStep = ship.instructionsStep == -1 ? 0 : -1;
                 if (ship.instructionsStep == -1) {
-                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS);
-                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                    ship.hideUI(UIComponent.C.UIS.RULES);
+                    ship.hideUI(UIComponent.C.UIS.RULES_NEXT);
                 }
             }
-            if (id == UIComponent.C.UIS.INSTRUCTIONS_NEXT.id) {
+            if (id == UIComponent.C.UIS.RULES_NEXT.id) {
                 ship.instructionsStep++;
-                if (ship.instructionsStep >= Ship.C.INSTRUCTIONS.length) {
+                if (ship.instructionsStep >= Ship.C.RULES.length) {
                     ship.instructionsStep = -1;
-                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS);
-                    ship.hideUI(UIComponent.C.UIS.INSTRUCTIONS_NEXT);
+                    ship.hideUI(UIComponent.C.UIS.RULES);
+                    ship.hideUI(UIComponent.C.UIS.RULES_NEXT);
                 }
             }
         }
@@ -1791,14 +1791,13 @@ class Ship {
         CHOOSE_SHIP_TIMEOUT: 15,
         PORTAL_TIME: 3600,
         SWITCH_SHIP_TIME: 300,
-        INSTRUCTIONS: [
-            'Welcome to Capture the Flag! In this game, you can choose from a variety of ships, each with unique abilities and stats.',
-            'Your goal is to capture the enemy flag and bring it back to your base. Doing so will earn your team a point.',
-            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the game.` : `Scoring ${Game.C.ROUND_MAX} points will allow your team to win the current round. There are ${Game.C.NUM_ROUNDS} rounds in total.`),
-            'If both teams have a flagholder, you must kill the enemy flag carrier to be able to score.',
-            'Around the map are green hexagonal portals, which can teleport you to another portal. Use them to your advantage!',
-            'You are able to change your ship on the spawn hexagon. Do note that popular ships become locked for balancing.',
-            'There are collectibles that can help you gain an advantage in the game. Be sure to collect them when you see them!',
+        RULES: [
+            'Choose from 5 randomly selected ships on the spawn hexagon.',
+            'Capture the enemy flag and bring it back to win points.',
+            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points causes your team to win.` : `Scoring ${Game.C.ROUND_MAX} points causes your team to win the round. There are ${Game.C.NUM_ROUNDS} rounds.`),
+            'If both teams have a flagholder, you must kill the enemy flagholder to be able to score.',
+            'Teleport using the green hexagonal portals.',
+            'Use collectibles to your advantage.',
             'Good luck and have fun!'
         ]
     }
@@ -3284,7 +3283,7 @@ class UIComponent {
                     {
                         type: "text",
                         position: [5, 0, 90, 10],
-                        value: "Waiting for more players...",
+                        value: "Waiting for players...",
                         color: "#ffffff"
                     }
                 ]
@@ -3373,9 +3372,9 @@ class UIComponent {
                     }
                 ]
             },
-            INSTRUCTIONS_TOGGLE: {
-                id: "instructions_toggle",
-                position: [0, 90, 10, 5],
+            RULES_TOGGLE: {
+                id: "rules_toggle",
+                position: [0, 90, 5, 5],
                 clickable: true,
                 visible: true,
                 components: [
@@ -3387,13 +3386,13 @@ class UIComponent {
                     {
                         type: "text",
                         position: [5, 0, 90, 100],
-                        value: "Instructions",
+                        value: "Rules",
                         color: "#ffffff"
                     }
                 ]
             },
-            INSTRUCTIONS: {
-                id: "instructions",
+            RULES: {
+                id: "rules",
                 position: [20, 90, 55, 5],
                 visible: true,
                 components: [
@@ -3415,8 +3414,8 @@ class UIComponent {
                     }
                 ]
             },
-            INSTRUCTIONS_NEXT: {
-                id: "instructions_next",
+            RULES_NEXT: {
+                id: "rules_next",
                 position: [75, 90, 5, 5],
                 clickable: true,
                 visible: true,
