@@ -232,7 +232,7 @@ model =
       mass: 1800
       speed: [30,30]
       rotation: [150,150]
-      acceleration: [3,3]
+      acceleration: [15,15]
   bodies:
     recoilerion:
       section_segments: 4
@@ -255,7 +255,7 @@ model =
         speed: [30,30]
         number: 1
         error: 3
-        recoil: 600
+        recoil: 300
     side_propulsors:
       section_segments: [45,135,225,255,285,315]
       offset:
