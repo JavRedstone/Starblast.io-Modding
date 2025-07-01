@@ -9,8 +9,8 @@ return model =
       capacity: [300,300]
       reload: [18,18]
     generator:
-      capacity: [450,450]
-      reload: [60,60]
+      capacity: [600,600]
+      reload: [75,75]
     ship:
       mass: 450
       speed: [120,120]
@@ -21,8 +21,8 @@ return model =
         burst_speed: [15,15]
         speed: [15,15]
         acceleration: [150,150]
-        initial_energy: [450,450]
-        energy: [-225,-225]
+        initial_energy: [600,600]
+        energy: [-480,-480]
   bodies:
     main:
       section_segments: 12
@@ -66,12 +66,13 @@ return model =
       texture: 2
       propeller: true
       laser:
-        damage: [10,10]
+        damage: [18,18]
         rate: -1
         type: 1
         speed: [600,600]
         number: 1
         error: 5
+        recoil: 1.5
     boosters2:
       section_segments: 8
       offset:
