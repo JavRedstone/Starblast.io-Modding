@@ -1,0 +1,104 @@
+model =
+  name: 'B1E 1kg'
+  level: 6
+  model: 11
+  size: 2
+  zoom: 0.9
+  designer: 'Pulse'
+  specs:
+    shield:
+      capacity: [300,300]
+      reload: [12,12]
+    generator:
+      capacity: [36,36]
+      reload: [2160,2160] # capacity times 60
+    ship:
+      mass: 360
+      speed: [150,240]
+      rotation: [90,75]
+      acceleration: [120,90]
+  bodies:
+    main:
+      section_segments: 12
+      offset:
+        x: 0
+        y: -75
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0,0,0,0,0,0]
+        y: [0,30,60,90,93,165,177,177,183,180,195,189]
+        z: [0,0,0,0,0,0,0,0,0,0,0,0,0]
+      width: [0,9,13.5,18,18,18,18,12,12,16.5,15,0]
+      height: [0,9,13.5,18,18,18,18,12,12,16.5,15,0]
+      texture: [4,4,1,62,1,63,3,4,3,3,17]
+      propeller: true
+    ring:
+      section_segments: 12
+      offset:
+        x: 0
+        y: -82.5
+        z: 0
+      position:
+        x: [0,0,0,0,0]
+        y: [0,3.75,7.5,3.75,0]
+        z: [0,0,0,0,0]
+      width: [16.5,16.8,16.5,16.2,16.5]
+      height: [16.5,16.8,16.5,16.2,16.5]
+      texture: 4
+  wings:
+    fin1:
+      doubleside: true
+      offset:
+        x: 0
+        y: -67.5
+        z: 0
+      length: [0,13.5]
+      width: [0,30,90]
+      position: [0,0,30]
+      angle: [-45,-45]
+      texture: 4
+      bump:
+        position: 0
+        size: 5
+    fin2:
+      doubleside: true
+      offset:
+        x: 0
+        y: -67.5
+        z: 0
+      length: [0,13.5]
+      width: [0,30,90]
+      position: [0,0,30]
+      angle: [45,45]
+      texture: 4
+      bump:
+        position: 0
+        size: 5
+
+frameCt = 6
+lasCt = 9
+dmg = model.specs.generator.capacity[0]/lasCt
+
+for a in [0...frameCt]
+  for b in [0...270] by 270/lasCt
+    model.bodies["laserFrame"+a+"Las"+b] =
+      section_segments: 0
+      offset:
+        x: 0
+        y: -b
+        z: 0
+      position:
+        x: [0]
+        y: [0]
+        z: [0]
+      width: [0]
+      height: [0]
+      texture: 63
+      laser:
+        damage: [dmg,dmg]
+        type: 1
+        rate: 1
+        speed: [990,990]
+        number: 1
+
+return model;
