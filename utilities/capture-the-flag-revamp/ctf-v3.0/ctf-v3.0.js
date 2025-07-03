@@ -143,8 +143,8 @@ class Game {
             Game.C.NUM_ROUNDS = 1;
         }
         if (Game.C.IS_EVENT) {
-            Game.C.MIN_PLAYERS = 2; // 10
-            Game.C.TICKS.WAIT = 3600 * 0.1; // * 5
+            Game.C.MIN_PLAYERS = 10;
+            Game.C.TICKS.WAIT = 3600 * 5;
             Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 5;
 
@@ -6806,6 +6806,7 @@ class Helper {
 
 Game.setShipGroups();
 this.options = {
+    map_name: 'Capture The Flag V3.0 Event', // CHANGE BACK AFTER EVENT
     root_mode: Game.C.OPTIONS.ROOT_MODE,
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
