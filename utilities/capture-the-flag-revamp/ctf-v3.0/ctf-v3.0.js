@@ -72,7 +72,7 @@ class Game {
             RESET_TREE: true,
             CHOOSE_SHIP: null,
             SHIPS: [],
-            MAX_PLAYERS: 20,
+            MAX_PLAYERS: 40, // 20 CHANGE BACK AFTER EVENT!!!
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -109,13 +109,14 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 10800,
-            ROUND: 36000,
-            BETWEEN: 360
+            WAIT: 3600 * 3,
+            ROUND: 3600 * 10,
+            BETWEEN: 60 * 10
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_MODDING: true,
+        IS_MODDING: false,
+        IS_EVENT: true,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
@@ -137,9 +138,17 @@ class Game {
 
     constructor() {
         if (Game.C.IS_MODDING) {
-            Game.C.TICKS.WAIT = 10800;
-            Game.C.TICKS.ROUND = 43200;
+            Game.C.TICKS.WAIT = 3600 * 3;
+            Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 1;
+        }
+        if (Game.C.IS_EVENT) {
+            Game.C.MIN_PLAYERS = 2; // 10
+            Game.C.TICKS.WAIT = 3600 * 0.1; // * 5
+            Game.C.TICKS.ROUND = 3600 * 12;
+            Game.C.NUM_ROUNDS = 5;
+
+            ShipGroup.C.NUM_SHIPS = 7;
         }
         // this.reset();
     }
@@ -398,7 +407,7 @@ class Game {
         }
         this.timeouts.push(new TimeoutCreator(() => {
             this.isResetting = false;
-        }, Game.C.TICKS.RESET_STAGGER * this.ships.length).start());
+        }, Game.C.TICKS.RESET_STAGGER * (this.ships.length + 1)).start());
     }
 
     resetShip(ship, fast = false, newRound = false, resetUIs = false) {
@@ -1234,7 +1243,7 @@ class Game {
                             chooseShip.clickable = !isDisabled;
                             chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
                             chooseShip.id += '-' + i;
-                            let separation = 100 / (ShipGroup.C.NUM_SHIPS + 4);
+                            let separation = 100 / (ShipGroup.C.NUM_SHIPS * 9/5);
                             let width = separation * 9 / 10;
                             let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
                             chooseShip.position[0] = start + separation * i;
@@ -1794,7 +1803,7 @@ class Ship {
         RULES: [
             'Choose from 5 randomly selected ships on the spawn hexagon.',
             'Capture the enemy flag and bring it back to win points.',
-            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points causes your team to win.` : `Scoring ${Game.C.ROUND_MAX} points causes your team to win the round. There are ${Game.C.NUM_ROUNDS} rounds.`),
+            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points causes your team to win.` : `Scoring ${Game.C.ROUND_MAX} points causes your team to win the round. There are ${Game.C.IS_EVENT ? 5 : Game.C.NUM_ROUNDS} rounds.`),
             'If both teams have a flagholder, you must kill the enemy flagholder to be able to score.',
             'Teleport using the green hexagonal portals.',
             'Use collectibles to your advantage.',
