@@ -2773,7 +2773,7 @@ class Obj {
                     transparent: false,
                 },
                 DISTANCE: 8,
-                DESPAWN: 5400,
+                DESPAWN: 1800,
                 DROP: 3600
             },
             FLAGSTAND: {
