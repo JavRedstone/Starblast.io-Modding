@@ -6859,12 +6859,10 @@ this.tick = function () {
             g.tick();
         })();
 
-        // REMOVE AFTER EVENT
         game.custom.kick = function (shipID) {
             game.findShip(shipID).gameover ({ "": "" });
         };
 
-        // REMOVE AFTER EVENT
         game.custom.showIDs = function () {
             let list = "PLAYER LIST:\n";
             for (let ship of game.ships) {
@@ -6881,12 +6879,10 @@ this.event = function (event) {
         switch (event.name) {
             case 'ship_spawned':
                 g.onShipSpawned(gameShip);
-                // REMOVE AFTER EVENT
                 echo(game.custom.showIDs());
                 break;
             case 'ship_destroyed':
                 g.onShipDestroyed(gameShip);
-                // REMOVE AFTER EVENT
                 echo(game.custom.showIDs());
                 break;
             case 'ui_component_clicked':
