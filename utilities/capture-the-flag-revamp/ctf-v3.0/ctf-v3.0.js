@@ -1221,6 +1221,9 @@ class Game {
                     }
                 }
 
+                if (this.betweenTime != -1) {
+                    ship.chooseShipTime = -1;
+                }
                 if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
                     if (!ship.loadingChooseShip) {
                         if (!ship.choosingShip && !ship.loadingChooseShip) {
