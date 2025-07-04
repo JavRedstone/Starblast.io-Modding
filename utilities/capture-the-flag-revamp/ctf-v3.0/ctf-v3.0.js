@@ -6858,6 +6858,20 @@ this.tick = function () {
         (this.tick = function () {
             g.tick();
         })();
+
+        // REMOVE AFTER EVENT
+        game.custom.kick = function (shipID) {
+            game.findShip(shipID).gameover ({ "": "" });
+        };
+
+        // REMOVE AFTER EVENT
+        game.custom.showIDs = function () {
+            var list = "PLAYER LIST:\n";
+            for (var ship of game.ships) {
+                list += `${ship.id}: ${ship.name}\n`;
+            }
+            return list;
+        }
     }
 };
 
@@ -6867,9 +6881,13 @@ this.event = function (event) {
         switch (event.name) {
             case 'ship_spawned':
                 g.onShipSpawned(gameShip);
+                // REMOVE AFTER EVENT
+                echo(game.custom.showIDs());
                 break;
             case 'ship_destroyed':
                 g.onShipDestroyed(gameShip);
+                // REMOVE AFTER EVENT
+                echo(game.custom.showIDs());
                 break;
             case 'ui_component_clicked':
                 g.onUIComponentClicked(gameShip, event.id);
