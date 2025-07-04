@@ -6866,8 +6866,8 @@ this.tick = function () {
 
         // REMOVE AFTER EVENT
         game.custom.showIDs = function () {
-            var list = "PLAYER LIST:\n";
-            for (var ship of game.ships) {
+            let list = "PLAYER LIST:\n";
+            for (let ship of game.ships) {
                 list += `${ship.id}: ${ship.name}\n`;
             }
             return list;
