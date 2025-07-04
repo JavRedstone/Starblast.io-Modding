@@ -144,7 +144,6 @@ class Game {
         }
         if (Game.C.IS_EVENT) {
             Game.C.MIN_PLAYERS = 6;
-            Game.C.TICKS.WAIT = 3600 * 5;
             Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 5;
 
@@ -482,6 +481,16 @@ class Game {
         }
     }
 
+    getMinScore(team) {
+        let minScore = Infinity;
+        for (let ship of team.ships) {
+            if (ship.score < minScore) {
+                minScore = ship.score;
+            }
+        }
+        return minScore;
+    }
+
     getWinningTeam() {
         let team0 = this.teams[0];
         let team1 = this.teams[1];
@@ -548,7 +557,8 @@ class Game {
                             let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                             let t = diff > 0 ? 0 : 1;
                             let opp = t + 1 % 2;
-                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id)));
+                            let minScore = this.getMinScore(this.teams[t]);
+                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
                             if (randShip && !this.changeTeamShip) {
                                 this.changeTeamShip = randShip;
                                 randShip.changeTeamTime = game.step;
