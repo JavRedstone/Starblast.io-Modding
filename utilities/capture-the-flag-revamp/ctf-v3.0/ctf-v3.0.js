@@ -143,7 +143,7 @@ class Game {
             Game.C.NUM_ROUNDS = 1;
         }
         if (Game.C.IS_EVENT) {
-            Game.C.MIN_PLAYERS = 8;
+            Game.C.MIN_PLAYERS = 6;
             Game.C.TICKS.WAIT = 3600 * 5;
             Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 5;
