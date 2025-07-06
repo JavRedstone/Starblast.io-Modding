@@ -54,8 +54,8 @@ class Game {
             MAP_SIZE: 60,
             MAP: null,
             ASTEROIDS_STRENGTH: 1e6,
-            RELEASE_CRYSTAL: true,
-            CRYSTAL_DROP: 0.9,
+            RELEASE_CRYSTAL: false,
+            CRYSTAL_DROP: 0.25,
             CRYSTAL_VALUE: 0,
 
             FRIENDLY_COLORS: 2,
