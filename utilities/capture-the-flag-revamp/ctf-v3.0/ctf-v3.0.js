@@ -72,7 +72,7 @@ class Game {
             RESET_TREE: true,
             CHOOSE_SHIP: null,
             SHIPS: [],
-            MAX_PLAYERS: 40, // 20 CHANGE BACK AFTER EVENT!!!
+            MAX_PLAYERS: 20,
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -115,8 +115,8 @@ class Game {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_MODDING: false,
-        IS_EVENT: true,
+        IS_MODDING: true,
+        IS_EVENT: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
         NUM_ROUNDS: 3,
@@ -6819,7 +6819,6 @@ class Helper {
 
 Game.setShipGroups();
 this.options = {
-    map_name: 'Capture The Flag V3.0 Event', // CHANGE BACK AFTER EVENT
     root_mode: Game.C.OPTIONS.ROOT_MODE,
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
