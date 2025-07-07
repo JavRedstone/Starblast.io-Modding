@@ -1361,14 +1361,12 @@ class Game {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                for (let ship of this.ships) {
-                    ship.tick();
-                }
                 if (!this.isResetting && !this.isWaiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
                     }
                 }
+                ship.tick();
             }
         }
     }
