@@ -74,6 +74,8 @@ class Game {
             SHIPS: [],
             MAX_PLAYERS: 20,
 
+            SOUNDTRACK: 'civilisation.mp3',
+
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
                 { text: "No", icon: "\u004d", key: "N" },
@@ -115,7 +117,7 @@ class Game {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_MODDING: true,
+        IS_MODDING: false,
         IS_EVENT: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
@@ -138,7 +140,6 @@ class Game {
 
     constructor() {
         if (Game.C.IS_MODDING) {
-            Game.C.TICKS.WAIT = 3600 * 3;
             Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 1;
         }
@@ -2666,8 +2667,8 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 100,
-                    y: 100,
+                    x: 90,
+                    y: 90,
                     z: 0
                 },
                 type: {
@@ -6840,6 +6841,8 @@ this.options = {
     choose_ship: Game.C.OPTIONS.CHOOSE_SHIP,
     ships: Game.C.OPTIONS.SHIPS,
     max_players: Game.C.OPTIONS.MAX_PLAYERS,
+
+    soundtrack: Game.C.OPTIONS.SOUNDTRACK,
 
     vocabulary: Game.C.OPTIONS.VOCABULARY
 }
