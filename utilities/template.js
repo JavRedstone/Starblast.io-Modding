@@ -398,8 +398,6 @@ class Game {
                 if (!ship.done) {
                     this.resetShip(ship);
                     ship.done = true;
-
-                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
                 }
 
                 if (this.map && !ship.isResetting) {
