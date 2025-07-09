@@ -7,10 +7,9 @@ class Game {
     teams = [];
 
     aliens = [];
+
     asteroids = [];
     timedAsteroids = [];
-
-    spawns = [];
     
     isGameOver = false;
 
@@ -19,10 +18,10 @@ class Game {
             ROOT_MODE: '',
             MAP_SIZE: 60,
             MAP: null,
-            ASTEROIDS_STRENGTH: 1e6,
-            RELEASE_CRYSTAL: false,
-            CRYSTAL_DROP: 0.25,
-            CRYSTAL_VALUE: 0,
+            ASTEROIDS_STRENGTH: 1,
+            RELEASE_CRYSTAL: true,
+            CRYSTAL_DROP: 1,
+            CRYSTAL_VALUE: 2,
 
             FRIENDLY_COLORS: 2,
 
@@ -69,6 +68,9 @@ class Game {
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
+            TEAM_MANAGER: 20,
+            
+            RESET_STAGGER: 5,
 
             GAME_MANAGER: 30
         },
@@ -76,7 +78,7 @@ class Game {
     }
 
     constructor() {
-        // this.reset();
+        this.reset();
     }
 
     tick() {
@@ -86,6 +88,8 @@ class Game {
         this.manageGameState();
 
         this.manageShips();
+
+        this.manageTeams();
 
         this.tickTimedEntities();
         
@@ -124,15 +128,18 @@ class Game {
 
     reset() {
         this.deleteEverything();
+        this.resetShips();
         this.resetContainers();
-        this.setMap();
-        this.resetShips(resetUIs);
+        this.timeouts.push(new TimeoutCreator(() => {
+            this.selectRandomTeams();
+            this.spawnBases();
+        }, Game.C.TICKS.RESET_STAGGER).start());
+    }
+
+    resetContainers() {
     }
 
     deleteEverything() {
-        if (this.map) {
-            this.map.destroySelf();
-        }
         for (let alien of game.aliens) {
             alien.set({ kill: true });
         }
@@ -149,44 +156,39 @@ class Game {
     }
 
     deleteObjs() {
-
-    }
-
-    resetContainers() {
-
-    }
-
-    setMap() {
-        let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.flags, newMap.portals, newMap.spawns, newMap.tiers, newMap.asteroids).spawn();
-    }
-
-    spawnSpawns() {
-        this.deleteSpawns();
-        if (this.map && this.teams.length == 2) {
-            for (let i = 0; i < this.map.spawns.length; i++) {
-                let spawnPos = this.map.spawns[i];
-                let spawn = new Obj(
-                    Obj.C.OBJS.SPAWN.id,
-                    Obj.C.OBJS.SPAWN.type,
-                    new Vector3(spawnPos.x, spawnPos.y, Obj.C.OBJS.SPAWN.position.z),
-                    new Vector3(Obj.C.OBJS.SPAWN.rotation.x, Obj.C.OBJS.SPAWN.rotation.y, Obj.C.OBJS.SPAWN.rotation.z),
-                    new Vector3(Obj.C.OBJS.SPAWN.scale.x, Obj.C.OBJS.SPAWN.scale.y, Obj.C.OBJS.SPAWN.scale.z),
-                    true,
-                    true,
-                    this.teams[i].hex
-                ).update();
-                this.spawns.push(spawn);
-            }
+        for (let team of this.teams) {
+            team.base.destroySelf();
         }
     }
 
-    resetShips(newRound = false, resetUIs = false) {
+    selectRandomTeams() {
+        this.teams = [];
+        let randTeamOption = Helper.getRandomArrayElement(Team.C.TEAMS);
+        for (let teamOption of randTeamOption) {
+            this.teams.push(
+                new Team(
+                    teamOption.TEAM,
+                    teamOption.COLOR,
+                    teamOption.HEX,
+                    teamOption.HUE,
+                    teamOption.FLAGGED
+                )
+            );
+        }
+    }
+
+    spawnBases() {
+        for (let team of this.teams) {
+            team.spawnBase();
+        }
+    }
+
+    resetShips() {
         this.ships = Helper.shuffleArray(this.ships);
         for (let i = 0; i < this.ships.length; i++) {
             let ship = this.ships[i];
             ship.timeouts.push(new TimeoutCreator(() => {
-                this.resetShip(ship, false, newRound, resetUIs);                
+                this.resetShip(ship);                
             }, Game.C.TICKS.RESET_STAGGER * i).start())
         }
         this.timeouts.push(new TimeoutCreator(() => {
@@ -194,46 +196,40 @@ class Game {
         }, Game.C.TICKS.RESET_STAGGER * (this.ships.length + 1)).start());
     }
 
-    resetShip(ship, resetUIs = false) {
+    resetShip(ship) {
         ship.isResetting = true;
 
         ship.reset();
         
         ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
-        this.resetShipNext(ship, resetUIs);
+        this.resetShipNext(ship);
     }
-    
-    resetShipNext(ship, newRound = false, resetUIs = false) {
-        if (this.teams.length == 2) {
-            if (this.teams[0].ships.length < this.teams[1].ships.length) {
-                this.teams[1].removeShip(ship);
-                ship.setTeam(this.teams[0]);
-            }
-            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-                this.teams[0].removeShip(ship);
-                ship.setTeam(this.teams[1]);
-            } else {
-                if (this.teams[0].score < this.teams[1].score) {
-                    this.teams[1].removeShip(ship);
-                    ship.setTeam(this.teams[0]);
-                } else if (this.teams[1].score < this.teams[0].score) {
-                    this.teams[0].removeShip(ship);
-                    ship.setTeam(this.teams[1]);
-                } else {
-                    let randTeam = this.teams[Helper.getRandomInt(0, 1)];
-                    this.teams[(randTeam.team + 1) % 2].removeShip(ship);
-                    ship.setTeam(randTeam);
-                }
-            }
-        }
-        if (this.map && this.map.spawns.length == 2 && ship.team) {
-            ship.setPosition(this.map.spawns[ship.team.team])
-        }
-        if (resetUIs) {
-            ship.hideAllUIs();
-        }
 
+    resetShipNext(ship) {
+        // if (this.teams.length == 2) {
+        //     if (this.teams[0].ships.length < this.teams[1].ships.length) {
+        //         this.teams[1].removeShip(ship);
+        //         ship.setTeam(this.teams[0]);
+        //     }
+        //     else if (this.teams[1].ships.length < this.teams[0].ships.length) {
+        //         this.teams[0].removeShip(ship);
+        //         ship.setTeam(this.teams[1]);
+        //     } else {
+        //         if (this.teams[0].score < this.teams[1].score) {
+        //             this.teams[1].removeShip(ship);
+        //             ship.setTeam(this.teams[0]);
+        //         } else if (this.teams[1].score < this.teams[0].score) {
+        //             this.teams[0].removeShip(ship);
+        //             ship.setTeam(this.teams[1]);
+        //         } else {
+        //             let randTeam = this.teams[Helper.getRandomInt(0, 1)];
+        //             this.teams[(randTeam.team + 1) % 2].removeShip(ship);
+        //             ship.setTeam(randTeam);
+        //         }
+        //     }
+        // }
+        ship.hideAllUIs();
         ship.isResetting = false;
     }
 
@@ -273,9 +269,6 @@ class Game {
             this.gameOver();
         }
         if (this.isResetting) return;
-        if (this.map) {
-            this.map.tick();
-        }
         if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
             
         }
@@ -382,40 +375,28 @@ class Game {
 
     manageShips() {
         if (!this.isResetting && game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
-            if (!this.isWaiting && this.betweenTime == -1) {
-                for (let team of this.teams) {
-                    team.setDisabledIdxs(this.shipGroup);
-                }
-            }
             for (let ship of this.ships) {
                 if (!ship.done) {
                     this.resetShip(ship);
                     ship.done = true;
-
-                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
                 }
 
-                if (this.map && !ship.isResetting) {
-                    if (ship.chosenType == 0) {
-                        if (this.map.spawns.length == 2 && ship.team) {
-                            ship.setPosition(this.map.spawns[ship.team.team]);
-                        }
-                        ship.setVelocity(new Vector2(0, 0));
-                        if (ship.ship.type != 101) {
-                            ship.setType(101);
-                        }
-                        ship.setCrystals(0);
-                        ship.setCollider(false);
-                    } else {
-                        ship.setCollider(true);
-                        let oppTeam = this.getOppTeam(ship.team);
-                    }
+                if (!ship.isResetting) {
+
                 }
             }
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
                 ship.tick();
+            }
+        }
+    }
+
+    manageTeams() {
+        if (game.step % Game.C.TICKS.TEAM_MANAGER === 0) {
+            for (let team of this.teams) {
+                team.tick();
             }
         }
     }
@@ -457,12 +438,26 @@ class Game {
         return null;
     }
 
+    findSafeAlien(gameAlien) {
+        for (let team of this.teams) {
+            if (team.base) {
+                for (let safeAlien of team.base.safeAliens) {
+                    if (safeAlien.alien.alien == gameAlien || safeAlien.alien.alien.custom.id == gameAlien.custom.id) {
+                        return safeAlien;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
     findAlien(gameAlien) {
         for (let alien of this.aliens) {
             if (alien.alien == gameAlien || alien.alien.id == gameAlien.id) {
                 return alien;
             }
         }
+        return null;
     }
 
     onShipSpawned(gameShip) {
@@ -473,9 +468,6 @@ class Game {
         }
         else { // on respawn
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
-            if (this.map && this.map.spawns.length == 2 && ship.team) {
-                ship.setPosition(this.map.spawns[ship.team.team]);
-            }
             ship.setVelocity(new Vector2(0, 0));
             ship.fillUp();
         }
@@ -496,7 +488,10 @@ class Game {
     }
 
     onAlienDestroyed(gameAlien, gameShip) {
-
+        let safeAlien = this.findSafeAlien(gameAlien);
+        if (safeAlien != null) {
+            safeAlien.handleAlienDestroyed(gameAlien, gameShip);
+        }
     }
 }
 
@@ -505,16 +500,12 @@ class Team {
     color = '';
     hex = 0;
     hue = 0;
-    flagged = 0;
 
     score = 0;
 
     ships = [];
 
-    disabledIdxs = [];
-
-    flag = null;
-    flagHolder = null;
+    base = null;
 
     static C = {
         TEAMS: [
@@ -574,6 +565,16 @@ class Team {
         this.color = color;
         this.hex = hex;
         this.hue = hue;
+    }
+
+    spawnBase() {
+        this.base = new Base(this).spawnBase();
+    }
+
+    tick() {
+        if (this.base) {
+            this.base.tick();
+        }
     }
 
     setScore(score) {
@@ -805,8 +806,6 @@ class Ship {
         for (let timedUI of removeTimedUIs) {
             Helper.deleteFromArray(this.timedUIs, timedUI);
         }
-
-        this.ship.set({ score: this.score });
     }
 
     getLevel() {
@@ -1002,6 +1001,408 @@ class Ship {
     }
 }
 
+class Base {
+    team = null;
+    pose = null;
+    baseModules = [];
+    safeAliens = [];
+    baseLevel = 1;
+    dead = false;
+
+    static C = {
+        NUM_SIDES: 3,
+        RADIUS: 50,
+    };
+
+    constructor(team) {
+        this.team = team;
+        this.pose = new Pose(new Vector2(this.team.team == 0 ? 100 : -100, 0), Math.PI * this.team.team);
+        this.baseLevel = 1;
+    }
+
+    spawnBase() {
+        this.baseModules = [];
+        this.safeAliens = [];
+
+        for (let i = 0; i < Base.C.NUM_SIDES; i++) {
+            let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES;
+            let container = new ContainerBaseModule(
+                this,
+                new Pose(
+                    new Vector2(
+                        Math.cos(angle) * Base.C.RADIUS,
+                        Math.sin(angle) * Base.C.RADIUS
+                    ),
+                    angle,
+                    new Vector3(1.25, 1.25, 1.25)
+                ),
+                [
+                    new AlienBaseModule(this, new Pose(new Vector2(), Math.PI, new Vector3(10, 10, 10))),
+                    new SpawnBaseModule(this, new Pose(new Vector2(-5, 15), Math.PI * -2 / 3, new Vector3(5, 5, 5))),
+                    new DepotBaseModule(this, new Pose(new Vector2(-15, 5), Math.PI * 1 / 6, new Vector3(5, 5, 5))),
+                    // new TurretBaseModule(this, new Pose()),
+                    // new StaticBaseModule(this, new Pose())
+                ]
+            );
+            this.baseModules.push(container);
+            for (let baseModule of container.baseModules) {
+                baseModule.container = container;
+            }
+        }
+
+        for (let baseModule of this.baseModules) {
+            baseModule.spawnBaseModule();
+        }
+        return this;
+    }
+
+    tick() {
+        for (let baseModule of this.baseModules) {
+            baseModule.tick();
+        }
+        return this;
+    }
+
+    destroySelf() {
+        for (let baseModule of this.baseModules) {
+            baseModule.destroySelf();
+        }
+        for (let safeAlien of this.safeAliens) {
+            safeAlien.destroySelf();
+        }
+        this.baseModules = [];
+        this.dead = true;
+        return this;
+    }
+}
+
+class BaseModule {
+    base = null;
+    container = null;
+    type = '';
+    relativePose = null;
+    pose = null;
+    objs = [];
+    dead = false;
+
+    static C = {
+        TYPES: {
+            ALIEN: 'alien',
+            SPAWN: 'spawn',
+            DEPOT: 'depot',
+            TURRET: 'turret',
+            STATIC: 'static',
+            CONTAINER: 'container'
+        }
+    };
+
+    constructor(base, type, relativePose) {
+        this.base = base;
+        this.container = base;
+        this.type = type;
+        this.relativePose = relativePose;
+    }
+
+    tick() {
+        this.setAbsolutePose();
+        return this;
+    }
+    
+    spawnBaseModule() {
+        this.setAbsolutePose();
+        this.createObjs();
+        return this;
+    }
+
+    createObjs() {
+        for (let obj of this.objs) {
+            obj.destroySelf();
+        }
+        this.objs = [];
+        return this;
+    }
+
+    setAbsolutePose() {
+        this.pose = this.relativePose.getAbsolutePose(this.container.pose);
+    }
+
+    destroySelf() {
+        this.dead = true;
+        return this;
+    }
+}
+
+class ContainerBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.CONTAINER;
+    baseModules = [];
+
+    constructor(base, relativePose, baseModules = []) {
+        super(base, BaseModule.C.TYPES.CONTAINER, relativePose);
+        this.baseModules = baseModules;
+        for (let baseModule of this.baseModules) {
+            baseModule.container = this;
+        }
+    }
+
+    tick() {
+        super.tick();
+        for (let baseModule of this.baseModules) {
+            baseModule.tick();
+        }
+        return this;
+    }
+
+    spawnBaseModule() {
+        super.spawnBaseModule();
+        for (let baseModule of this.baseModules) {
+            baseModule.spawnBaseModule();
+        }
+        return this;
+    }
+    
+    setAbsolutePose() {
+        this.pose = this.relativePose.getAbsolutePose(this.container.pose);
+        for (let baseModule of this.baseModules) {
+            baseModule.setAbsolutePose();
+        }
+    }
+
+    createObjs() {
+        super.createObjs();
+        for (let baseModule of this.baseModules) {
+            baseModule.createObjs();
+        }
+        return this;
+    }
+}
+
+class AlienBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.ALIEN;
+    safeAlien = null;
+
+    constructor(base, pose) {
+        super(base, BaseModule.C.TYPES.ALIEN, pose);
+        this.createSafeAlien();
+    }
+
+    createSafeAlien() {
+        this.safeAlien = new SafeAlien(new Pose(new Vector2(-0.5, 0)), this);
+        if (this.base) {
+            this.base.safeAliens.push(this.safeAlien);
+        }
+    }
+    
+    spawnBaseModule() {
+        super.spawnBaseModule();
+        if (this.safeAlien) {
+            this.safeAlien.spawnAlien();
+        }
+        return this;
+    }
+
+    createObjs() {
+        super.createObjs();
+        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
+        uShape = this.pose.transformObj(uShape);
+        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
+        this.objs.push(uShapeObj);
+    }
+
+    tick() {
+        super.tick();
+        if (this.safeAlien) {
+            this.safeAlien.tick();
+        }
+        return this;
+    }
+
+    destroySelf() {
+        super.destroySelf();
+        if (this.safeAlien) {
+            this.safeAlien.destroySelf();
+        }
+        return this;
+    }
+}
+
+class SpawnBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.SPAWN;
+
+    constructor(base, pose) {
+        super(base, BaseModule.C.TYPES.SPAWN, pose);
+    }
+
+    createObjs() {
+        super.createObjs();
+        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
+        uShape = this.pose.transformObj(uShape);
+        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
+        this.objs.push(uShapeObj);
+    }
+}
+
+class DepotBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.DEPOT;
+
+    constructor(base, pose) {
+        super(base, BaseModule.C.TYPES.DEPOT, pose);
+    }
+
+    createObjs() {
+        super.createObjs();
+        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
+        uShape = this.pose.transformObj(uShape);
+        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
+        this.objs.push(uShapeObj);
+    }
+}
+
+class TurretBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.TURRET;
+}
+
+class StaticBaseModule extends BaseModule {
+    type = BaseModule.C.TYPES.STATIC;
+}
+
+class SafeAlien {
+    alien = null;
+    relativePose = null;
+    pose = null;
+    baseModule = null;
+    baseLevelFields = SafeAlien.C.BASE_LEVELS[0];
+    setOneTimers = false;
+
+    timeouts = [];
+
+    static C = {
+        TICKS: {
+            SPAWN_DELAY: 5,
+        },
+        ALL: {
+            VELOCITY: {
+                x: 0,
+                y: 0
+            },
+            REGEN: 0,
+            DAMAGE: 1,
+            LASER_SPEED: 1,
+            RATE: 0.1
+        },
+        BASE_LEVELS: [
+            {
+                BASE_LEVEL: 1,
+                NAME: 'Saucer',
+                SHIELD: 25,
+                POINTS: 10,
+                CRYSTAL_DROP: 5,
+                CODE: 19,
+                LEVEL: 0
+            },
+            {
+                BASE_LEVEL: 2,
+                NAME: 'Saucer',
+                SHIELD: 50,
+                POINTS: 20,
+                CRYSTAL_DROP: 10,
+                CODE: 19,
+                LEVEL: 1
+            },
+            {
+                BASE_LEVEL: 3,
+                NAME: 'Saucer',
+                SHIELD: 100,
+                POINTS: 50,
+                CRYSTAL_DROP: 20,
+                CODE: 19,
+                LEVEL: 2
+            },
+            {
+                BASE_LEVEL: 4,
+                NAME: 'Boss',
+                SHIELD: 200,
+                POINTS: 100,
+                CRYSTAL_DROP: 40,
+                LEVEL: 2
+            }
+            
+        ]
+    }
+
+    constructor(relativePose, baseModule = null) {
+        this.relativePose = relativePose;
+        this.baseModule = baseModule;
+    }
+
+    setAbsolutePose() {
+        this.pose = this.relativePose.getAbsolutePose(this.baseModule.pose);
+    }
+
+    spawnAlien() {
+        this.setAbsolutePose();
+        if (this.pose) {
+            this.baseLevelFields = this.baseModule && this.baseModule.base ? SafeAlien.C.BASE_LEVELS.find(level => level.BASE_LEVEL === this.baseModule.base.baseLevel) : SafeAlien.C.BASE_LEVELS[0];
+            this.alien = new Alien(this.pose.position, new Vector2(SafeAlien.C.ALL.VELOCITY.x, SafeAlien.C.ALL.VELOCITY.y), this.baseLevelFields.NAME, this.baseLevelFields.CODE, this.baseLevelFields.LEVEL, this.baseLevelFields.POINTS, this.baseLevelFields.CRYSTAL_DROP, this.baseLevelFields.WEAPON_DROP);
+            this.alien.setID(`${this.baseModule.base.team.team}-${Helper.getRandomString(10)}`);
+            this.alien.setPosition(this.pose.position);
+            this.setOneTimers = false;
+        }
+        return this;
+    }
+
+    tick() {
+        this.setAbsolutePose();
+        this.tickTimeouts();
+        if (this.alien && game.aliens.includes(this.alien.alien)) {
+            if (!this.setOneTimers) {
+                this.setOneTimers = true;
+                this.timeouts.push(new TimeoutCreator(() => {
+                    this.alien.setShield(this.baseLevelFields.SHIELD);
+                }, SafeAlien.C.TICKS.SPAWN_DELAY).start());
+            }
+            this.alien.setPosition(this.pose.position);
+            this.alien.setVelocity(new Vector2(SafeAlien.C.ALL.VELOCITY.x, SafeAlien.C.ALL.VELOCITY.y));
+            this.alien.setRegen(SafeAlien.C.ALL.REGEN);
+            this.alien.setDamage(SafeAlien.C.ALL.DAMAGE);
+            this.alien.setLaserSpeed(SafeAlien.C.ALL.LASER_SPEED);
+            this.alien.setRate(SafeAlien.C.ALL.RATE);
+        }
+        return this;
+    }
+
+    tickTimeouts() {
+        let removeTimeouts = [];
+        for (let timeout of this.timeouts) {
+            if (timeout.running) {
+                timeout.tick();
+            } else {
+                removeTimeouts.push(timeout);
+            }
+        }
+        for (let timeout of removeTimeouts) {
+            Helper.deleteFromArray(this.timeouts, timeout);
+        }
+        return this;
+    }
+
+    handleAlienDestroyed(gameAlien, gameShip) {
+        if (this.alien.alien == gameAlien && this.alien.alien.custom.id === gameAlien.custom.id) {
+            this.alien.destroySelf();
+            if (this.baseModule && !this.baseModule.dead) {
+                this.spawnAlien();
+            }
+        }
+        return this;
+    }
+
+    destroySelf() {
+        if (this.alien) {
+            this.alien.destroySelf();
+        }
+        return this;
+    }
+}
+
 class Alien {
     name = '';
 
@@ -1091,6 +1492,12 @@ class Alien {
             code: code, level: level,
             points: points, crystal_drop: crystalDrop, weapon_drop: weaponDrop,
         });
+    }
+
+    setID(id) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.custom.id = id;
+        }
     }
 
     setPosition(position) {
@@ -1381,6 +1788,34 @@ class Obj {
                     obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
+            },
+            U_SHAPE: {
+                id: 'u_shape',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                },
+                type: {
+                    id: 'u_shape',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/u-sniper.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    transparent: false
+                },
+                physics: {
+                    mass: 10000
+                }
             }
         }
     }
@@ -1392,6 +1827,7 @@ class Obj {
         randomizeID = false,
         randomizeTypeID = false,
         color = "#ffffff",
+        physics = null
     ) {
         this.obj = {
             id: id,
@@ -1421,6 +1857,9 @@ class Obj {
         }
         if (randomizeTypeID) {
             this.obj.type.id += '-' + Helper.getRandomString(10);
+        }
+        if (physics) {
+            this.obj.physics.mass = physics.mass;
         }
 
         this.originalObj = Helper.deepCopy(this.obj);
@@ -1838,112 +2277,56 @@ class UISubComponent {
     }
 }
 
-class GameMap {
-    name = '';
-    author = '';
-    map = '';
-    spawnArea = [];
-    gridObjs = [];
-    flags = [];
-    portals = [];
-    spawns = [];
-    tiers = [];
-    asteroidPaths = [];
+class Pose {
+    position = null;
+    rotation = null;
+    scale = null;
 
-    tier = 0;
-
-    static C = {
-        FILL_IN: false,
-        MAPS: [
-        ]
+    constructor(position = new Vector2(0, 0), rotation = 0, scale = new Vector3(1, 1, 1)) {
+        this.position = position;
+        this.rotation = rotation;
+        this.scale = scale;
     }
 
-    constructor(name, author, map, spawns, asteroids) {
-        this.name = name;
-        this.author = author;
-        this.map = map;
-        if (GameMap.C.FILL_IN) {
-            this.map = this.map.replace(/[1-8]/g, '9');
-        }
-        this.getSpawnArea();
-        this.spawns = [];
-        if (spawns) {
-            for (let i = 0; i < spawns.length; i++) {
-                this.spawns.push(new Vector2(spawns[i].x, spawns[i].y));
-            }
-        }
-
-        this.asteroidPaths = [];
-        for (let i = 0; i < asteroids.length; i++) {
-            this.asteroidPaths.push(new AsteroidPath(
-                new Vector2(asteroids[i].x, asteroids[i].y),
-                new Vector2(asteroids[i].vx, asteroids[i].vy),
-                asteroids[i].size
-            ));
-        }
+    getAbsolutePose(prevPose) {
+        const rotatedPosition = this.position.rotateBy(prevPose.rotation);
+        const scaledPosition = new Vector2(
+            rotatedPosition.x * prevPose.scale.x,
+            rotatedPosition.y * prevPose.scale.y
+        );
+        const absolutePosition = prevPose.position.add(scaledPosition);
+        const absoluteRotation = prevPose.rotation + this.rotation;
+        const absoluteScale = prevPose.scale.multiplyComponents(this.scale);
+        return new Pose(absolutePosition, absoluteRotation, absoluteScale);
     }
 
-    getSpawnArea() {
-        let sMap = this.map.split('\n');
-        this.spawnArea = [];
-        for (let i = 0; i < Game.C.OPTIONS.MAP_SIZE; i++) {
-            for (let j = 0; j < Game.C.OPTIONS.MAP_SIZE; j++) {
-                let char = sMap[i].charAt(j);
-                if (char == ' ') {
-                    this.spawnArea.push(new Vector2(
-                        (j - Game.C.OPTIONS.MAP_SIZE / 2 + 0.5) * 10,
-                        (Game.C.OPTIONS.MAP_SIZE / 2 - 0.5 - i) * 10
-                    ));
-                }
-            }
-        }
-
-        if (Game.C.IS_DEBUGGING) {
-            for (let i = 0; i < this.spawnArea.length; i++) {
-                let grid = Helper.deepCopy(Obj.C.OBJS.GRID);
-                this.gridObjs.push(new Obj(
-                    grid.id,
-                    grid.type,
-                    new Vector3(this.spawnArea[i].x * 10, this.spawnArea[i].y * 10, grid.position.z),
-                    new Vector3(grid.rotation.x, grid.rotation.y, grid.rotation.z),
-                    new Vector3(grid.scale.x, grid.scale.y, grid.scale.z),
-                    true,
-                    false
-                ).update());
-            }
-        }
+    rotateBy(angle) {
+        const newPosition = this.position.clone().rotateBy(angle);
+        const newRotation = this.rotation.clone().addScalar(angle);
+        return new Pose(newPosition, newRotation, this.scale.clone());
     }
 
-    spawn() {
-        game.setCustomMap(this.map);
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.spawn();
-        }
-        return this;
+    transformObj(obj) {
+        let objPosition = new Vector2(obj.position.x, obj.position.y);
+        let transformedPosition = this.position.add(objPosition.rotateBy(this.rotation));
+        
+        obj.position.x = transformedPosition.x;
+        obj.position.y = transformedPosition.y;
+
+        obj.rotation.z = this.rotation + obj.rotation.z;
+        
+        obj.scale.x *= this.scale.x;
+        obj.scale.y *= this.scale.y;
+        obj.scale.z *= this.scale.z;
+        return obj;
     }
 
-    tick() {
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.tick();
-        }
-        return this;
-    }
-
-    stop() {
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.stop();
-        }
-        return this;
-    }
-
-    destroySelf() {
-        for (let gridObj of this.gridObjs) {
-            gridObj.destroySelf();
-        }
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.destroySelf();
-        }
-        return this;
+    clone() {
+        return new Pose(
+            this.position.clone(),
+            this.rotation.clone(),
+            this.scale.clone()
+        );
     }
 }
 
@@ -1951,7 +2334,7 @@ class Vector2 {
     x = 0;
     y = 0;
 
-    constructor(x, y) {
+    constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
     }
@@ -1966,6 +2349,10 @@ class Vector2 {
 
     multiply(scalar) {
         return new Vector2(this.x * scalar, this.y * scalar);
+    }
+
+    multiplyComponents(vector) {
+        return new Vector2(this.x * vector.x, this.y * vector.y);
     }
 
     divide(scalar) {
@@ -2014,6 +2401,15 @@ class Vector2 {
         return Math.atan2(vector.y - this.y, vector.x - this.x);
     }
 
+    rotateBy(angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        return new Vector2(
+            this.x * cos - this.y * sin,
+            this.x * sin + this.y * cos
+        );
+    }
+
     clone() {
         return new Vector2(this.x, this.y);
     }
@@ -2028,7 +2424,7 @@ class Vector3 {
     y = 0;
     z = 0;
 
-    constructor(x, y, z) {
+    constructor(x = 0, y = 0, z = 0) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -2044,6 +2440,10 @@ class Vector3 {
 
     multiply(scalar) {
         return new Vector3(this.x * scalar, this.y * scalar, this.z * scalar);
+    }
+
+    multiplyComponents(vector) {
+        return new Vector3(this.x * vector.x, this.y * vector.y, this.z * vector.z);
     }
 
     divide(scalar) {
