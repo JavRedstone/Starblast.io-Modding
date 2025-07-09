@@ -2658,7 +2658,7 @@ class Obj {
                 position: {
                     x: 0,
                     y: 0,
-                    z: -500
+                    z: -30
                 },
                 rotation: {
                     x: Math.PI,
@@ -2666,8 +2666,8 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 500,
-                    y: 500,
+                    x: 100,
+                    y: 100,
                     z: 0
                 },
                 type: {
