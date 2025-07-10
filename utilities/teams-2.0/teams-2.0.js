@@ -16,7 +16,7 @@ class Game {
     static C = {
         OPTIONS: {
             ROOT_MODE: '',
-            MAP_SIZE: 60,
+            MAP_SIZE: 100,
             MAP: null,
             ASTEROIDS_STRENGTH: 1,
             RELEASE_CRYSTAL: true,
@@ -25,7 +25,7 @@ class Game {
 
             FRIENDLY_COLORS: 2,
 
-            RADAR_ZOOM: 1,
+            RADAR_ZOOM: 3,
 
             SPEED_MOD: 1.5,
             FRICTION_RATIO: 1,
@@ -163,17 +163,24 @@ class Game {
 
     selectRandomTeams() {
         this.teams = [];
-        let randTeamOption = Helper.getRandomArrayElement(Team.C.TEAMS);
-        for (let teamOption of randTeamOption) {
-            this.teams.push(
+        let availableTeamOptions = Helper.deepCopy(Team.C.TEAMS);
+        for (let i = 0; i < Game.C.OPTIONS.FRIENDLY_COLORS / 2; i++) {
+            let randIndex = Helper.getRandomInt(0, availableTeamOptions.length - 1);
+            let randTeamOption = availableTeamOptions[randIndex];
+            availableTeamOptions.splice(randIndex, 1);
+            for (let teamOption of randTeamOption) {
+            if (this.teams.length < Game.C.OPTIONS.FRIENDLY_COLORS) {
+                this.teams.push(
                 new Team(
-                    teamOption.TEAM,
+                    this.teams.length,
                     teamOption.COLOR,
                     teamOption.HEX,
                     teamOption.HUE,
                     teamOption.FLAGGED
                 )
-            );
+                );
+            }
+            }
         }
     }
 
@@ -207,28 +214,28 @@ class Game {
     }
 
     resetShipNext(ship) {
-        // if (this.teams.length == 2) {
-        //     if (this.teams[0].ships.length < this.teams[1].ships.length) {
-        //         this.teams[1].removeShip(ship);
-        //         ship.setTeam(this.teams[0]);
-        //     }
-        //     else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-        //         this.teams[0].removeShip(ship);
-        //         ship.setTeam(this.teams[1]);
-        //     } else {
-        //         if (this.teams[0].score < this.teams[1].score) {
-        //             this.teams[1].removeShip(ship);
-        //             ship.setTeam(this.teams[0]);
-        //         } else if (this.teams[1].score < this.teams[0].score) {
-        //             this.teams[0].removeShip(ship);
-        //             ship.setTeam(this.teams[1]);
-        //         } else {
-        //             let randTeam = this.teams[Helper.getRandomInt(0, 1)];
-        //             this.teams[(randTeam.team + 1) % 2].removeShip(ship);
-        //             ship.setTeam(randTeam);
-        //         }
-        //     }
-        // }
+        if (this.teams.length == 2) {
+            if (this.teams[0].ships.length < this.teams[1].ships.length) {
+                this.teams[1].removeShip(ship);
+                ship.setTeam(this.teams[0]);
+            }
+            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
+                this.teams[0].removeShip(ship);
+                ship.setTeam(this.teams[1]);
+            } else {
+                if (this.teams[0].score < this.teams[1].score) {
+                    this.teams[1].removeShip(ship);
+                    ship.setTeam(this.teams[0]);
+                } else if (this.teams[1].score < this.teams[0].score) {
+                    this.teams[0].removeShip(ship);
+                    ship.setTeam(this.teams[1]);
+                } else {
+                    let randTeam = this.teams[Helper.getRandomInt(0, 1)];
+                    this.teams[(randTeam.team + 1) % 2].removeShip(ship);
+                    ship.setTeam(randTeam);
+                }
+            }
+        }
         ship.hideAllUIs();
         ship.isResetting = false;
     }
@@ -379,6 +386,8 @@ class Game {
                 if (!ship.done) {
                     this.resetShip(ship);
                     ship.done = true;
+
+                    this.handleShipSpawnLerp(ship);
                 }
 
                 if (!ship.isResetting) {
@@ -460,6 +469,15 @@ class Game {
         return null;
     }
 
+    handleShipSpawnLerp(ship) {
+        if (ship.team) {
+            let spawnModule = Helper.getRandomArrayElement(ship.team.base.getModulesByType(BaseModule.C.TYPES.SPAWN));
+            if (spawnModule) {
+                ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_SPAWN.NAME, new Pose(spawnModule.pose.position.clone(), spawnModule.pose.rotation + Math.PI, spawnModule.pose.scale.clone()), ShipLerp.C.TYPES.EXIT_SPAWN.BLEND_FACTOR, spawnModule);
+            }
+        }
+    }
+
     onShipSpawned(gameShip) {
         let ship = this.findShip(gameShip);
         if (ship == null) {
@@ -470,6 +488,8 @@ class Game {
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
             ship.setVelocity(new Vector2(0, 0));
             ship.fillUp();
+
+            this.handleShipSpawnLerp(ship);
         }
     }
 
@@ -610,12 +630,91 @@ class Team {
     }
 }
 
+class ShipLerp {
+    ship = null;
+    
+    name = '';
+
+    targetPose = null;
+
+    t = 0;
+    
+    baseModule = null;
+    targetDifference = null;
+
+    running = true;
+
+    prevTime = 0;
+
+    static C = {
+        TYPES: {
+            EXIT_SPAWN: {
+                NAME: 'exit-spawn',
+                BLEND_FACTOR: 0.2
+            },
+            ENTER_DEPOT: {
+                NAME: 'enter-depot',
+                BLEND_FACTOR: 0.1
+            },
+            EXIT_DEPOT: {
+                NAME: 'exit-depot',
+                BLEND_FACTOR: 0.2
+            }
+        }
+    }
+
+    constructor(ship, name, targetPose, t = 0.1, baseModule = null) {
+        this.ship = ship;
+        this.name = name;
+        this.targetPose = targetPose;
+        this.t = t;
+        this.baseModule = baseModule;
+
+        if (this.baseModule) {
+            this.targetDifference = this.targetPose.subtract(this.baseModule.pose);
+        }
+
+        this.running = true;
+        this.prevTime = game.step;
+    }
+
+    tick() {
+        if (this.running) {
+            this.ship.setIdle(true);
+            this.ship.setGenerator(0);
+            this.ship.setInvulnerable(Ship.C.LERP_INVULNERABLE_TIME);
+            this.ship.setCollider(false);
+
+            if (this.baseModule) {
+                this.targetPose = this.baseModule.pose.add(this.targetDifference);
+            }
+            
+            let lerpPose = this.ship.getPose().lerp(this.targetPose, this.t);
+            // let velocity = lerpPose.position.subtract(this.ship.getPosition()).divide(game.step - this.prevTime);
+            this.ship.setPosition(lerpPose.position);
+            // this.ship.setVelocity(velocity);
+            this.ship.setAngle(lerpPose.rotation);
+            this.prevTime = game.step;
+        } else {
+            this.ship.setIdle(false);
+            this.ship.setCollider(true);
+        }
+    }
+
+    stop() {
+        this.running = false;
+        this.ship.setIdle(false);
+        this.ship.setCollider(true);
+    }
+}
+
 class Ship {    
     team = null;
     ship = null;
 
     timeouts = [];
     conditions = [];
+    lerp = null;
 
     allUIs = [];
     timedUIs = [];
@@ -628,7 +727,8 @@ class Ship {
     isResetting = false;
 
     static C = {
-        INVULNERABLE_TIME: 180
+        INVULNERABLE_TIME: 360,
+        LERP_INVULNERABLE_TIME: 240
     }
 
     constructor(ship) {
@@ -763,6 +863,7 @@ class Ship {
     tick() {
         this.tickTimeouts();
         this.tickConditions();
+        this.tickLerp();
         this.tickTimedUIs();
     }
 
@@ -791,6 +892,15 @@ class Ship {
         }
         for (let condition of removeConditions) {
             Helper.deleteFromArray(this.conditions, condition);
+        }
+    }
+
+    tickLerp() {
+        if (this.lerp != null) {
+            this.lerp.tick();
+            if (!this.lerp.running) {
+                this.lerp = null;
+            }
         }
     }
 
@@ -846,6 +956,13 @@ class Ship {
         return this;
     }
 
+    getPosition() {
+        if (game.ships.includes(this.ship)) {
+            return new Vector2(this.ship.x, this.ship.y);
+        }
+        return null;
+    }
+
     setVelocity(velocity) {
         if (game.ships.includes(this.ship)) {
             this.ship.vx = velocity.x;
@@ -853,6 +970,31 @@ class Ship {
             this.ship.set({ vx: velocity.x, vy: velocity.y });
         }
         return this;
+    }
+
+    getVelocity() {
+        if (game.ships.includes(this.ship)) {
+            return new Vector2(this.ship.vx, this.ship.vy);
+        }
+        return null;
+    }
+
+    setAngle(angle) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.angle = angle;
+            this.ship.set({ angle: Helper.toDegrees(angle) });
+        }
+        return this;
+    }
+
+    getPose() {
+        if (game.ships.includes(this.ship)) {
+            return new Pose(
+                new Vector2(this.ship.x, this.ship.y),
+                this.ship.r
+            );
+        }
+        return null;
     }
 
     setCrystals(crystals) {
@@ -1006,44 +1148,76 @@ class Base {
     pose = null;
     baseModules = [];
     safeAliens = [];
-    baseLevel = 1;
+    baseLevel = 4;
     dead = false;
 
     static C = {
-        NUM_SIDES: 3,
-        RADIUS: 50,
+        SCALES: [
+            1,
+            1.2,
+            1.5,
+            2
+        ],
+        NUM_SIDES: [
+            2,
+            3,
+            3,
+            4
+        ],
+        RADIUS: 80,
+        ROTATION_RATE: -Math.PI / (60 * 60 * 8),
+        ORBIT_RADIUS: 200,
+        ORBIT_RATE: Math.PI / (60 * 60 * 8),
     };
 
     constructor(team) {
         this.team = team;
-        this.pose = new Pose(new Vector2(this.team.team == 0 ? 100 : -100, 0), Math.PI * this.team.team);
-        this.baseLevel = 1;
+        let angle = (this.team.team * 2 * Math.PI) / Game.C.OPTIONS.FRIENDLY_COLORS;
+        this.pose = new Pose(
+            new Vector2(
+                Math.cos(angle) * Base.C.ORBIT_RADIUS,
+                Math.sin(angle) * Base.C.ORBIT_RADIUS
+            ),
+            Math.PI * this.team.team
+        );
     }
 
     spawnBase() {
         this.baseModules = [];
         this.safeAliens = [];
 
-        for (let i = 0; i < Base.C.NUM_SIDES; i++) {
-            let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES;
+        for (let i = 0; i < Base.C.NUM_SIDES[this.baseLevel - 1]; i++) {
+            let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1];
             let container = new ContainerBaseModule(
                 this,
                 new Pose(
                     new Vector2(
-                        Math.cos(angle) * Base.C.RADIUS,
-                        Math.sin(angle) * Base.C.RADIUS
-                    ),
+                        Math.cos(angle),
+                        Math.sin(angle)
+                    ).multiply(Base.C.RADIUS),
                     angle,
-                    new Vector3(1.25, 1.25, 1.25)
+                    new Vector3(1, 1, 1).multiply(Base.C.SCALES[this.baseLevel - 1])
                 ),
                 [
-                    new AlienBaseModule(this, new Pose(new Vector2(), Math.PI, new Vector3(10, 10, 10))),
-                    new SpawnBaseModule(this, new Pose(new Vector2(-5, 15), Math.PI * -2 / 3, new Vector3(5, 5, 5))),
-                    new DepotBaseModule(this, new Pose(new Vector2(-15, 5), Math.PI * 1 / 6, new Vector3(5, 5, 5))),
+                    new StaticBaseModule(this, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.STATIC.SCALE))),
+                    new AlienBaseModule(this, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.ALIEN.SCALE))),
+                    new SpawnBaseModule(this, new Pose(new Vector2(0, 9.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.SPAWN.SCALE))),
                     // new TurretBaseModule(this, new Pose()),
-                    // new StaticBaseModule(this, new Pose())
                 ]
             );
+            for (let j = 0; j < 2; j++) {
+                let angle = Math.PI * 1 / 8;
+                let depotPose = new Pose(
+                    new Vector2(
+                        -5 + Math.cos(angle + Math.PI / 2) * j * BaseModule.C.TYPES.DEPOT.STEP,
+                        -6.5 + Math.sin(angle + Math.PI / 2) * j * BaseModule.C.TYPES.DEPOT.STEP
+                    ),
+                    angle,
+                    new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.DEPOT.SCALE)
+                );
+                let depotModule = new DepotBaseModule(this, depotPose);
+                container.baseModules.push(depotModule);
+            }
             this.baseModules.push(container);
             for (let baseModule of container.baseModules) {
                 baseModule.container = container;
@@ -1057,10 +1231,27 @@ class Base {
     }
 
     tick() {
+        this.pose.rotation += Base.C.ROTATION_RATE;
+        this.pose.position = this.pose.position.rotateBy(Base.C.ORBIT_RATE);
         for (let baseModule of this.baseModules) {
             baseModule.tick();
         }
         return this;
+    }
+
+    getModulesByType(type) {
+        let baseModules = [];
+        for (let baseModule of this.baseModules) {
+            if (baseModule.type == type) {
+                baseModules.push(baseModule);
+            } else if (baseModule.type == BaseModule.C.TYPES.CONTAINER) {
+                let containerModules = baseModule.getModulesByType(type);
+                for (let containerModule of containerModules) {
+                    baseModules.push(containerModule);
+                }
+            }
+        }
+        return baseModules;
     }
 
     destroySelf() {
@@ -1087,13 +1278,33 @@ class BaseModule {
 
     static C = {
         TYPES: {
-            ALIEN: 'alien',
-            SPAWN: 'spawn',
-            DEPOT: 'depot',
-            TURRET: 'turret',
-            STATIC: 'static',
-            CONTAINER: 'container'
-        }
+            ALIEN: {
+                NAME: 'alien',
+                SCALE: 10
+            },
+            SPAWN: {
+                NAME: 'spawn',
+                SCALE: 5
+            },
+            DEPOT: {
+                NAME: 'depot',
+                SCALE: 5,
+                STEP: 8
+            },
+            TURRET: {
+                NAME: 'turret',
+                SCALE: 5
+            },
+            STATIC: {
+                NAME: 'static',
+                SCALE: 5
+            },
+            CONTAINER: {
+                NAME: 'container',
+                SCALE: 5
+            }
+        },
+        RESET_MULTIPLIER: 200
     };
 
     constructor(base, type, relativePose) {
@@ -1105,6 +1316,7 @@ class BaseModule {
 
     tick() {
         this.setAbsolutePose();
+        this.updateObjs();
         return this;
     }
     
@@ -1119,6 +1331,33 @@ class BaseModule {
             obj.destroySelf();
         }
         this.objs = [];
+        return this;
+    }
+
+    updateObjs() {
+        let gamestep = (game.step % (Game.C.TICKS.TEAM_MANAGER * BaseModule.C.RESET_MULTIPLIER)) / Game.C.TICKS.TEAM_MANAGER;
+        if (gamestep == 0) {
+            for (let obj of this.objs) {
+                obj.destroySelf();
+            }
+        } else if (gamestep == 1) {
+            game.removeObject();
+        } else {
+            for (let obj of this.objs) {
+                obj.show();
+                obj.setPosition(new Vector3(this.pose.position.x, this.pose.position.y, obj.obj.position.z));
+                obj.setRotation(new Vector3(obj.obj.rotation.x, obj.obj.rotation.y, this.pose.rotation));
+                obj.setScale(this.pose.scale);
+                obj.update();
+            }
+        }
+    }
+
+    createUShape() {
+        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
+        uShape = this.pose.transformObj(uShape);
+        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true, this.base.team.hex).update();
+        this.objs.push(uShapeObj);
         return this;
     }
 
@@ -1150,6 +1389,21 @@ class ContainerBaseModule extends BaseModule {
             baseModule.tick();
         }
         return this;
+    }
+
+    getModulesByType(type) {
+        let baseModules = [];
+        for (let baseModule of this.baseModules) {
+            if (baseModule.type == type) {
+                baseModules.push(baseModule);
+            } else if (baseModule.type == BaseModule.C.TYPES.CONTAINER) {
+                let containerModules = baseModule.getModulesByType(type);
+                for (let containerModule of containerModules) {
+                    baseModules.push(containerModule);
+                }
+            }
+        }
+        return baseModules;
     }
 
     spawnBaseModule() {
@@ -1202,10 +1456,7 @@ class AlienBaseModule extends BaseModule {
 
     createObjs() {
         super.createObjs();
-        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
-        uShape = this.pose.transformObj(uShape);
-        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
-        this.objs.push(uShapeObj);
+        this.createUShape();
     }
 
     tick() {
@@ -1234,10 +1485,7 @@ class SpawnBaseModule extends BaseModule {
 
     createObjs() {
         super.createObjs();
-        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
-        uShape = this.pose.transformObj(uShape);
-        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
-        this.objs.push(uShapeObj);
+        this.createUShape();
     }
 }
 
@@ -1250,10 +1498,7 @@ class DepotBaseModule extends BaseModule {
 
     createObjs() {
         super.createObjs();
-        let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
-        uShape = this.pose.transformObj(uShape);
-        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true).update();
-        this.objs.push(uShapeObj);
+        this.createUShape();
     }
 }
 
@@ -1262,7 +1507,24 @@ class TurretBaseModule extends BaseModule {
 }
 
 class StaticBaseModule extends BaseModule {
-    type = BaseModule.C.TYPES.STATIC;
+    type = BaseModule.C.TYPES.STATIC; // Essentially will house all the other objects that do nothing but look pretty
+
+    constructor(base, pose) {
+        super(base, BaseModule.C.TYPES.STATIC, pose);
+    }
+
+    createObjs() {
+        super.createObjs();
+        this.createTriangle();
+    }
+
+    createTriangle() {
+        let triangle = Helper.deepCopy(Obj.C.OBJS.TRIANGLE);
+        triangle = this.pose.transformObj(triangle);
+        let triangleObj = new Obj(triangle.id, triangle.type, triangle.position, triangle.rotation, triangle.scale, true, true, this.base.team.hex).update();
+        this.objs.push(triangleObj);
+        return this;
+    }
 }
 
 class SafeAlien {
@@ -1277,7 +1539,7 @@ class SafeAlien {
 
     static C = {
         TICKS: {
-            SPAWN_DELAY: 5,
+            SPAWN_DELAY: 10,
         },
         ALL: {
             VELOCITY: {
@@ -1323,7 +1585,8 @@ class SafeAlien {
                 SHIELD: 200,
                 POINTS: 100,
                 CRYSTAL_DROP: 40,
-                LEVEL: 2
+                CODE: 12,
+                LEVEL: 1
             }
             
         ]
@@ -1742,6 +2005,7 @@ class Obj {
     obj = null;
 
     static C = {
+        GHOST_SUFFIX: '-ghost',
         OBJS: {
             PLANE: {
                 id: 'plane',
@@ -1808,13 +2072,43 @@ class Obj {
                 },
                 type: {
                     id: 'u_shape',
-                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/u-sniper.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/u_shape.obj',
                     diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
-                    transparent: false
+                    transparent: false,
+                    physics: {
+                        mass: 500,
+                        shape: [0,0,0,1.412,1.329,1.13,1.003,0.918,0.855,0.812,0.783,0.771,0.78,0.806,0.813,0.832,0.867,0.901,0.881,0.909,1.008,0,0,0,0,0,0,0,0,0,1.008,0.909,0.881,0.901,0.867,0.832,0.813,0.806,0.78,0.771,0.783,0.812,0.855,0.918,1.003,1.13,1.329,1.412,0,0]
+                    } // WHEN CREATING A NEW OBJECT, PUT PHYSICS AS {}, THEN THE SHAPE WILL BE PRINTED IN CONSOLE
                 },
-                physics: {
-                    mass: 10000
+            },
+            TRIANGLE: {
+                id: 'triangle',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                },
+                type: {
+                    id: 'triangle',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/triangle.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    transparent: false,
+                    physics: {
+                        mass: 500,
+                        shape: [0.921,0.873,0.843,0.828,0.834,0.859,0.9,0.957,1.048,1.171,1.354,1.633,1.963,1.935,1.767,1.853,1.911,1.711,1.398,1.197,1.069,0.976,0.908,0.865,0.839,0.827,0.839,0.865,0.908,0.976,1.069,1.197,1.398,1.711,1.911,1.853,1.767,2.08,2.026,1.812,1.664,1.561,1.492,1.45,1.434,1.185,1.278,1.236,1.091,0.99]
+                    }
                 }
             }
         }
@@ -1826,8 +2120,7 @@ class Obj {
         position, rotation, scale,
         randomizeID = false,
         randomizeTypeID = false,
-        color = "#ffffff",
-        physics = null
+        color = "#ffffff"
     ) {
         this.obj = {
             id: id,
@@ -1858,9 +2151,6 @@ class Obj {
         if (randomizeTypeID) {
             this.obj.type.id += '-' + Helper.getRandomString(10);
         }
-        if (physics) {
-            this.obj.physics.mass = physics.mass;
-        }
 
         this.originalObj = Helper.deepCopy(this.obj);
     }
@@ -1875,8 +2165,15 @@ class Obj {
         return type;
     }
 
-    update() {
+    update(createGhost = false) {
         game.setObject(this.obj);
+        if (createGhost) {
+            let ghostObj = Helper.deepCopy(this.obj);
+            ghostObj.id += Obj.C.GHOST_SUFFIX;
+            ghostObj.type.id += Obj.C.GHOST_SUFFIX;
+            ghostObj.physics = null;
+            game.setObject(ghostObj);
+        }
         return this;
     }
 
@@ -1887,39 +2184,54 @@ class Obj {
     }
 
     setPosition(position) {
-        this.obj.position = position;
+        this.obj.position = {
+            x: position.x,
+            y: position.y,
+            z: position.z
+        };
         return this;
     }
 
     setRotation(rotation) {
-        this.obj.rotation = rotation;
+        this.obj.rotation = {
+            x: rotation.x,
+            y: rotation.y,
+            z: rotation.z
+        };
         return this;
     }
 
     setScale(scale) {
-        this.obj.scale = scale;
+        this.obj.scale = {
+            x: scale.x,
+            y: scale.y,
+            z: scale.z
+        };
         return this;
     }
 
-    hide() {
+    hide(hideGhost = true) {
         this.obj.position.z = -1e5;
         this.obj.scale.x *= 1e-5;
         this.obj.scale.y *= 1e-5;
         this.obj.scale.z *= 1e-5;
-        this.update();
+        this.update(hideGhost);
     }
 
-    show() {
+    show(showGhost = true) {
         this.obj.position.z = this.originalObj.position.z;
         this.obj.scale.x = this.originalObj.scale.x;
         this.obj.scale.y = this.originalObj.scale.y;
         this.obj.scale.z = this.originalObj.scale.z;
-        this.update();
+        this.update(showGhost);
     }
 
-    destroySelf() {
-        this.hide();
+    destroySelf(deleteGhost = true) {
+        this.hide(deleteGhost);
         game.removeObject(this.obj.id);
+        if (deleteGhost) {
+            game.removeObject(this.obj.id + Obj.C.GHOST_SUFFIX);
+        }
     }
 }
 
@@ -2321,6 +2633,32 @@ class Pose {
         return obj;
     }
 
+    add(pose) {
+        const newPosition = this.position.add(pose.position);
+        const newRotation = this.rotation + pose.rotation;
+        const newScale = this.scale.multiplyComponents(pose.scale);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
+    subtract(pose) {
+        const newPosition = this.position.subtract(pose.position);
+        const newRotation = this.rotation - pose.rotation;
+        const newScale = this.scale.divideComponents(pose.scale);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
+    lerpRotation(rotation, t) {
+        const newRotation = this.rotation + (rotation - this.rotation) * t;
+        return new Pose(this.position.clone(), newRotation, this.scale.clone());
+    }
+
+    lerp(pose, t) {
+        const newPosition = this.position.lerp(pose.position, t);
+        const newRotation = this.lerpRotation(pose.rotation, t).rotation;
+        const newScale = this.scale.lerp(pose.scale, t);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
     clone() {
         return new Pose(
             this.position.clone(),
@@ -2357,6 +2695,10 @@ class Vector2 {
 
     divide(scalar) {
         return new Vector2(this.x / scalar, this.y / scalar);
+    }
+
+    divideComponents(vector) {
+        return new Vector2(this.x / vector.x, this.y / vector.y);
     }
 
     addScalar(scalar) {
@@ -2410,6 +2752,13 @@ class Vector2 {
         );
     }
 
+    lerp(vector, t) {
+        return new Vector2(
+            this.x + (vector.x - this.x) * t,
+            this.y + (vector.y - this.y) * t
+        );
+    }
+
     clone() {
         return new Vector2(this.x, this.y);
     }
@@ -2448,6 +2797,10 @@ class Vector3 {
 
     divide(scalar) {
         return new Vector3(this.x / scalar, this.y / scalar, this.z / scalar);
+    }
+
+    divideComponents(vector) {
+        return new Vector3(this.x / vector.x, this.y / vector.y, this.z / vector.z);
     }
 
     addScalar(scalar) {
@@ -2492,6 +2845,14 @@ class Vector3 {
 
     getAngleTo(vector) {
         return Math.atan2(vector.y - this.y, vector.x - this.x);
+    }
+
+    lerp(vector, t) {
+        return new Vector3(
+            this.x + (vector.x - this.x) * t,
+            this.y + (vector.y - this.y) * t,
+            this.z + (vector.z - this.z) * t
+        );
     }
 
     clone() {
@@ -2724,6 +3085,14 @@ class Helper {
             corners.push(new Vector2(Math.cos(angle), Math.sin(angle)));
         }
         return corners;
+    }
+
+    static toDegrees(radians) {
+        return radians * (180 / Math.PI);
+    }
+
+    static toRadians(degrees) {
+        return degrees * (Math.PI / 180);
     }
 
     static formatTime(time) {
