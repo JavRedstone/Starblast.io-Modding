@@ -28,7 +28,7 @@ return model =
         z: [0,0,0,0]
       width: [0,200,200,0]
       height: [0,70,70,0]
-      texture: [63,3.74,63]
+      texture: [64,3.74,64]
       propeller: 0
       vertical: 1
     Depot_Base_square:
@@ -58,7 +58,7 @@ return model =
         z: [0,0,0,0]
       width: [0,225,225,0]
       height: [0,130,130,0]
-      texture: [4,62,4]
+      texture: [64,64,17]
       propeller: 0
       vertical: 0
     Spawn_Base_square:
@@ -89,7 +89,7 @@ return model =
         z: [0,0,0,0]
       width: [0,100,100,0]
       height: [0,130,130,0]
-      texture: [4,64,4]
+      texture: [17,17,64]
       propeller: 0
       vertical: 0
       angle: 45
@@ -121,7 +121,7 @@ return model =
         z: [0,0,0,0]
       width: [0,180,180,0]
       height: [0,130,130,0]
-      texture: [4,17,4]
+      texture: [17,17,64]
       propeller: 0
       vertical: 0
       angle: -23
