@@ -6,7 +6,7 @@
 
     Developed in 2025
 
-    Special thanks to Nanoray (Halycon), EDEN, and 5470p3_ for the continual support in this project, as well as countless others in the Starblast Test Games and the Capture the Flag Discord servers for aiding with testing and debugging the mod
+    Special thanks to Nanoray (Halycon), EDEN, and 5470p3_ for the continual support in this project, as well as countless others in SChickenMan's Starblast Test Games and my Capture the Flag Discord servers for aiding with testing the mod
 
     Ships from Vanilla Revamp (V3) and MCST
 */
@@ -31,7 +31,6 @@ class Game {
 
     spawns = [];
     shipBeacons = [];
-    warningRules = [];
     beacons = [];
     portals = [];
     gravityWells = [];
@@ -74,7 +73,7 @@ class Game {
             SHIPS: [],
             MAX_PLAYERS: 20,
 
-            SOUNDTRACK: 'civilisation.mp3',
+            SOUNDTRACK: 'warp_drive.mp3',
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -254,9 +253,6 @@ class Game {
             shipBeacon.destroySelf();
         }
         this.shipBeacons = [];
-        for (let warningRule of this.warningRules) {
-            warningRule.destroySelf();
-        }
     }
 
     deleteFlags() {
@@ -273,10 +269,6 @@ class Game {
             portal.destroySelf();
         }
         this.portals = [];
-        for (let gravityWell of this.gravityWells) {
-            gravityWell.destroySelf();
-        }
-        this.gravityWells = [];
     }
 
     deleteBeacons() {
@@ -354,29 +346,7 @@ class Game {
         this.deletePortals();
         if (this.map) {
             for (let i = 0; i < this.map.portals.length; i++) {
-                let portalPos = this.map.portals[i];
-                let portal = new Obj(
-                    Obj.C.OBJS.PORTAL.id,
-                    Obj.C.OBJS.PORTAL.type,
-                    new Vector3(portalPos.x, portalPos.y, Obj.C.OBJS.PORTAL.position.z),
-                    new Vector3(Obj.C.OBJS.PORTAL.rotation.x, Obj.C.OBJS.PORTAL.rotation.y, Obj.C.OBJS.PORTAL.rotation.z),
-                    new Vector3(Obj.C.OBJS.PORTAL.scale.x, Obj.C.OBJS.PORTAL.scale.y, Obj.C.OBJS.PORTAL.scale.z),
-                    true,
-                    true,
-                    '#00ff00'
-                ).update();
-                let gravityWell = new Obj(
-                    Obj.C.OBJS.GRAVITY_WELL.id,
-                    Obj.C.OBJS.GRAVITY_WELL.type,
-                    new Vector3(portalPos.x, portalPos.y, Obj.C.OBJS.GRAVITY_WELL.position.z),
-                    new Vector3(Obj.C.OBJS.GRAVITY_WELL.rotation.x, Obj.C.OBJS.GRAVITY_WELL.rotation.y, Obj.C.OBJS.GRAVITY_WELL.rotation.z),
-                    new Vector3(Obj.C.OBJS.GRAVITY_WELL.scale.x, Obj.C.OBJS.GRAVITY_WELL.scale.y, Obj.C.OBJS.GRAVITY_WELL.scale.z),
-                    true,
-                    true,
-                    '#00ff00'
-                ).update();
-                this.portals.push(portal);
-                this.gravityWells.push(gravityWell);
+                this.portals.push(new Portal(this.map.portals[i]).spawn());
             }
         }
     }
@@ -515,6 +485,16 @@ class Game {
             this.map.tick();
         }
         if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
+            if (this.isWaiting) {
+                if (this.teams.length == 2 && Math.abs(this.teams[0].ships.length - this.teams[1].ships.length) >= Game.C.TEAM_PLAYER_DEFICIT) {
+                    let diff = this.teams[0].ships.length - this.teams[1].ships.length;
+                    let t = diff > 0 ? 0 : 1;
+                    let randShip = Helper.getRandomArrayElement(this.teams[t].ships);
+                    if (randShip) {
+                        this.resetShip(randShip, true);
+                    }
+                }
+            }
             if (this.ships.length < Game.C.MIN_PLAYERS) {
                 if (!this.isWaiting || this.waitTimer == -2) {
                     this.isWaiting = true;
@@ -557,7 +537,6 @@ class Game {
                         if (this.teams.length == 2 && Math.abs(this.teams[0].ships.length - this.teams[1].ships.length) >= Game.C.TEAM_PLAYER_DEFICIT) {
                             let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                             let t = diff > 0 ? 0 : 1;
-                            let opp = t + 1 % 2;
                             let minScore = this.getMinScore(this.teams[t]);
                             let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
                             if (randShip && !this.changeTeamShip) {
@@ -650,24 +629,17 @@ class Game {
 
                     if (this.map) {
                         if (this.teams[0].flagHolder && this.teams[1].flagHolder) {
-                                if (this.warningRules.length == 0) {
-                                for (let i = 0; i < 2; i++) {
-                                    this.warningRules.push(new Obj(
-                                        Obj.C.OBJS.WARNING_RULE.id,
-                                        Obj.C.OBJS.WARNING_RULE.type,
-                                        new Vector3(this.map.flags[i].x + Obj.C.OBJS.WARNING_RULE.position.x, this.map.flags[i].y + Obj.C.OBJS.WARNING_RULE.position.y, Obj.C.OBJS.WARNING_RULE.position.z),
-                                        new Vector3(Obj.C.OBJS.WARNING_RULE.rotation.x, Obj.C.OBJS.WARNING_RULE.rotation.y, Obj.C.OBJS.WARNING_RULE.rotation.z),
-                                        new Vector3(Obj.C.OBJS.WARNING_RULE.scale.x, Obj.C.OBJS.WARNING_RULE.scale.y, Obj.C.OBJS.WARNING_RULE.scale.z),
-                                        true,
-                                        false
-                                    ).update());
+                            for (let i = 0; i < this.teams.length; i++) {
+                                if (this.teams[i].flag) {
+                                    this.teams[i].flag.showWarn();
                                 }
                             }
                         } else {
-                            for (let warningRule of this.warningRules) {
-                                warningRule.destroySelf();
+                            for (let i = 0; i < this.teams.length; i++) {
+                                if (this.teams[i].flag) {
+                                    this.teams[i].flag.hideWarn();
+                                }
                             }
-                            this.warningRules = [];
                         }
                     }
                 }
@@ -1063,7 +1035,13 @@ class Game {
                                 type: 'text',
                                 position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
                                 value: '⬢',
-                                color: this.teams[i].hex + '80'
+                                color: this.teams[i].hex + '40'
+                            });
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
+                                value: '⬡',
+                                color: this.teams[i].hex
                             });
                         }
                         for (let i = 0; i < this.map.portals.length; i++) {
@@ -1364,7 +1342,7 @@ class Game {
             for (let ship of this.ships) {
                 if (!this.isResetting && !this.isWaiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101) {
                     for (let portal of this.portals) {
-                        this.suckPortalShip(ship, portal, this.gravityWells[this.portals.indexOf(portal)]);
+                        this.suckPortalShip(ship, portal.portal, portal.gravityWell);
                     }
                 }
                 ship.tick();
@@ -2558,6 +2536,8 @@ class Flag {
     flagHidden = false;
     flagStandPos = null;
     flagStand = null;
+    flagStandGlow = null;
+    warningRule = null;
     color = '';
 
     holder = null;
@@ -2590,6 +2570,25 @@ class Flag {
             true,
             this.color
         ).update();
+        this.flagStandGlow = new Obj(
+            Obj.C.OBJS.FLAGSTAND_GLOW.id,
+            Obj.C.OBJS.FLAGSTAND_GLOW.type,
+            new Vector3(this.flagStandPos.x, this.flagStandPos.y, Obj.C.OBJS.FLAGSTAND_GLOW.position.z),
+            new Vector3(Obj.C.OBJS.FLAGSTAND_GLOW.rotation.x, Obj.C.OBJS.FLAGSTAND_GLOW.rotation.y, Obj.C.OBJS.FLAGSTAND_GLOW.rotation.z),
+            new Vector3(Obj.C.OBJS.FLAGSTAND_GLOW.scale.x, Obj.C.OBJS.FLAGSTAND_GLOW.scale.y, Obj.C.OBJS.FLAGSTAND_GLOW.scale.z),
+            true,
+            true,
+            this.color
+        ).update();
+        this.warningRule = new Obj(
+            Obj.C.OBJS.WARNING_RULE.id,
+            Obj.C.OBJS.WARNING_RULE.type,
+            new Vector3(this.flagStandPos.x + Obj.C.OBJS.WARNING_RULE.position.x, this.flagStandPos.y + Obj.C.OBJS.WARNING_RULE.position.y, Obj.C.OBJS.WARNING_RULE.position.z),
+            new Vector3(Obj.C.OBJS.WARNING_RULE.rotation.x, Obj.C.OBJS.WARNING_RULE.rotation.y, Obj.C.OBJS.WARNING_RULE.rotation.z),
+            new Vector3(Obj.C.OBJS.WARNING_RULE.scale.x, Obj.C.OBJS.WARNING_RULE.scale.y, Obj.C.OBJS.WARNING_RULE.scale.z),
+            true,
+            false
+        ).hide();
         return this;
     }
 
@@ -2601,6 +2600,16 @@ class Flag {
     show() {
         this.flag.show();
         this.flagHidden = false;
+    }
+
+    showWarn() {
+        this.warningRule.show();
+        this.flagStandGlow.hide();
+    }
+
+    hideWarn() {
+        this.warningRule.hide();
+        this.flagStandGlow.show();
     }
 
     setPosition(position) {
@@ -2622,6 +2631,59 @@ class Flag {
     destroySelf() {
         this.flag.destroySelf();
         this.flagStand.destroySelf();
+        this.flagStandGlow.destroySelf();
+        this.warningRule.destroySelf();
+    }
+}
+
+class Portal {
+    portalPos = null;
+    portal = null;
+    portalGlow = null;
+    gravityWell = null;
+
+    constructor(portalPos) {
+        this.portalPos = portalPos;
+    }
+
+    spawn() {
+        this.portal = new Obj(
+            Obj.C.OBJS.PORTAL.id,
+            Obj.C.OBJS.PORTAL.type,
+            new Vector3(this.portalPos.x, this.portalPos.y, Obj.C.OBJS.PORTAL.position.z),
+            new Vector3(Obj.C.OBJS.PORTAL.rotation.x, Obj.C.OBJS.PORTAL.rotation.y, Obj.C.OBJS.PORTAL.rotation.z),
+            new Vector3(Obj.C.OBJS.PORTAL.scale.x, Obj.C.OBJS.PORTAL.scale.y, Obj.C.OBJS.PORTAL.scale.z),
+            true,
+            true,
+            '#00ff00'
+        ).update();
+        this.portalGlow = new Obj(
+            Obj.C.OBJS.PORTAL_GLOW.id,
+            Obj.C.OBJS.PORTAL_GLOW.type,
+            new Vector3(this.portalPos.x, this.portalPos.y, Obj.C.OBJS.PORTAL_GLOW.position.z),
+            new Vector3(Obj.C.OBJS.PORTAL_GLOW.rotation.x, Obj.C.OBJS.PORTAL_GLOW.rotation.y, Obj.C.OBJS.PORTAL_GLOW.rotation.z),
+            new Vector3(Obj.C.OBJS.PORTAL_GLOW.scale.x, Obj.C.OBJS.PORTAL_GLOW.scale.y, Obj.C.OBJS.PORTAL_GLOW.scale.z),
+            true,
+            true,
+            '#00ff00'
+        ).update();
+        this.gravityWell = new Obj(
+            Obj.C.OBJS.GRAVITY_WELL.id,
+            Obj.C.OBJS.GRAVITY_WELL.type,
+            new Vector3(this.portalPos.x, this.portalPos.y, Obj.C.OBJS.GRAVITY_WELL.position.z),
+            new Vector3(Obj.C.OBJS.GRAVITY_WELL.rotation.x, Obj.C.OBJS.GRAVITY_WELL.rotation.y, Obj.C.OBJS.GRAVITY_WELL.rotation.z),
+            new Vector3(Obj.C.OBJS.GRAVITY_WELL.scale.x, Obj.C.OBJS.GRAVITY_WELL.scale.y, Obj.C.OBJS.GRAVITY_WELL.scale.z),
+            true,
+            true,
+            '#00ff00'
+        ).update();
+        return this;
+    }
+
+    destroySelf() {
+        this.portal.destroySelf();
+        this.portalGlow.destroySelf();
+        this.gravityWell.destroySelf();
     }
 }
 
@@ -2731,19 +2793,19 @@ class Obj {
                     z: -5
                 },
                 rotation: {
-                    x: Math.PI / 2,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
                 scale: {
-                    x: 5,
-                    y: 5,
-                    z: 5
+                    x: 35,
+                    y: 35,
+                    z: 35
                 },
                 type: {
                     id: 'spawn',
-                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.obj',
-                    transparent: false,
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.png',
                 },
                 CHOOSE_SHIP_DISTANCE: 5
             },
@@ -2785,7 +2847,7 @@ class Obj {
                 rotation: {
                     x: 0,
                     y: 0,
-                    z: 0
+                    z: Math.PI / 6
                 },
                 scale: {
                     x: 60,
@@ -2801,7 +2863,30 @@ class Obj {
                 },
                 N_GON: 6,
                 N_GON_SCALE: 6.5,
-                N_GON_OFFSET: 0,
+                N_GON_OFFSET: Math.PI / 6,
+            },
+            FLAGSTAND_GLOW: {
+                id: 'flagstand_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -6
+                },
+                rotation: {
+                    x: Math.PI,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 70,
+                    y: 70,
+                    z: 1
+                },
+                type: {
+                    id: 'flagstand_glow',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/flagstand_glow.png',
+                }
             },
             PORTAL: {
                 id: 'portal',
@@ -2828,6 +2913,29 @@ class Obj {
                     transparent: false
                 },
                 TELEPORT_FACTOR: 0.5
+            },
+            PORTAL_GLOW: {
+                id: 'portal_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 43,
+                    y: 43,
+                    z: 43
+                },
+                type: {
+                    id: 'portal_glow',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/portal_glow.png',
+                }
             },
             GRAVITY_WELL: {
                 id: 'gravity_well',
@@ -2911,7 +3019,7 @@ class Obj {
                 position: {
                     x: 0,
                     y: 0,
-                    z: -4
+                    z: -3.4
                 },
                 rotation: {
                     x: 0,
@@ -2919,13 +3027,13 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 0.25,
-                    y: 0.25,
-                    z: 0.25
+                    x: 0.2,
+                    y: 0.2,
+                    z: 0.2
                 },
                 type: {
                     id: 'laser',
-                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/laser.obj',
                     transparent: false
                 },
                 EXISTENCE_TIME: 15,
@@ -3021,6 +3129,7 @@ class Obj {
         this.obj.scale.y *= 1e-5;
         this.obj.scale.z *= 1e-5;
         this.update();
+        return this;
     }
 
     show() {
@@ -3029,6 +3138,7 @@ class Obj {
         this.obj.scale.y = this.originalObj.scale.y;
         this.obj.scale.z = this.originalObj.scale.z;
         this.update();
+        return this;
     }
 
     destroySelf() {
