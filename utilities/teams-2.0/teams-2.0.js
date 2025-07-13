@@ -68,8 +68,10 @@ class Game {
             ENTITY_MANAGER: 60,
             SHIP_MANAGER: 20,
             SHIP_MANAGER_FAST: 5,
-            TEAM_MANAGER: 20,
-            
+
+            BASE_MANAGER: 360,
+            FAST_BASE_MANAGER: 5,
+
             RESET_STAGGER: 5,
 
             GAME_MANAGER: 30
@@ -84,16 +86,15 @@ class Game {
     tick() {
         this.manageTimeouts();
         this.manageConditions();
+        this.manageEntities();
 
         this.manageGameState();
 
         this.manageShips();
 
-        this.manageTeams();
+        this.manageBases();
 
         this.tickTimedEntities();
-        
-        this.manageEntities();
     }
 
     manageTimeouts() {
@@ -175,6 +176,7 @@ class Game {
                     this.teams.length,
                     teamOption.COLOR,
                     teamOption.HEX,
+                    teamOption.NAME,
                     teamOption.HUE,
                     teamOption.FLAGGED
                 )
@@ -348,7 +350,7 @@ class Game {
             }
             for (let ship of notFoundShips) {
                 if (ship.team) {
-                    Helper.deleteFromArray(ship.team.ships, ship);
+                    ship.team.removeShip(ship);
                 }
                 Helper.deleteFromArray(this.ships, ship);
                 let hasLeftShip = false;
@@ -391,22 +393,43 @@ class Game {
                 }
 
                 if (!ship.isResetting) {
+                    this.handleShipDepotEnterLerp(ship);
 
+                    this.handleWeaponsStore(ship);
                 }
             }
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
+                if (!ship.resetting) {
+                    this.handleShipTurretUse(ship);
+                }
+
                 ship.tick();
             }
         }
     }
 
-    manageTeams() {
-        if (game.step % Game.C.TICKS.TEAM_MANAGER === 0) {
+    manageBases() {
+        if (game.step % Game.C.TICKS.BASE_MANAGER === 0) {
             for (let team of this.teams) {
-                team.tick();
+                if (team.base) {
+                    team.base.tick();
+                }
             }
+        }
+        if (game.step % Game.C.TICKS.FAST_BASE_MANAGER === 0) {
+            for (let team of this.teams) {
+                if (team.base) {
+                    for (let safeAlien of team.base.safeAliens) {
+                        safeAlien.tick();
+                    }
+                    for (let turretBaseModule of team.base.turretBaseModules) {
+                        turretBaseModule.tick();
+                    }
+                }
+            }
+            this.handleTurretAutoAim();
         }
     }
 
@@ -471,11 +494,159 @@ class Game {
 
     handleShipSpawnLerp(ship) {
         if (ship.team) {
-            let spawnModule = Helper.getRandomArrayElement(ship.team.base.getModulesByType(BaseModule.C.TYPES.SPAWN));
+            let spawnModule = Helper.getRandomArrayElement(ship.team.base.spawnBaseModules);
             if (spawnModule) {
-                ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_SPAWN.NAME, new Pose(spawnModule.pose.position.clone(), spawnModule.pose.rotation + Math.PI, spawnModule.pose.scale.clone()), ShipLerp.C.TYPES.EXIT_SPAWN.BLEND_FACTOR, spawnModule);
+                let spawnInitialPose = spawnModule.pose.clone();
+                spawnInitialPose.position = spawnInitialPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.x, SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.y).rotateBy(spawnModule.pose.rotation));
+                ship.setPosition(spawnInitialPose.position);
+                ship.setVelocity(new Vector2(0, 0));
+
+                let spawnFinalPose = spawnModule.pose.clone();
+                spawnFinalPose.position = spawnFinalPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_FINAL_OFFSET.x, SpawnBaseModule.C.SPAWN_FINAL_OFFSET.y).rotateBy(spawnModule.pose.rotation));
+                spawnFinalPose.rotation += Math.PI;
+                ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_SPAWN.NAME, spawnFinalPose, ShipLerp.C.TYPES.EXIT_SPAWN.BLEND_FACTOR, spawnModule, true, SpawnBaseModule.C.SPAWN_DELAY);
             }
         }
+    }
+
+    handleShipDepotEnterLerp(ship) {
+        if (ship.team) {
+            let depotModules = ship.team.base.depotBaseModules;
+            for (let depotModule of depotModules) {
+                let suckRectangle = new Rectangle(new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.CENTER.x, DepotBaseModule.C.SUCK_RECTANGLE.CENTER.y).rotateBy(depotModule.pose.rotation).add(depotModule.pose.position), new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.SIZE.x, DepotBaseModule.C.SUCK_RECTANGLE.SIZE.y), depotModule.pose.rotation);
+                let shipPosition = ship.getPosition();
+                if (shipPosition && suckRectangle.containsPoint(shipPosition) && !ship.lerp && Helper.angleWithinThreshold(ship.getPose().rotation, depotModule.pose.rotation, DepotBaseModule.C.ANGLE_THRESHOLD)) {
+                    ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.ENTER_DEPOT.NAME, depotModule.pose, ShipLerp.C.TYPES.ENTER_DEPOT.BLEND_FACTOR, depotModule, false);
+
+                    ship.inDepot = depotModule;
+                }
+            }
+        }
+    }
+
+    handleShipDepotExitLerp(ship) {
+        if (ship.team && ship.inDepot) {
+            let depotModule = ship.inDepot;
+            let depotFinalPose = depotModule.pose.clone();
+            depotFinalPose.position = depotFinalPose.position.add(new Vector2(DepotBaseModule.C.DEPOT_FINAL_OFFSET.x, DepotBaseModule.C.DEPOT_FINAL_OFFSET.y).rotateBy(depotModule.pose.rotation));
+            depotFinalPose.rotation += Math.PI;
+            ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_DEPOT.NAME, depotFinalPose, ShipLerp.C.TYPES.EXIT_DEPOT.BLEND_FACTOR, depotModule, true);
+            ship.inDepot = null;
+        }
+    }
+
+    handleWeaponsStore(ship) {
+        if (!ship.inDepot) {
+            
+            ship.hideUI(UIComponent.C.UIS.WEAPONS_STORE);
+            ship.hideUI(UIComponent.C.UIS.WEAPONS_STORE_EXIT);
+            // ship.hideUI(UIComponent.C.UIS.WEAPONS_STORE_HEALING);
+
+            ship.hideUIsIncludingID(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
+            return;
+        }
+
+        let A = 'BF';
+        
+        let weaponsStore = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE);
+        weaponsStore.components[0].fill = ship.team.hex + '20';
+        weaponsStore.components[1].fill = Helper.adjustBrightness(ship.team.hex, 0.5) + A;
+        weaponsStore.components[2].value = ship.team.name + ' - Weapons Store';
+        weaponsStore.components[2].position[2] = weaponsStore.components[2].value.length * 2;
+        ship.sendUI(weaponsStore);
+
+        let weaponsStoreExit = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_EXIT);
+        weaponsStoreExit.components[0].fill = Helper.adjustBrightness(ship.team.hex, 0.5) + A;
+        ship.sendUI(weaponsStoreExit);
+
+        // let weaponsStoreHealing = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_HEALING);
+        // weaponsStoreHealing.components[0].fill = Helper.adjustBrightness(ship.team.hex, 0.5) + A;
+        // weaponsStoreHealing.components[1].value = ship.ship.healing ? '⛨ HEALING LASERS ⇌ ⚔' : '⚔ ATTACK LASERS ⇌ ⛨';
+        // ship.sendUI(weaponsStoreHealing);
+
+        let numCols = 5;
+        let numRows = 2;
+        for (let i = 0; i < numRows; i++) {
+            for (let j = 0; j < numCols; j++) {
+                let index = i * numCols + j;
+                let item = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
+                item.id += '-' + index;
+                
+                let position = Helper.getGridUIPosition(27.5, 35, 1, 3, j, i, numCols, numRows);
+                item.position = position;
+                item.components[0].fill = ship.team.hex + A;
+                item.components[1].value = DepotBaseModule.C.WEAPONS_STORE_ITEMS[index].ICON;
+                item.components[2].fill = Helper.adjustBrightness(ship.team.hex, 0.5) + A;
+                item.components[3].value = 'x' + DepotBaseModule.C.WEAPONS_STORE_ITEMS[index].FREQUENCY;
+                item.components[4].fill = Helper.adjustBrightness(ship.team.hex, 0.5) + A;
+                item.components[5].value = DepotBaseModule.C.WEAPONS_STORE_ITEMS[index].BASE_COST + ' Credits';
+                item.components[6].fill = Helper.adjustBrightness(ship.team.hex, -0.5) + A;
+                item.components[7].value = DepotBaseModule.C.WEAPONS_STORE_ITEMS[index].NAME;
+                
+                ship.sendUI(item);
+            }
+        }
+    }
+
+    handleTurretAutoAim() {
+        for (let team of this.teams) {
+            let oppTeam = this.getOppTeam(team);
+            if (oppTeam && team.base) {
+                for (let turretBaseModule of oppTeam.base.turretBaseModules) {
+                    let closestShip = null;
+                    let closestDistance = Infinity;
+                    for (let ship of team.ships) {
+                        let shipPos = ship.getPosition();
+                        if (shipPos == null || ship.lerp || ship.ship.alive == false) continue;
+                        let distance = shipPos.getDistanceTo(turretBaseModule.pose.position);
+                        if (!closestShip || distance < closestDistance) {
+                            closestShip = ship;
+                            closestDistance = distance;
+                        }
+                    }
+                    let laserOption = TurretBaseModule.C.LASERS[team.base.baseLevel - 1];
+                    if (closestShip && closestDistance < laserOption.RANGE) {
+                        turretBaseModule.isShooting = true;
+
+                        const shipPos = closestShip.getPosition();
+                        const shipVel = closestShip.getVelocity();
+                        const turretPos = turretBaseModule.pose.position;
+                        const laserSpeed = laserOption.SPEED;
+
+                        const toShip = shipPos.subtract(turretPos);
+                        const distance = toShip.length();
+
+                        if (shipVel.length() < TurretBaseModule.C.MIN_VELOCITY) {
+                            let turretPose = turretBaseModule.pose.clone();
+                            turretPose.rotation = shipPos.getAngleTo(turretPos);
+                            turretBaseModule.setPose(turretPose, true, true, TurretBaseModule.C.LERP_BLEND_FACTOR);
+                        } else {
+                            const timeToReach = distance / laserSpeed;
+                            const predictedPos = shipPos.add(shipVel.multiply(timeToReach));
+                            let turretPose = turretBaseModule.pose.clone();
+                            turretPose.rotation = predictedPos.getAngleTo(turretPos);
+                            turretBaseModule.setPose(turretPose, true, true, TurretBaseModule.C.LERP_BLEND_FACTOR);
+                        }
+                    } else {
+                        turretBaseModule.isShooting = false;
+                    }
+                }
+            }
+        }
+    }
+
+    handleShipTurretUse(ship) {
+        // if (ship.team) {
+        //     let turretModules = ship.team.base.getModulesByType(BaseModule.C.TYPES.TURRET);
+        //     for (let turretModule of turretModules) {
+        //         let rectangle = turretModule.isUpper ? TurretBaseModule.C.CONTROL_RECTANGLES.UPPER : TurretBaseModule.C.CONTROL_RECTANGLES.LOWER;
+        //         let controlRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).rotateBy(turretModule.container.pose.rotation).add(turretModule.pose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y), turretModule.container.pose.rotation);
+        //         let shipPosition = ship.getPosition();
+        //         if (shipPosition && controlRectangle.containsPoint(shipPosition) && !ship.lerp) {
+        //             turretModule.setPose(new Pose(turretModule.pose.position, ship.getPose().rotation + Math.PI, turretModule.pose.scale), true);
+        //         }
+        //     }
+        // }
     }
 
     onShipSpawned(gameShip) {
@@ -503,7 +674,12 @@ class Game {
     onUIComponentClicked(gameShip, id) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-            
+            if (id == UIComponent.C.UIS.WEAPONS_STORE_EXIT.id) {
+                this.handleShipDepotExitLerp(ship);
+            }
+            else if (id == UIComponent.C.UIS.WEAPONS_STORE_HEALING.id) {
+                ship.setHealing(!ship.ship.healing);
+            }
         }
     }
 
@@ -580,10 +756,11 @@ class Team {
         ]
     }
 
-    constructor(team, color, hex, hue) {
+    constructor(team, color, hex, name, hue) {
         this.team = team;
         this.color = color;
         this.hex = hex;
+        this.name = name;
         this.hue = hue;
     }
 
@@ -635,6 +812,7 @@ class ShipLerp {
     
     name = '';
 
+    startPose = null;
     targetPose = null;
 
     t = 0;
@@ -642,33 +820,43 @@ class ShipLerp {
     baseModule = null;
     targetDifference = null;
 
+    autoStop = true;
+    holdFor = 0;
+
+    duration = 0;
+
     running = true;
 
-    prevTime = 0;
+    prevTime = -1;
 
     static C = {
         TYPES: {
             EXIT_SPAWN: {
                 NAME: 'exit-spawn',
-                BLEND_FACTOR: 0.2
+                BLEND_FACTOR: 0.3
             },
             ENTER_DEPOT: {
                 NAME: 'enter-depot',
-                BLEND_FACTOR: 0.1
+                BLEND_FACTOR: 0.3
             },
             EXIT_DEPOT: {
                 NAME: 'exit-depot',
-                BLEND_FACTOR: 0.2
+                BLEND_FACTOR: 0.3
             }
-        }
+        },
+        AUTO_STOP_THRESHOLD: 5,
+        AUTO_STOP_TIMEOUT: 100
     }
 
-    constructor(ship, name, targetPose, t = 0.1, baseModule = null) {
+    constructor(ship, name, targetPose, t = 0.1, baseModule = null, autoStop = true, holdFor = 0) {
         this.ship = ship;
         this.name = name;
+        this.startPose = ship.getPose();
         this.targetPose = targetPose;
         this.t = t;
         this.baseModule = baseModule;
+        this.autoStop = autoStop;
+        this.holdFor = holdFor;
 
         if (this.baseModule) {
             this.targetDifference = this.targetPose.subtract(this.baseModule.pose);
@@ -679,21 +867,45 @@ class ShipLerp {
     }
 
     tick() {
+        if (this.prevTime < 0) {
+            this.prevTime = game.step;
+            return;
+        }
         if (this.running) {
             this.ship.setIdle(true);
             this.ship.setGenerator(0);
             this.ship.setInvulnerable(Ship.C.LERP_INVULNERABLE_TIME);
             this.ship.setCollider(false);
+            this.ship.setAngle(this.targetPose.rotation);
+            if (this.holdFor > 0) {
+                this.holdFor -= game.step - this.prevTime;
+                this.ship.setPosition(this.startPose.position);
+                this.ship.setVelocity(new Vector2(0, 0));
+                this.prevTime = game.step;
+                return;
+            }
+
+            if (this.autoStop && (this.targetPose.subtract(this.ship.getPose()).position.length() < ShipLerp.C.AUTO_STOP_THRESHOLD || this.duration - this.holdFor > ShipLerp.C.AUTO_STOP_TIMEOUT)) {
+                this.stop();
+                return;
+            }
 
             if (this.baseModule) {
                 this.targetPose = this.baseModule.pose.add(this.targetDifference);
             }
             
             let lerpPose = this.ship.getPose().lerp(this.targetPose, this.t);
-            // let velocity = lerpPose.position.subtract(this.ship.getPosition()).divide(game.step - this.prevTime);
-            this.ship.setPosition(lerpPose.position);
-            // this.ship.setVelocity(velocity);
-            this.ship.setAngle(lerpPose.rotation);
+            let poseDifference = lerpPose.subtract(this.ship.getPose());
+            if (poseDifference.position.x > game.mapSize * 5 || poseDifference.position.x < -game.mapSize * 5 ||
+                poseDifference.position.y > game.mapSize * 5 || poseDifference.position.y < -game.mapSize * 5) {
+                let norm = poseDifference.position.normalize();
+                poseDifference.position = norm.multiply(poseDifference.position.length() - game.mapSize * 10);
+            }
+            let velocity = poseDifference.position.divide(game.step - this.prevTime);
+            // this.ship.setPosition(lerpPose.position); // It's more clunky but more accurate
+            this.ship.setVelocity(velocity);
+
+            this.duration += game.step - this.prevTime;
             this.prevTime = game.step;
         } else {
             this.ship.setIdle(false);
@@ -719,6 +931,8 @@ class Ship {
     allUIs = [];
     timedUIs = [];
 
+    inDepot = null;
+
     left = false;
     done = false;
 
@@ -728,7 +942,23 @@ class Ship {
 
     static C = {
         INVULNERABLE_TIME: 360,
-        LERP_INVULNERABLE_TIME: 240
+        LERP_INVULNERABLE_TIME: 240,
+
+        SHIPS: {
+            '101': {
+                SHIP: '{"name":"Fly","level":1,"model":1,"size":1.05,"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-65,-60,-50,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,10,30,25,30,18,15,0],"height":[0,6,8,12,20,20,18,15,0],"propeller":true,"texture":[4,63,10,1,1,1,12,17]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":0,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-15,0,20,30,60],"z":[0,0,0,0,0]},"width":[0,13,17,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":[7,9,9,4,4]},"cannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,30],"z":[0,0,0,0,0,20]},"width":[0,5,8,11,7,0],"height":[0,5,8,11,10,0],"angle":0,"laser":{"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"error":2.5},"propeller":false,"texture":[3,3,10,3]}},"wings":{"main":{"length":[60,20],"width":[100,50,40],"angle":[-10,10],"position":[0,20,10],"doubleside":true,"offset":{"x":0,"y":10,"z":5},"bump":{"position":30,"size":20},"texture":[11,63]}},"typespec":{"name":"Fly","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"shape":[1.368,1.368,1.093,0.965,0.883,0.827,0.791,0.767,0.758,0.777,0.847,0.951,1.092,1.667,1.707,1.776,1.856,1.827,1.744,1.687,1.525,1.415,1.335,1.606,1.603,1.578,1.603,1.606,1.335,1.415,1.525,1.687,1.744,1.827,1.856,1.776,1.707,1.667,1.654,0.951,0.847,0.777,0.758,0.767,0.791,0.827,0.883,0.965,1.093,1.368],"lasers":[{"x":0,"y":-1.365,"z":-0.21,"angle":0,"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"spread":0,"error":2.5,"recoil":0}],"radius":1.856}}',
+                HITBOX: {
+                    CENTER: {
+                        x: 0,
+                        y: 0
+                    },
+                    SIZE: {
+                        x: 5,
+                        y: 5
+                    }
+                },
+            }
+        }
     }
 
     constructor(ship) {
@@ -742,6 +972,7 @@ class Ship {
         this.setIdle(false);
         this.setScore(0);
 
+        this.inDepot = null;
         this.score = 0;
 
         this.ship.emptyWeapons();
@@ -846,6 +1077,7 @@ class Ship {
         removedUIs = [];
         for (let uiGeneric in UIComponent.C.UIS) {
             this.hideUI(UIComponent.C.UIS[uiGeneric]);
+            this.hideUIsIncludingID(UIComponent.C.UIS[uiGeneric]);
         }
         this.allUIs = [];
         this.timedUIs = [];
@@ -1060,6 +1292,13 @@ class Ship {
         return this;
     }
 
+    setHealing(healing) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ healing: healing });
+        }
+        return this;
+    }
+
     setTeam(team) {
         this.team = team;
         this.team.addShip(this);
@@ -1146,9 +1385,20 @@ class Ship {
 class Base {
     team = null;
     pose = null;
+
     baseModules = [];
+
+    allBaseModules = [];
+    containerBaseModules = [];
+    alienBaseModules = [];
+    spawnBaseModules = [];
+    depotBaseModules = [];
+    turretBaseModules = [];
+    staticBaseModules = [];
+
     safeAliens = [];
-    baseLevel = 4;
+
+    baseLevel = 1;
     dead = false;
 
     static C = {
@@ -1159,15 +1409,15 @@ class Base {
             2
         ],
         NUM_SIDES: [
-            2,
             3,
             3,
-            4
+            3,
+            3
         ],
         RADIUS: 80,
-        ROTATION_RATE: -Math.PI / (60 * 60 * 8),
+        ROTATION_RATE: 0, // -Math.PI / (60 * 60 * 4)
         ORBIT_RADIUS: 200,
-        ORBIT_RATE: Math.PI / (60 * 60 * 8),
+        ORBIT_RATE: 0, // Math.PI / (60 * 60 * 4)
     };
 
     constructor(team) {
@@ -1182,10 +1432,22 @@ class Base {
         );
     }
 
-    spawnBase() {
+    clearContainers() {
         this.baseModules = [];
-        this.safeAliens = [];
 
+        this.allBaseModules = [];
+        this.containerBaseModules = [];
+        this.alienBaseModules = [];
+        this.spawnBaseModules = [];
+        this.depotBaseModules = [];
+        this.turretBaseModules = [];
+        this.staticBaseModules = [];
+
+        this.safeAliens = [];
+    }
+
+    spawnBase() {
+        this.clearContainers();
         for (let i = 0; i < Base.C.NUM_SIDES[this.baseLevel - 1]; i++) {
             let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1];
             let container = new ContainerBaseModule(
@@ -1199,24 +1461,36 @@ class Base {
                     new Vector3(1, 1, 1).multiply(Base.C.SCALES[this.baseLevel - 1])
                 ),
                 [
-                    new StaticBaseModule(this, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.STATIC.SCALE))),
-                    new AlienBaseModule(this, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.ALIEN.SCALE))),
-                    new SpawnBaseModule(this, new Pose(new Vector2(0, 9.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.SPAWN.SCALE))),
-                    // new TurretBaseModule(this, new Pose()),
+                    new StaticBaseModule(this, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(5))),
+                    new AlienBaseModule(this, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10))),
+                    new SpawnBaseModule(this, new Pose(new Vector2(0, 9.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(5)))
                 ]
             );
             for (let j = 0; j < 2; j++) {
                 let angle = Math.PI * 1 / 8;
                 let depotPose = new Pose(
                     new Vector2(
-                        -5 + Math.cos(angle + Math.PI / 2) * j * BaseModule.C.TYPES.DEPOT.STEP,
-                        -6.5 + Math.sin(angle + Math.PI / 2) * j * BaseModule.C.TYPES.DEPOT.STEP
+                        -5 + Math.cos(angle + Math.PI / 2) * j * DepotBaseModule.C.STEP,
+                        -6.5 + Math.sin(angle + Math.PI / 2) * j * DepotBaseModule.C.STEP
                     ),
                     angle,
-                    new Vector3(1, 1, 1).multiply(BaseModule.C.TYPES.DEPOT.SCALE)
+                    new Vector3(1, 1, 1).multiply(5)
                 );
                 let depotModule = new DepotBaseModule(this, depotPose);
                 container.baseModules.push(depotModule);
+            }
+            for (let j = 0; j < 2; j++) {
+                let angle = Math.PI * 1 / 12;
+                let turretPose = new Pose(
+                    new Vector2(
+                        1 + Math.cos(angle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
+                        -4 + Math.sin(angle + Math.PI / 2) * j * TurretBaseModule.C.STEP
+                    ),
+                    angle + Math.PI,
+                    new Vector3(1, 1, 1).multiply(3.5)
+                );
+                let turretModule = new TurretBaseModule(this, turretPose, j == 0);
+                container.baseModules.push(turretModule);
             }
             this.baseModules.push(container);
             for (let baseModule of container.baseModules) {
@@ -1278,31 +1552,12 @@ class BaseModule {
 
     static C = {
         TYPES: {
-            ALIEN: {
-                NAME: 'alien',
-                SCALE: 10
-            },
-            SPAWN: {
-                NAME: 'spawn',
-                SCALE: 5
-            },
-            DEPOT: {
-                NAME: 'depot',
-                SCALE: 5,
-                STEP: 8
-            },
-            TURRET: {
-                NAME: 'turret',
-                SCALE: 5
-            },
-            STATIC: {
-                NAME: 'static',
-                SCALE: 5
-            },
-            CONTAINER: {
-                NAME: 'container',
-                SCALE: 5
-            }
+            ALIEN: 'alien',
+            SPAWN: 'spawn',
+            DEPOT: 'depot',
+            TURRET: 'turret',
+            STATIC: 'static',
+            CONTAINER: 'container'
         },
         RESET_MULTIPLIER: 200
     };
@@ -1312,6 +1567,8 @@ class BaseModule {
         this.container = base;
         this.type = type;
         this.relativePose = relativePose;
+
+        this.base.allBaseModules.push(this);
     }
 
     tick() {
@@ -1335,21 +1592,20 @@ class BaseModule {
     }
 
     updateObjs() {
-        let gamestep = (game.step % (Game.C.TICKS.TEAM_MANAGER * BaseModule.C.RESET_MULTIPLIER)) / Game.C.TICKS.TEAM_MANAGER;
-        if (gamestep == 0) {
-            for (let obj of this.objs) {
-                obj.destroySelf();
-            }
-        } else if (gamestep == 1) {
-            game.removeObject();
-        } else {
+        if (!this.dead) {
             for (let obj of this.objs) {
                 obj.show();
-                obj.setPosition(new Vector3(this.pose.position.x, this.pose.position.y, obj.obj.position.z));
-                obj.setRotation(new Vector3(obj.obj.rotation.x, obj.obj.rotation.y, this.pose.rotation));
-                obj.setScale(this.pose.scale);
+                obj.setPose(this.pose);
                 obj.update();
             }
+        }
+        if ((game.step % (Game.C.TICKS.BASE_MANAGER * BaseModule.C.RESET_MULTIPLIER)) / Game.C.TICKS.BASE_MANAGER == 0) {
+            g.timeouts.push(new Timeout(() => {
+                for (let obj of this.objs) {
+                    obj.destroySelf();
+                }
+                game.removeObject();
+            }, Game.C.TICKS.BASE_MANAGER - 1));
         }
     }
 
@@ -1363,6 +1619,18 @@ class BaseModule {
 
     setAbsolutePose() {
         this.pose = this.relativePose.getAbsolutePose(this.container.pose);
+    }
+
+    setPose(pose, updateImmediately = false, lerp = false, t = 0.1) {
+        if (lerp) {
+            pose = this.pose.lerp(pose, t);
+        }
+        this.relativePoseDifference = this.pose.subtract(this.relativePose);
+        this.relativePose = pose.subtract(this.relativePoseDifference);
+        this.setAbsolutePose();
+        if (updateImmediately) {
+            this.updateObjs();
+        }
     }
 
     destroySelf() {
@@ -1381,6 +1649,8 @@ class ContainerBaseModule extends BaseModule {
         for (let baseModule of this.baseModules) {
             baseModule.container = this;
         }
+
+        this.base.containerBaseModules.push(this);
     }
 
     tick() {
@@ -1437,6 +1707,8 @@ class AlienBaseModule extends BaseModule {
     constructor(base, pose) {
         super(base, BaseModule.C.TYPES.ALIEN, pose);
         this.createSafeAlien();
+
+        this.base.alienBaseModules.push(this);
     }
 
     createSafeAlien() {
@@ -1459,14 +1731,6 @@ class AlienBaseModule extends BaseModule {
         this.createUShape();
     }
 
-    tick() {
-        super.tick();
-        if (this.safeAlien) {
-            this.safeAlien.tick();
-        }
-        return this;
-    }
-
     destroySelf() {
         super.destroySelf();
         if (this.safeAlien) {
@@ -1479,8 +1743,22 @@ class AlienBaseModule extends BaseModule {
 class SpawnBaseModule extends BaseModule {
     type = BaseModule.C.TYPES.SPAWN;
 
+    static C = {
+        SPAWN_INITIAL_OFFSET: {
+            x: 5,
+            y: 0
+        },
+        SPAWN_FINAL_OFFSET: {
+            x: -10,
+            y: 0
+        },
+        SPAWN_DELAY: 60
+    }
+
     constructor(base, pose) {
         super(base, BaseModule.C.TYPES.SPAWN, pose);
+
+        this.base.spawnBaseModules.push(this);
     }
 
     createObjs() {
@@ -1492,8 +1770,101 @@ class SpawnBaseModule extends BaseModule {
 class DepotBaseModule extends BaseModule {
     type = BaseModule.C.TYPES.DEPOT;
 
+    static C = {
+        STEP: 8,
+        SUCK_RECTANGLE: {
+            CENTER: {
+                x: 0,
+                y: 0
+            },
+            SIZE: {
+                x: 30,
+                y: 7.5
+            }
+        },
+        DEPOT_FINAL_OFFSET: {
+            x: -10,
+            y: 0
+        },
+        ANGLE_THRESHOLD: Math.PI / 6,
+        WEAPONS_STORE_ITEMS: [
+            {
+                NAME: 'Rocket',
+                ICON: '🚀',
+                BASE_COST: 100,
+                FREQUENCY: 4,
+                CODE: 10
+            },
+            {
+                NAME: 'Space Mine',
+                ICON: '💣',
+                BASE_COST: 100,
+                FREQUENCY: 8,
+                CODE: 20
+            },
+            {
+                NAME: 'Mining Pod',
+                ICON: '🔧',
+                BASE_COST: 120,
+                FREQUENCY: 1,
+                CODE: 40
+            },
+            {
+                NAME: 'Attack Pod',
+                ICON: '⚔️',
+                BASE_COST: 120,
+                FREQUENCY: 1,
+                CODE: 41
+            },
+            {
+                NAME: 'Energy Refill',
+                ICON: '⚡💊',
+                BASE_COST: 110,
+                FREQUENCY: 2,
+                CODE: 90
+            },
+            {
+                NAME: 'Shield Refill',
+                ICON: '🛡️💊',
+                BASE_COST: 110,
+                FREQUENCY: 2,
+                CODE: 91
+            },
+            {
+                NAME: 'Defense Pod',
+                ICON: '🛡️',
+                BASE_COST: 120,
+                FREQUENCY: 2,
+                CODE: 42
+            },
+            {
+                NAME: 'Heavy Mines',
+                ICON: '💣💣',
+                BASE_COST: 200,
+                FREQUENCY: 4,
+                CODE: 21
+            },
+            {
+                NAME: 'Missiles',
+                ICON: '🚀🚀',
+                BASE_COST: 250,
+                FREQUENCY: 2,
+                CODE: 11
+            },
+            {
+                NAME: 'Torpedo',
+                ICON: '🚀🚀🚀',
+                BASE_COST: 500,
+                FREQUENCY: 1,
+                CODE: 12
+            }
+        ]
+    }
+
     constructor(base, pose) {
         super(base, BaseModule.C.TYPES.DEPOT, pose);
+
+        this.base.depotBaseModules.push(this);
     }
 
     createObjs() {
@@ -1504,6 +1875,126 @@ class DepotBaseModule extends BaseModule {
 
 class TurretBaseModule extends BaseModule {
     type = BaseModule.C.TYPES.TURRET;
+    isUpper = false;
+    isShooting = false;
+    lasers = [];
+
+    shotTimeUpper = 0;
+    shotTimeLower = 0;
+
+    static C = {
+        STEP: 8,
+        CONTROL_RECTANGLES: {
+            UPPER: {
+                CENTER: {
+                    x: 0,
+                    y: -10
+                },
+                SIZE: {
+                    x: 10,
+                    y: 10
+                }
+            },
+            LOWER: {
+                CENTER: {
+                    x: -10,
+                    y: 10
+                },
+                SIZE: {
+                    x: 10,
+                    y: 10
+                }
+            }
+        },
+        OFFSETS: {
+            BASE: {
+                x: -1.5,
+                y: 0
+            },
+            UPPER: {
+                x: 0,
+                y: -0.25
+            },
+            LOWER: {
+                x: 0,
+                y: 0.25
+            }
+        },
+        LASERS: [
+            {
+                SPEED: 0.5,
+                DAMAGE: 10,
+                RANGE: 50,
+                SHOOT_DELAY: 30
+            }
+        ],
+        MIN_VELOCITY: 0.5,
+        LERP_BLEND_FACTOR: 0.75
+    }
+
+    constructor(base, pose, isUpper = false) {
+        super(base, BaseModule.C.TYPES.TURRET, pose);
+        this.isUpper = isUpper;
+
+        this.base.turretBaseModules.push(this);
+    }
+
+    createObjs() {
+        super.createObjs();
+        this.createTurret();
+    }
+
+    createTurret() {
+        let turret = Helper.deepCopy(Obj.C.OBJS.TURRET);
+        turret = this.pose.transformObj(turret);
+        let turretObj = new Obj(turret.id, turret.type, turret.position, turret.rotation, turret.scale, true, true, this.base.team.hex).update();
+        this.objs.push(turretObj);
+        return this;
+    }
+
+    tick() {
+        super.tick();
+        if (this.isShooting) {
+            this.shoot();
+        }
+        let deadLasers = [];
+        for (let laser of this.lasers) {
+            laser.tick();
+            if (laser.dead) {
+                deadLasers.push(laser);
+            }
+        }
+        for (let laser of deadLasers) {
+            Helper.deleteFromArray(this.lasers, laser);
+        }
+        return this;
+    }
+
+    shoot() {
+        if (this.base && !this.base.dead) {
+            let baseLaserPose = this.pose.add(new Pose(new Vector2(TurretBaseModule.C.OFFSETS.BASE.x, TurretBaseModule.C.OFFSETS.BASE.y).multiplyComponents(this.pose.scale).rotateBy(this.pose.rotation), Math.PI));
+            let laserOption = TurretBaseModule.C.LASERS[this.base.baseLevel - 1];
+            if (game.step - this.shotTimeUpper >= laserOption.SHOOT_DELAY) {
+                let leftPose = baseLaserPose.add(new Pose(new Vector2(TurretBaseModule.C.OFFSETS.UPPER.x, TurretBaseModule.C.OFFSETS.UPPER.y).rotateBy(this.pose.rotation)));
+                this.lasers.push(new Laser(leftPose, laserOption.SPEED, laserOption.DAMAGE, laserOption.RANGE, this.base.team).spawn());
+                this.shotTimeUpper = game.step;
+            }
+            if (game.step - this.shotTimeLower >= laserOption.SHOOT_DELAY && game.step - this.shotTimeUpper >= laserOption.SHOOT_DELAY * 0.5) {
+                let rightPose = baseLaserPose.add(new Pose(new Vector2(TurretBaseModule.C.OFFSETS.LOWER.x, TurretBaseModule.C.OFFSETS.LOWER.y).rotateBy(this.pose.rotation)));
+                this.lasers.push(new Laser(rightPose, laserOption.SPEED, laserOption.DAMAGE, laserOption.RANGE, this.base.team).spawn());
+                this.shotTimeLower = game.step;
+            }
+        }
+    }
+
+    destroySelf() {
+        super.destroySelf();
+        for (let laser of this.lasers) {
+            laser.destroySelf();
+        }
+        this.lasers = [];
+        return this;
+    }
 }
 
 class StaticBaseModule extends BaseModule {
@@ -1511,6 +2002,8 @@ class StaticBaseModule extends BaseModule {
 
     constructor(base, pose) {
         super(base, BaseModule.C.TYPES.STATIC, pose);
+
+        this.base.staticBaseModules.push(this);
     }
 
     createObjs() {
@@ -1527,6 +2020,87 @@ class StaticBaseModule extends BaseModule {
     }
 }
 
+class Laser {
+    laser = null;
+    initialPose = null;
+    speed = null;
+    damage = null;
+    range = 0;
+    
+    team = null;
+
+    prevTime = -1;
+
+    dead = false;
+
+    constructor(initialPose, speed, damage, range, team = null) {
+        this.initialPose = initialPose;
+        this.speed = speed;
+        this.damage = damage;
+        this.range = range;
+        this.team = team;
+    }
+
+    spawn() {
+        let laser = Helper.deepCopy(Obj.C.OBJS.LASER);
+        laser = this.initialPose.transformObj(laser);
+        this.laser = new Obj(laser.id, laser.type, laser.position, laser.rotation, laser.scale, true, true, this.team.hex).update();
+        return this;
+    }
+
+    tick() {
+        if (this.prevTime < 0) {
+            this.prevTime = game.step;
+            return;
+        }
+
+        let dt = game.step - this.prevTime;
+
+        if (this.laser) {
+            let laserPose = this.laser.getPose();
+            if (laserPose.position.getDistanceTo(this.initialPose.position) >= this.range) {
+                this.destroySelf();
+                return;
+            }
+            this.laser.setPose(laserPose.add(new Pose(new Vector2(this.speed * dt, 0).rotateBy(this.laser.getPose().rotation))));
+            this.laser.update();
+
+            this.checkCollisions();
+        }
+
+        this.prevTime = game.step;
+    }
+
+    checkCollisions() {
+        let oppTeam = this.team ? g.getOppTeam(this.team) : null;
+        if (oppTeam) {
+            for (let ship of oppTeam.ships) {
+                if (ship.ship.alive) {
+                    let shipPose = ship.getPose();
+                    if (shipPose) {
+                        let rectangle = Ship.C.SHIPS[`${ship.ship.type}`].HITBOX;
+                        let shipRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).rotateBy(shipPose.rotation).add(shipPose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y), shipPose.rotation);
+                        if (shipRectangle.containsPoint(this.laser.getPose().position)) {
+                            ship.takeDamage(this.damage);
+                            this.destroySelf();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    destroySelf() {
+        if (this.laser) {
+            this.laser.destroySelf();
+        }
+        this.laser = null;
+        this.dead = true;
+        return this;
+    }
+}
+
 class SafeAlien {
     alien = null;
     relativePose = null;
@@ -1539,7 +2113,7 @@ class SafeAlien {
 
     static C = {
         TICKS: {
-            SPAWN_DELAY: 10,
+            SPAWN_DELAY: 15,
         },
         ALL: {
             VELOCITY: {
@@ -2002,6 +2576,7 @@ class TimedAsteroid {
 
 class Obj {
     originalObj = null;
+    prevObj = null;
     obj = null;
 
     static C = {
@@ -2110,6 +2685,58 @@ class Obj {
                         shape: [0.921,0.873,0.843,0.828,0.834,0.859,0.9,0.957,1.048,1.171,1.354,1.633,1.963,1.935,1.767,1.853,1.911,1.711,1.398,1.197,1.069,0.976,0.908,0.865,0.839,0.827,0.839,0.865,0.908,0.976,1.069,1.197,1.398,1.711,1.911,1.853,1.767,2.08,2.026,1.812,1.664,1.561,1.492,1.45,1.434,1.185,1.278,1.236,1.091,0.99]
                     }
                 }
+            },
+            TURRET: {
+                id: 'turret',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 4
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                },
+                type: {
+                    id: 'turret',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/turret.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    transparent: false,
+                    // physics: {
+                    //     mass: 500,
+                    //     shape: [1.553,1.556,0.816,0.517,0.479,0.378,0.32,0.296,0.285,0.279,0.28,0.313,0.999,1.008,1.031,1.075,1.14,1.166,1.106,0.949,0.844,0.665,0.85,0.846,0.842,0.85,0.842,0.846,0.85,0.665,0.534,0.3,0.296,0.285,0.279,0.28,0.287,0.299,0.3,0.287,0.28,0.279,0.285,0.296,0.32,0.378,0.479,0.517,0.816,1.556]
+                    // }
+                }
+            },
+            LASER: {
+                id: 'laser',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 6
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0,
+                },
+                scale: {
+                    x: 0.25,
+                    y: 0.1,
+                    z: 0.1
+                },
+                type: {
+                    id: 'laser',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/laser.obj',
+                    transparent: false
+                }
             }
         }
     }
@@ -2165,15 +2792,12 @@ class Obj {
         return type;
     }
 
-    update(createGhost = false) {
-        game.setObject(this.obj);
-        if (createGhost) {
-            let ghostObj = Helper.deepCopy(this.obj);
-            ghostObj.id += Obj.C.GHOST_SUFFIX;
-            ghostObj.type.id += Obj.C.GHOST_SUFFIX;
-            ghostObj.physics = null;
-            game.setObject(ghostObj);
+    update() {
+        if (JSON.stringify(this.obj) == JSON.stringify(this.prevObj)) {
+            return;
         }
+        game.setObject(this.obj);
+        this.prevObj = Helper.deepCopy(this.obj);
         return this;
     }
 
@@ -2181,6 +2805,33 @@ class Obj {
         this.obj = Helper.deepCopy(this.originalObj);
         this.update();
         return this;
+    }
+
+    setPose(pose) {
+        this.obj.position = {
+            x: pose.position.x,
+            y: pose.position.y,
+            z: this.obj.position.z
+        };
+        this.obj.rotation = {
+            x: this.obj.rotation.x,
+            y: this.obj.rotation.y,
+            z: pose.rotation
+        };
+        this.obj.scale = {
+            x: pose.scale.x,
+            y: pose.scale.y,
+            z: pose.scale.z
+        };
+        return this;
+    }
+
+    getPose() {
+        return new Pose(
+            new Vector2(this.obj.position.x, this.obj.position.y),
+            this.obj.rotation.z,
+            new Vector3(this.obj.scale.x, this.obj.scale.y, this.obj.scale.z)
+        );
     }
 
     setPosition(position) {
@@ -2210,28 +2861,25 @@ class Obj {
         return this;
     }
 
-    hide(hideGhost = true) {
+    hide() {
         this.obj.position.z = -1e5;
         this.obj.scale.x *= 1e-5;
         this.obj.scale.y *= 1e-5;
         this.obj.scale.z *= 1e-5;
-        this.update(hideGhost);
+        this.update();
     }
 
-    show(showGhost = true) {
+    show() {
         this.obj.position.z = this.originalObj.position.z;
         this.obj.scale.x = this.originalObj.scale.x;
         this.obj.scale.y = this.originalObj.scale.y;
         this.obj.scale.z = this.originalObj.scale.z;
-        this.update(showGhost);
+        this.update();
     }
 
-    destroySelf(deleteGhost = true) {
-        this.hide(deleteGhost);
+    destroySelf() {
+        this.hide();
         game.removeObject(this.obj.id);
-        if (deleteGhost) {
-            game.removeObject(this.obj.id + Obj.C.GHOST_SUFFIX);
-        }
     }
 }
 
@@ -2456,6 +3104,113 @@ class UIComponent {
                     }
                 ]
             },
+            WEAPONS_STORE: {
+                id: "weapons_store",
+                position: [25, 25, 50, 60],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100]
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 10],
+                    },
+                    {
+                        type: "text",
+                        position: [2.5, 0, 20, 10],
+                        color: '#000000'
+                    },
+                    {
+                        type: "text",
+                        position: [0, 80, 100, 10],
+                        value: 'CONTRIB SECTION TODO',
+                        color: '#ffffff'
+                    },
+                ]
+            },
+            WEAPONS_STORE_EXIT: {
+                id: "weapons_store_exit",
+                position: [65, 80, 10, 5],
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(27), // ESC
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                    },
+                    {
+                        type: "text",
+                        position: [20, 20, 60, 60],
+                        value: 'EXIT',
+                        color: '#000000'
+                    }
+                ]
+            },
+            WEAPONS_STORE_HEALING: {
+                id: "weapons_store_healing",
+                position: [25, 80, 20, 5],
+                visible: true,
+                clickable: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                    },
+                    {
+                        type: "text",
+                        position: [5, 5, 90, 90],
+                        color: '#000000'
+                    }
+                ]
+            },
+            WEAPONS_STORE_ITEM: {
+                id: "weapons_store_item",
+                position: [0, 0, 10, 10],
+                visible: true,
+                clickable: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100]
+                    },
+                    {
+                        type: "text",
+                        position: [25, 5, 70, 40],
+                        color: '#ffffff',
+                        align: 'right'
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 0, 20, 20]
+                    },
+                    {
+                        type: "text",
+                        position: [2.5, 2.5, 15, 15],
+                        color: '#000000',
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 50, 100, 20]
+                    },
+                    {
+                        type: "text",
+                        position: [2.5, 52.5, 95, 15],
+                        color: '#000000',
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 70, 100, 30]
+                    },
+                    {
+                        type: "text",
+                        position: [10, 75, 80, 20],
+                        color: '#ffffff',
+                    },
+                ]
+            }
         },
         TICKS: {
 
@@ -2589,6 +3344,44 @@ class UISubComponent {
     }
 }
 
+class Rectangle {
+    center = null;
+    size = null;
+    angle = 0;
+
+    constructor(center = new Vector2(0, 0), size = new Vector2(1, 1), angle = 0) {
+        this.center = center;
+        this.size = size;
+        this.angle = angle;
+    }
+
+    getVertices() {
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        const vertices = [
+            new Vector2(-halfWidth, -halfHeight),
+            new Vector2(halfWidth, -halfHeight),
+            new Vector2(halfWidth, halfHeight),
+            new Vector2(-halfWidth, halfHeight)
+        ];
+
+        return vertices.map(vertex => vertex.rotateBy(this.angle).add(this.center));
+    }
+
+    containsPoint(point) {
+        const localPoint = point.subtract(this.center).rotateBy(-this.angle);
+
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        return (
+            localPoint.x >= -halfWidth && localPoint.x <= halfWidth &&
+            localPoint.y >= -halfHeight && localPoint.y <= halfHeight
+        );
+    }
+}
+
 class Pose {
     position = null;
     rotation = null;
@@ -2614,7 +3407,7 @@ class Pose {
 
     rotateBy(angle) {
         const newPosition = this.position.clone().rotateBy(angle);
-        const newRotation = this.rotation.clone().addScalar(angle);
+        const newRotation = this.rotation + angle;
         return new Pose(newPosition, newRotation, this.scale.clone());
     }
 
@@ -2622,10 +3415,10 @@ class Pose {
         let objPosition = new Vector2(obj.position.x, obj.position.y);
         let transformedPosition = this.position.add(objPosition.rotateBy(this.rotation));
         
-        obj.position.x = transformedPosition.x;
-        obj.position.y = transformedPosition.y;
+        obj.position.x += transformedPosition.x;
+        obj.position.y += transformedPosition.y;
 
-        obj.rotation.z = this.rotation + obj.rotation.z;
+        obj.rotation.z += this.rotation + obj.rotation.z;
         
         obj.scale.x *= this.scale.x;
         obj.scale.y *= this.scale.y;
@@ -2648,7 +3441,16 @@ class Pose {
     }
 
     lerpRotation(rotation, t) {
-        const newRotation = this.rotation + (rotation - this.rotation) * t;
+        let a = ((this.rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        let b = ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        let delta = b - a;
+        if (delta > Math.PI) delta -= 2 * Math.PI;
+        if (delta < -Math.PI) delta += 2 * Math.PI;
+
+        let newRotation = a + delta * t;
+        newRotation = ((newRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
         return new Pose(this.position.clone(), newRotation, this.scale.clone());
     }
 
@@ -2662,7 +3464,7 @@ class Pose {
     clone() {
         return new Pose(
             this.position.clone(),
-            this.rotation.clone(),
+            this.rotation,
             this.scale.clone()
         );
     }
@@ -2752,7 +3554,8 @@ class Vector2 {
         );
     }
 
-    lerp(vector, t) {
+    lerp(vector, t, ease = true) {
+        if (ease) t = Helper.getCubicEaseInOut(t);
         return new Vector2(
             this.x + (vector.x - this.x) * t,
             this.y + (vector.y - this.y) * t
@@ -2847,7 +3650,8 @@ class Vector3 {
         return Math.atan2(vector.y - this.y, vector.x - this.x);
     }
 
-    lerp(vector, t) {
+    lerp(vector, t, ease = true) {
+        if (ease) t = Helper.getCubicEaseInOut(t);
         return new Vector3(
             this.x + (vector.x - this.x) * t,
             this.y + (vector.y - this.y) * t,
@@ -2966,7 +3770,7 @@ class Helper {
         return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
     }
 
-    static hexToHsla(hex) {
+    static hexToHsla(hex, returnObject = false) {
         hex = hex.replace(/^#/, '');
     
         if (hex.length === 3) {
@@ -2998,7 +3802,11 @@ class Helper {
     
         s = Math.round(s * 100);
         l = Math.round(l * 100);
-    
+
+        if (returnObject) {
+            return { h, s, l, a };
+        }
+
         return `hsla(${h}, ${s}%, ${l}%, ${parseFloat(a.toFixed(2))})`;
     }
 
@@ -3032,6 +3840,43 @@ class Helper {
 
         return hex;
     }
+
+    static adjustSaturation(hex, percent) {
+        let { h, s, l, a } = Helper.hexToHsla(hex, true);
+        s = Math.min(100, Math.max(0, s + percent * 100));
+        return Helper.hslaToHex(h, s, l, a);
+    }
+
+
+    static adjustBrightness(hex, percent) {
+        hex = hex.replace(/^#/, '');
+
+        let r = parseInt(hex.substring(0, 2), 16);
+        let g = parseInt(hex.substring(2, 4), 16);
+        let b = parseInt(hex.substring(4, 6), 16);
+
+        if (percent > 0) {
+            r += (255 - r) * percent;
+            g += (255 - g) * percent;
+            b += (255 - b) * percent;
+        } else {
+            r *= 1 + percent;
+            g *= 1 + percent;
+            b *= 1 + percent;
+        }
+
+        r = Math.round(Math.min(255, Math.max(0, r)));
+        g = Math.round(Math.min(255, Math.max(0, g)));
+        b = Math.round(Math.min(255, Math.max(0, b)));
+
+        return (
+            '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0')
+        ).toUpperCase();
+    }
+
 
     static getRandomRectCoordinate(min, max) {
         return new Vector2(
@@ -3078,6 +3923,19 @@ class Helper {
         return subset;
     }
 
+    static getCubicEaseInOut(t) {
+        if (t < 0.5) {
+            return 4 * t * t * t;
+        } else {
+            return 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+    }
+
+    static angleWithinThreshold(angle, target, threshold) {
+        let diff = Math.abs(angle - target) % (2 * Math.PI);
+        return diff <= threshold || diff >= 2 * Math.PI - threshold;
+    }
+
     static getNGonCorners(n, angleOffset=0) {
         let corners = [];
         for (let i = 0; i < n; i++) {
@@ -3086,12 +3944,14 @@ class Helper {
         }
         return corners;
     }
-
     static toDegrees(radians) {
-        return radians * (180 / Math.PI);
+        let deg = radians * (180 / Math.PI);
+        deg = ((deg % 360) + 360) % 360;
+        return deg;
     }
 
     static toRadians(degrees) {
+        degrees = ((degrees % 360) + 360) % 360;
         return degrees * (Math.PI / 180);
     }
 
@@ -3135,6 +3995,19 @@ class Helper {
             w * scaleSize,
             h * scaleSize
         ];
+    }
+
+    static getGridUIPosition(startX, startY, separationX, separationY, indexX, indexY, numX, numY) {
+        let totalAvailableWidth = (100 - startX * 2) - (numX - 1) * separationX;
+        let totalAvailableHeight = (100 - startY * 2) - (numY - 1) * separationY;
+
+        let width = totalAvailableWidth / numX;
+        let height = totalAvailableHeight / numY;
+
+        let x = startX + indexX * (width + separationX);
+        let y = startY + indexY * (height + separationY);
+
+        return [x, y, width, height];
     }
 }
 
