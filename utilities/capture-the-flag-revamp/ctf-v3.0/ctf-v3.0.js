@@ -116,7 +116,7 @@ class Game {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_MODDING: false,
+        IS_MODDING: true,
         IS_EVENT: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
@@ -155,6 +155,7 @@ class Game {
     tick() {
         this.manageTimeouts();
         this.manageConditions();
+        this.manageEntities();
 
         this.manageGameState();
 
@@ -163,8 +164,6 @@ class Game {
         this.spawnCollectibles();
 
         this.tickTimedEntities();
-        
-        this.manageEntities();
     }
 
     manageTimeouts() {
@@ -650,7 +649,10 @@ class Game {
             if (this.map && game.step % Obj.C.OBJS.BEACON.SPAWN_RATE == 0) {
                 for (let i = 0; i < Obj.C.OBJS.BEACON.SPAWN_AMOUNT; i++) {
                     let randPos = Helper.getRandomArrayElement(this.map.spawnArea);
-                    this.spawnBeacon(randPos, Helper.getRandomVividHSL());
+                    if (randPos.getDistanceTo(new Vector2(0, 0)) > Obj.C.OBJS.BEACON.DISTANCE_FROM_CENTER) {
+                        let hsla = Helper.getRandomVividHSLA(100, true);
+                        this.beacons.push(new Beacon(randPos, Helper.hslaToHex(hsla.h, hsla.s, hsla.l, hsla.a), true).spawn());
+                    }
                 }
             }
         } else if (this.betweenTime == -1) {
@@ -794,7 +796,7 @@ class Game {
             }
             for (let ship of notFoundShips) {
                 if (ship.team) {
-                    Helper.deleteFromArray(ship.team.ships, ship);
+                    ship.team.removeShip(ship);
                 }
                 Helper.deleteFromArray(this.ships, ship);
                 if (this.changeTeamShip && this.changeTeamShip.ship.id == ship.ship.id) {
@@ -851,12 +853,23 @@ class Game {
                 if (this.isWaiting) {
                     ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                    bottomMessage.components[1].value = "Waiting for more players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
+                    bottomMessage.components[1].value = "Waiting for players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
                     if (this.waitTimer != -1) {
                         bottomMessage.components[1].value = "Game starts in: " + Helper.formatTime(Game.C.TICKS.WAIT - (game.step - this.waitTimer));
                     }
                     ship.sendUI(bottomMessage);
-                    ship.sendUI(UIComponent.C.UIS.RADAR_BACKGROUND);
+
+                    let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
+                    for (let beacon of this.beacons) {
+                        radarBackground.components.push({
+                            type: "text",
+                            position: Helper.getRadarSpotPosition(beacon.beaconPos, new Vector2(20, 20)),
+                            value: '⬢',
+                            color: beacon.color.substring(0, 7) + '80'
+                        });
+                    }
+                    ship.sendUI(radarBackground);
+
                     ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
 
                     ship.setMaxStats();
@@ -974,7 +987,7 @@ class Game {
 
                                 ship.team.setScore(ship.team.score + 1);
 
-                                this.spawnBeacon(ship.team.flag.flagStandPos, ship.team.hex);
+                                this.beacons.push(new Beacon(ship.team.flag.flagStandPos, ship.team.hex).spawn());
 
                                 this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
                             }
@@ -993,10 +1006,6 @@ class Game {
                             ship.sendUI(timer);
                         }
                     }
-
-                    let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
-                    mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
-                    ship.sendUI(mapAuthor);
 
                     let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
                     for (let i = 0; i < this.teams.length; i++) {
@@ -1054,14 +1063,14 @@ class Game {
 
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(120, 120)),
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(100, 100)),
                                 value: '⬡',
                                 color: portalColor + '80'
                             });
 
                             radarBackground.components.push({
                                 type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(80, 80)),
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(70, 70)),
                                 value: '⬡',
                                 color: portalColor + '60'
                             });
@@ -1071,6 +1080,13 @@ class Game {
                                 position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(40, 40)),
                                 value: '⬡',
                                 color: portalColor + '40'
+                            });
+                            
+                            radarBackground.components.push({
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(20, 20)),
+                                value: '⬡',
+                                color: portalColor + '20'
                             });
                         }
                     }
@@ -1167,29 +1183,30 @@ class Game {
                             ship.hideUI(topMessage);
                         }
 
-                        let roundScore = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
+                        let roundScores = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
                         let winningTeam = this.getWinningTeam();
                         if (winningTeam == null) {
-                            roundScore.components[0].value = 'TIE';
-                            roundScore.components[0].color = '#ffffff';
+                            roundScores.components[0].value = 'TIE';
+                            roundScores.components[0].color = '#ffffff';
                         }
                         else {
-                            roundScore.components[0].value = winningTeam.color.toUpperCase();
-                            roundScore.components[0].color = winningTeam.hex;
+                            roundScores.components[0].value = winningTeam.color.toUpperCase();
+                            roundScores.components[0].color = winningTeam.hex;
                         }
                         if (this.teams[0].flagHolder) {
-                            roundScore.components[1].value = '⚑';
-                            roundScore.components[1].color = this.teams[0].hex;
+                            roundScores.components[1].value = '⚑';
+                            roundScores.components[1].color = this.teams[0].hex;
                         }
                         if (this.teams[1].flagHolder) {
-                            roundScore.components[5].value = '⚑';
-                            roundScore.components[5].color = this.teams[1].hex;
+                            roundScores.components[5].value = '⚑';
+                            roundScores.components[5].color = this.teams[1].hex;
                         }
-                        roundScore.components[2].value = this.teams[0].score;
-                        roundScore.components[2].color = this.teams[0].hex;
-                        roundScore.components[4].value = this.teams[1].score;
-                        roundScore.components[4].color = this.teams[1].hex;
-                        ship.sendUI(roundScore);
+                        roundScores.components[2].value = this.teams[0].score;
+                        roundScores.components[2].color = this.teams[0].hex;
+                        roundScores.components[4].value = this.teams[1].score;
+                        roundScores.components[4].color = this.teams[1].hex;
+                        roundScores = UIComponent.addTextShadow(roundScores, '#2C2C2C', 0, 0.04, true);
+                        ship.sendUI(roundScores);
 
                         if (this.betweenTime == -1) {
                             let portalCooldown = Helper.deepCopy(UIComponent.C.UIS.PORTAL_COOLDOWN);
@@ -1209,6 +1226,10 @@ class Game {
                         }
                     }
                 }
+
+                let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
+                mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
+                ship.sendUI(mapAuthor);
 
                 if (this.betweenTime != -1) {
                     ship.chooseShipTime = -1;
@@ -1437,7 +1458,7 @@ class Game {
                         }
                     }
                     let spawnPos = Helper.getRandomArrayElement(portalCoords);
-                    this.spawnBeacon(spawnPos, '#00ff00');
+                    this.beacons.push(new Beacon(spawnPos, '#00ff00').spawn());
                     ship.setPosition(spawnPos);
                     ship.setVelocity(new Vector2(0, 0));
                     ship.portalTime = game.step;
@@ -1478,24 +1499,6 @@ class Game {
         );
     }
 
-    spawnBeacon(pos, hex) {
-        this.beacons.push(
-            new TimedObj(
-                new Obj(
-                    Obj.C.OBJS.BEACON.id,
-                    Obj.C.OBJS.BEACON.type,
-                    new Vector3(pos.x, pos.y, Obj.C.OBJS.BEACON.position.z),
-                    new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
-                    new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
-                    true,
-                    true,
-                    hex
-                ),
-                Obj.C.OBJS.BEACON.EXISTENCE_TIME
-            ).spawn()
-        );
-    }
-
     spawnLaser(pos, ship, hex) {
         let laserRotation = new Vector2(ship.ship.x, ship.ship.y).getAngleTo(new Vector2(pos.x, pos.y));
         let laserDistance = new Vector2(ship.ship.x, ship.ship.y).getDistanceTo(new Vector2(pos.x, pos.y));
@@ -1509,7 +1512,7 @@ class Game {
                     new Vector3(Obj.C.OBJS.LASER.scale.x, laserDistance, Obj.C.OBJS.LASER.scale.z),
                     true,
                     true,
-                    hex
+                    Helper.adjustBrightness(hex, 0.5)
                 ),
                 Obj.C.OBJS.LASER.EXISTENCE_TIME
             ).spawn()
@@ -1812,8 +1815,6 @@ class Ship {
         this.setIdle(false);
         this.setScore(0);
 
-        this.instructionsStep = -1
-
         this.choosingShip = false;
         this.loadingChooseShip = false;
         this.chooseShipTime = -1;
@@ -1828,24 +1829,9 @@ class Ship {
         this.ship.emptyWeapons();
     }
 
-    convertUIHexToHsla(ui) {
-        for (let c of ui.components) {
-            if (c.fill) {
-                c.fill = Helper.hexToHsla(c.fill);
-            }
-            if (c.stroke) {
-                c.stroke = Helper.hexToHsla(c.stroke);
-            }
-            if (c.color) {
-                c.color = Helper.hexToHsla(c.color);
-            }
-        }
-        return ui;
-    }
-
     sendUI(ui, hideMode = false) {
         if (this.ship != null) {
-            let cUI = this.convertUIHexToHsla(Helper.deepCopy(ui));
+            let cUI = UIComponent.convertUIHexToHsla(Helper.deepCopy(ui));
             let removedUIs = [];
             for (let u of this.allUIs) {
                 if (u.id == cUI.id) {
@@ -2593,35 +2579,47 @@ class Flag {
     }
 
     hide() {
-        this.flag.hide();
-        this.flagHidden = true;
+        if (this.flag) {
+            this.flag.hide();
+            this.flagHidden = true;
+        }
     }
 
     show() {
-        this.flag.show();
-        this.flagHidden = false;
+        if (this.flag) {
+            this.flag.show();
+            this.flagHidden = false;
+        }
     }
 
     showWarn() {
-        this.warningRule.show();
-        this.flagStandGlow.hide();
+        if (this.warningRule && this.flagStandGlow) {
+            this.warningRule.show();
+            this.flagStandGlow.hide();
+        }
     }
 
     hideWarn() {
-        this.warningRule.hide();
-        this.flagStandGlow.show();
+        if (this.warningRule && this.flagStandGlow) {
+            this.warningRule.hide();
+            this.flagStandGlow.show();
+        }
     }
 
     setPosition(position) {
-        this.flagPos = position.clone();
-        this.flag.setPosition(position);
+        if (this.flag) {
+            this.flagPos = position.clone();
+            this.flag.setPosition(position);
+        }
     }
 
     reset() {
-        this.flagPos = this.flagStandPos.clone();
-        this.flag.setPosition(this.flagPos);
-        this.despawn = -1;
-        this.show();
+        if (this.flag) {
+            this.flagPos = this.flagStandPos.clone();
+            this.flag.setPosition(this.flagPos);
+            this.despawn = -1;
+            this.show();
+        }
     }
 
     isAtStand() {
@@ -2629,10 +2627,18 @@ class Flag {
     }
 
     destroySelf() {
-        this.flag.destroySelf();
-        this.flagStand.destroySelf();
-        this.flagStandGlow.destroySelf();
-        this.warningRule.destroySelf();
+        if (this.flag) {
+            this.flag.destroySelf();
+        }
+        if (this.flagStand) {
+            this.flagStand.destroySelf();
+        }
+        if (this.flagStandGlow) {
+            this.flagStandGlow.destroySelf();
+        }
+        if (this.warningRule) {
+            this.warningRule.destroySelf();
+        }
     }
 }
 
@@ -2640,6 +2646,7 @@ class Portal {
     portalPos = null;
     portal = null;
     portalGlow = null;
+    portalRimGlow = null;
     gravityWell = null;
 
     constructor(portalPos) {
@@ -2667,6 +2674,16 @@ class Portal {
             true,
             '#00ff00'
         ).update();
+        this.portalRimGlow = new Obj(
+            Obj.C.OBJS.PORTAL_RIM_GLOW.id,
+            Obj.C.OBJS.PORTAL_RIM_GLOW.type,
+            new Vector3(this.portalPos.x, this.portalPos.y, Obj.C.OBJS.PORTAL_RIM_GLOW.position.z),
+            new Vector3(Obj.C.OBJS.PORTAL_RIM_GLOW.rotation.x, Obj.C.OBJS.PORTAL_RIM_GLOW.rotation.y, Obj.C.OBJS.PORTAL_RIM_GLOW.rotation.z),
+            new Vector3(Obj.C.OBJS.PORTAL_RIM_GLOW.scale.x, Obj.C.OBJS.PORTAL_RIM_GLOW.scale.y, Obj.C.OBJS.PORTAL_RIM_GLOW.scale.z),
+            true,
+            true,
+            '#00ff00'
+        ).update();
         this.gravityWell = new Obj(
             Obj.C.OBJS.GRAVITY_WELL.id,
             Obj.C.OBJS.GRAVITY_WELL.type,
@@ -2681,14 +2698,96 @@ class Portal {
     }
 
     destroySelf() {
-        this.portal.destroySelf();
-        this.portalGlow.destroySelf();
-        this.gravityWell.destroySelf();
+        if (this.portal) {
+            this.portal.destroySelf();
+        }
+        if (this.portalGlow) {
+            this.portalGlow.destroySelf();
+        }
+        if (this.portalRimGlow) {
+            this.portalRimGlow.destroySelf();
+        }
+        if (this.gravityWell) {
+            this.gravityWell.destroySelf();
+        }
+    }
+}
+
+class Beacon {
+    beaconPos = null;
+    color = '';
+    beacon = null;
+    beaconGlow = null;
+    glow = false;
+
+    running = false;
+
+    constructor(beaconPos, color, glow = false) {
+        this.beaconPos = beaconPos;
+        this.color = color;
+        this.glow = glow;
+    }
+
+    spawn() {
+        this.beacon = new TimedObj(new Obj(
+            Obj.C.OBJS.BEACON.id,
+            Obj.C.OBJS.BEACON.type,
+            new Vector3(this.beaconPos.x, this.beaconPos.y, Obj.C.OBJS.BEACON.position.z),
+            new Vector3(Obj.C.OBJS.BEACON.rotation.x, Obj.C.OBJS.BEACON.rotation.y, Obj.C.OBJS.BEACON.rotation.z),
+            new Vector3(Obj.C.OBJS.BEACON.scale.x, Obj.C.OBJS.BEACON.scale.y, Obj.C.OBJS.BEACON.scale.z),
+            true,
+            true,
+            this.color
+        ), Obj.C.OBJS.BEACON.EXISTENCE_TIME).spawn();
+        if (this.glow) {
+            this.beaconGlow = new TimedObj(new Obj(
+                Obj.C.OBJS.BEACON_GLOW.id,
+                Obj.C.OBJS.BEACON_GLOW.type,
+                new Vector3(this.beaconPos.x, this.beaconPos.y, Obj.C.OBJS.BEACON_GLOW.position.z),
+                new Vector3(Obj.C.OBJS.BEACON_GLOW.rotation.x, Obj.C.OBJS.BEACON_GLOW.rotation.y, Obj.C.OBJS.BEACON_GLOW.rotation.z),
+                new Vector3(Obj.C.OBJS.BEACON_GLOW.scale.x, Obj.C.OBJS.BEACON_GLOW.scale.y, Obj.C.OBJS.BEACON_GLOW.scale.z),
+                true,
+                true,
+                this.color
+            ), Obj.C.OBJS.BEACON.EXISTENCE_TIME).spawn();
+        }
+
+        this.running = true;
+        return this;
+    }
+
+    tick() {
+        if (this.running) {
+            if (this.beacon) {
+                if (!this.beacon.running) {
+                this.running = false;
+                this.destroySelf();
+                }
+                this.beacon.tick();
+            }
+            if (this.beaconGlow) {
+                if (!this.beaconGlow.running) {
+                    this.running = false;
+                    this.destroySelf();
+                }
+                this.beaconGlow.tick();
+            }
+        }
+    }
+
+    destroySelf() {
+        if (this.beacon) {
+            this.beacon.destroySelf();
+        }
+        if (this.beaconGlow) {
+            this.beaconGlow.destroySelf();
+        }
     }
 }
 
 class Obj {
     originalObj = null;
+    prevObj = null;
     obj = null;
 
     static C = {
@@ -2729,8 +2828,8 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 90,
-                    y: 90,
+                    x: 120,
+                    y: 120,
                     z: 0
                 },
                 type: {
@@ -2790,24 +2889,24 @@ class Obj {
                 position: {
                     x: 0,
                     y: 0,
-                    z: -5
+                    z: -7
                 },
                 rotation: {
-                    x: 0,
+                    x: Math.PI,
                     y: 0,
                     z: 0
                 },
                 scale: {
-                    x: 35,
-                    y: 35,
-                    z: 35
+                    x: 52.5,
+                    y: 52.5,
+                    z: 52.5
                 },
                 type: {
                     id: 'spawn',
                     obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.png',
                 },
-                CHOOSE_SHIP_DISTANCE: 5
+                CHOOSE_SHIP_DISTANCE: 7.5
             },
             FLAG: {
                 id: 'flag',
@@ -2870,7 +2969,7 @@ class Obj {
                 position: {
                     x: 0,
                     y: 0,
-                    z: -6
+                    z: -7
                 },
                 rotation: {
                     x: Math.PI,
@@ -2878,8 +2977,8 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 70,
-                    y: 70,
+                    x: 120,
+                    y: 120,
                     z: 1
                 },
                 type: {
@@ -2937,6 +3036,29 @@ class Obj {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/portal_glow.png',
                 }
             },
+            PORTAL_RIM_GLOW: {
+                id: 'portal_rim_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 90,
+                    y: 90,
+                    z: 90
+                },
+                type: {
+                    id: 'portal_rim_glow',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/portal_rim_glow.png',
+                }
+            },
             GRAVITY_WELL: {
                 id: 'gravity_well',
                 position: {
@@ -2969,7 +3091,7 @@ class Obj {
                 position: {
                     x: 0,
                     y: 0,
-                    z: 7
+                    z: 5
                 },
                 rotation: {
                     x: Math.PI / 2,
@@ -2977,9 +3099,9 @@ class Obj {
                     z: 0
                 },
                 scale: {
-                    x: 5,
+                    x: 7.5,
                     y: 24,
-                    z: 5
+                    z: 7.5
                 },
                 type: {
                     id: 'ship_beacon',
@@ -3012,7 +3134,31 @@ class Obj {
                 },
                 EXISTENCE_TIME: 300,
                 SPAWN_RATE: 30,
-                SPAWN_AMOUNT: 2
+                SPAWN_AMOUNT: 2,
+                DISTANCE_FROM_CENTER: 60
+            },
+            BEACON_GLOW: {
+                id: 'beacon_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: Math.PI,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 20,
+                    y: 20,
+                    z: 20
+                },
+                type: {
+                    id: 'beacon_glow',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon_glow.png',
+                }
             },
             LASER: {
                 id: 'laser',
@@ -3054,9 +3200,15 @@ class Obj {
         randomizeTypeID = false,
         color = "#ffffff",
     ) {
+        let typeCopy = Helper.deepCopy(type);
+        if (typeCopy) {
+            if (color) {
+                typeCopy.emissiveColor = color;
+            }
+        }
         this.obj = {
             id: id,
-            type: this.convertTypeHexToHsla(Helper.deepCopy(type)),
+            type: this.convertTypeHexToHsla(typeCopy),
             position: {
                 x: position.x,
                 y: position.y,
@@ -3074,9 +3226,6 @@ class Obj {
             }
         };
 
-        if (color) {
-            this.obj.type.emissiveColor = color;
-        }
         if (randomizeID) {
             this.obj.id += '-' + Helper.getRandomString(10);
         }
@@ -3098,7 +3247,11 @@ class Obj {
     }
 
     update() {
+        if (JSON.stringify(this.obj) == JSON.stringify(this.prevObj)) {
+            return;
+        }
         game.setObject(this.obj);
+        this.prevObj = Helper.deepCopy(this.obj);
         return this;
     }
 
@@ -3664,36 +3817,34 @@ class UIComponent {
                 components: [
                     {
                         type: "text",
-                        position: [0, 10, 100, 20]
+                        position: [0, 10, 100, 20],
                     },
                     {
                         type: "text",
                         position: [10, 0, 10, 100],
-                        value: '',
+                        value: "",
                         align: "right"
                     },
                     {
                         type: "text",
                         position: [20, 0, 20, 100],
-                        value: '',
                         align: "right"
                     },
                     {
                         type: "text",
                         position: [40, 0, 20, 100],
                         value: "-",
-                        color: "#ffffffBF"
+                        color: "#ffffff"
                     },
                     {
                         type: "text",
                         position: [60, 0, 20, 100],
-                        value: '',
                         align: "left"
                     },
                     {
                         type: "text",
                         position: [80, 0, 10, 100],
-                        value: '',
+                        value: "",
                         align: "left"
                     }
                 ]
@@ -3779,6 +3930,36 @@ class UIComponent {
     removeComponent(component) {
         Helper.deleteFromArray(this.uiComponent.components, component);
         return this;
+    }
+
+    static convertUIHexToHsla(ui) {
+        for (let c of ui.components) {
+            if (c.fill) {
+                c.fill = Helper.hexToHsla(c.fill);
+            }
+            if (c.stroke) {
+                c.stroke = Helper.hexToHsla(c.stroke);
+            }
+            if (c.color) {
+                c.color = Helper.hexToHsla(c.color);
+            }
+        }
+        return ui;
+    }
+
+    static addTextShadow(ui, shadowColor = '#2C2C2C', offsetX = 1, offsetY = 1, scaling = true) {
+        let textShadowComponents = [];
+        for (let c of ui.components) {
+            if (c.type == 'text') {
+                let textShadowComponent = Helper.deepCopy(c);
+                textShadowComponent.position[0] += scaling ? offsetX * textShadowComponent.position[2] : offsetX;
+                textShadowComponent.position[1] += scaling ? offsetY * textShadowComponent.position[3] : offsetY;
+                textShadowComponent.color = shadowColor;
+                textShadowComponents.push(textShadowComponent);
+            }
+        }
+        ui.components.unshift(...textShadowComponents);
+        return ui;
     }
 
     destroySelf() {
@@ -3875,66 +4056,66 @@ class GameMap {
         WAITING_MAP: {
             name: 'Tunnels',
             author: 'SChickenMan',
-            map: '   99999999999999    99999999999999   9999999999999999999   \n' +
-                '    9999999999999    99999999999999   999999999999999999    \n' +
-                '      99999999999     9999999999999   99999999999999999     \n' +
-                '       999999          99999999999    999999999999999       \n' +
-                '9                      99999999999     9999999999999       9\n' +
-                '999                     99999999999    999999999999       99\n' +
-                '9999            9999    99999999999    99999999999      9999\n' +
-                '99999     9999999999     9999999999    9999999999      99999\n' +
-                '999999     9999999999     999999999    9999999999     999999\n' +
-                '9999999    9999999999      99999999    9999999999    9999999\n' +
-                '9999999     9999999999      9999999     999999999     999999\n' +
-                '99999999    99999999999      9999999    999999999      99999\n' +
-                '99999999    9999999999        999999     999999999     99999\n' +
-                '9999999     999999999           99999     999999999     9999\n' +
-                '999999      99999999     9        999     9999999999    9999\n' +
-                '99999      99999999      99         99    9999999999    9999\n' +
-                '9999      999999999     99999                  999999    999\n' +
-                '  99     999999999     99999999                  9999       \n' +
-                '        999999999     999999999999                99        \n' +
-                '       9999999999     999999999999999999                    \n' +
-                '         99999       999999999999999999     99              \n' +
-                '999                 999999999999999999      999        99999\n' +
-                '9999                999999999999999999     99999      999999\n' +
-                '99999                999999999999999      99999999    999999\n' +
-                '99999        9999    99999999999999      999999999     99999\n' +
-                '99999    99999999    99999999999999      9999999999     9999\n' +
-                '9999    9999999999    99999999999      9999999999999    9999\n' +
-                '9999    9999999999    9999999999      99999999999999    9999\n' +
-                '9999    9999999999     99999       999999999999999999   9999\n' +
-                '999    999999999999    9999       999999999999999999    9999\n' +
-                '999    999999999999      99      9999999999999999999    9999\n' +
-                '999    99999999999              99999999999999999999    9999\n' +
-                '999    9999999999              99999999999999999999    99999\n' +
-                '999    999999999               99999999999999999999    99999\n' +
-                '9999   999999999     9999999    9999999999999999999    99999\n' +
-                '9999   99999999     99999999     9999999999999999     999999\n' +
-                '9999    9999999    9999999999     99999999999999      999999\n' +
-                '9999     999999    9999999999      99999999999      99999999\n' +
-                '99999     99999   999999999999      999999999       99999999\n' +
-                '99999     99999   9999999999         9999999        99999999\n' +
-                '999999     999    999999999           99999         99999999\n' +
-                '9999999     99    9999999       9       9       9    9999999\n' +
-                '9999999      9   9999999       999             99    9999999\n' +
-                '99999999         999999       99999           999     999999\n' +
-                '9999999          9999        99999999       999999    999999\n' +
-                '999999           999          99999999999999999999     99999\n' +
-                '999999           9             99999999999999999999    99999\n' +
-                '999999    9999          99      9999999999999999999    99999\n' +
-                '999999   99999         9999       999999999999999999   99999\n' +
-                '999999   99999       9999999       99999999999999999   99999\n' +
-                '999999   999999     9999999999      9999999999999999   99999\n' +
-                '99999    999999    999999999999     999999999999999    99999\n' +
-                '99999    9999999   9999999999999            999999     99999\n' +
-                '9999     9999999    9999999999999                      99999\n' +
-                '999     999999999   9999999999999                        999\n' +
-                '99      999999999   9999999999999     999                 99\n' +
-                '9      9999999999   99999999999999   9999999999999999      9\n' +
-                '      99999999999   99999999999999   99999999999999999      \n' +
-                '     999999999999   99999999999999    99999999999999999     \n' +
-                '    9999999999999   999999999999999   999999999999999999    ',
+            map: "   99999999999999    99999999999999   9999999999999999999   \n"+
+                "    9999999999999    99999999999999   999999999999999999    \n"+
+                "      99999999999     9999999999999   99999999999999999     \n"+
+                "       999999          99999999999    999999999999999       \n"+
+                "9                      99999999999     9999999999999       9\n"+
+                "999                     99999999999    999999999999       99\n"+
+                "9999            9999    99999999999    99999999999      9999\n"+
+                "99999     9999999999     9999999999    9999999999      99999\n"+
+                "999999     9999999999     999999999    9999999999     999999\n"+
+                "9999999    9999999999      99999999    9999999999    9999999\n"+
+                "9999999     9999999999      9999999     999999999     999999\n"+
+                "99999999    99999999999      9999999    999999999      99999\n"+
+                "99999999    9999999999        999999     999999999     99999\n"+
+                "9999999     999999999           99999     999999999     9999\n"+
+                "999999      99999999     9        999     9999999999    9999\n"+
+                "99999      99999999      99         99    9999999999    9999\n"+
+                "9999      999999999     99999                  999999    999\n"+
+                "  99     999999999     99999999                  9999       \n"+
+                "        999999999     999999999999                99        \n"+
+                "       9999999999     999999999999999999                    \n"+
+                "         99999       999999999999999999     99              \n"+
+                "999                 999999999999999999      999        99999\n"+
+                "9999                999999999999999999     99999      999999\n"+
+                "99999                999999999999999      99999999    999999\n"+
+                "99999        9999    99999999999999      999999999     99999\n"+
+                "99999    99999999    9999999999999       9999999999     9999\n"+
+                "9999    9999999999    9999             9999999999999    9999\n"+
+                "9999    9999999999    99              99999999999999    9999\n"+
+                "9999    9999999999                   9999999999999999   9999\n"+
+                "999    999999999999                 9999999999999999    9999\n"+
+                "999    999999999999                99999999999999999    9999\n"+
+                "999    99999999999                999999999999999999    9999\n"+
+                "999    9999999999                999999999999999999    99999\n"+
+                "999    999999999                9999999999999999999    99999\n"+
+                "9999   999999999     9999999    9999999999999999999    99999\n"+
+                "9999   99999999     99999999     9999999999999999     999999\n"+
+                "9999    9999999    9999999999     99999999999999      999999\n"+
+                "9999     999999    9999999999      99999999999      99999999\n"+
+                "99999     99999   999999999999      999999999       99999999\n"+
+                "99999     99999   9999999999         9999999        99999999\n"+
+                "999999     999    999999999           99999         99999999\n"+
+                "9999999     99    9999999       9       9       9    9999999\n"+
+                "9999999      9   9999999       999             99    9999999\n"+
+                "99999999         999999       99999           999     999999\n"+
+                "9999999          9999        99999999       999999    999999\n"+
+                "999999           999          99999999999999999999     99999\n"+
+                "999999           9             99999999999999999999    99999\n"+
+                "999999    9999          99      9999999999999999999    99999\n"+
+                "999999   99999         9999       999999999999999999   99999\n"+
+                "999999   99999       9999999       99999999999999999   99999\n"+
+                "999999   999999     9999999999      9999999999999999   99999\n"+
+                "99999    999999    999999999999     999999999999999    99999\n"+
+                "99999    9999999   9999999999999            999999     99999\n"+
+                "9999     9999999    9999999999999                      99999\n"+
+                "999     999999999   9999999999999                        999\n"+
+                "99      999999999   9999999999999     999                 99\n"+
+                "9      9999999999   99999999999999   9999999999999999      9\n"+
+                "      99999999999   99999999999999   99999999999999999      \n"+
+                "     999999999999   99999999999999    99999999999999999     \n"+
+                "    9999999999999   999999999999999   999999999999999999    ",
             flags: [],
             portals: [],
             spawns: [],
@@ -4120,12 +4301,12 @@ class GameMap {
                 author: "JavRedstone",
                 map: "999999999999999999999999999999999999999999999999999999999999\n"+
                     "9                99999999999999999999999999                9\n"+
-                    "9 9999 9999 9999999         9999         9999999 9999 9999 9\n"+
+                    "9 9999 9999 9999999                      9999999 9999 9999 9\n"+
                     "9 9 9   9 9 9  999                        999  9 9 9   9 9 9\n"+
                     "9 99     99 9 999    9                9    999 9 99     99 9\n"+
                     "9 9  999  9 9999    99999999999999999999    9999 9  999  9 9\n"+
                     "9    99 9   999       999  999999  999       999   9 99    9\n"+
-                    "9 9  9 99  9999999     99   9999   99     9999999  99 9  9 9\n"+
+                    "9 9  9 99  9999999     99          99     9999999  99 9  9 9\n"+
                     "9 99  999 9999          9          9          9999 999  99 9\n"+
                     "9 9 9    99999      9                  9      99999    9 9 9\n"+
                     "9 9999  999 99     999    99    99    999     99 999  9999 9\n"+
@@ -4170,20 +4351,20 @@ class GameMap {
                     "9 9999  999 99     999    99    99    999     99 999  9999 9\n"+
                     "9 9 9    99999      9                  9      99999    9 9 9\n"+
                     "9 99  999 9999          9          9          9999 999  99 9\n"+
-                    "9 9  9 99  9999999     99   9999   99     9999999  99 9  9 9\n"+
+                    "9 9  9 99  9999999     99          99     9999999  99 9  9 9\n"+
                     "9    99 9   999       999  999999  999       999   9 99    9\n"+
                     "9 9  999  9 9999    99999999999999999999    9999 9  999  9 9\n"+
                     "9 99     99 9 999    9                9    999 9 99     99 9\n"+
                     "9 9 9   9 9 9  999                        999  9 9 9   9 9 9\n"+
-                    "9 9999 9999 9999999         9999         9999999 9999 9999 9\n"+
+                    "9 9999 9999 9999999                      9999999 9999 9999 9\n"+
                     "9                99999999999999999999999999                9\n"+
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
                     x: 0,
-                    y: -210
+                    y: -200
                 }, {
                     x: 0,
-                    y: 210
+                    y: 200
                 }],
                 portals: [
                     {
@@ -4205,10 +4386,10 @@ class GameMap {
                 ],
                 spawns: [{
                     x: 0,
-                    y: -260
+                    y: -265
                 }, {
                     x: 0,
-                    y: 260
+                    y: 265
                 }],
                 tiers: [],
                 asteroids: []
@@ -4736,11 +4917,11 @@ class GameMap {
                     "999999999999999999999999999999999999999999999999999999999999\n"+
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
-                    x: -235,
-                    y: -235
+                    x: -250,
+                    y: -250
                 }, {
-                    x: 235,
-                    y: 235
+                    x: 250,
+                    y: 250
                 }],
                 portals: [
                     {
@@ -4761,11 +4942,11 @@ class GameMap {
                     }
                 ],
                 spawns: [{
-                    x: -195,
-                    y: -195
+                    x: -200,
+                    y: -200
                 }, {
-                    x: 195,
-                    y: 195
+                    x: 200,
+                    y: 200
                 }],
                 tiers: [5, 6],
                 asteroids: []
@@ -4834,18 +5015,18 @@ class GameMap {
                     "999999999999     9999999999      9999999999     999999999999\n"+
                     "999999999999     9999999999      9999999999     999999999999",
                 flags: [{
-                    x: -185,
+                    x: -165,
                     y: 0
                 }, {
-                    x: 185,
+                    x: 165,
                     y: 0
                 }],
                 portals: [],
                 spawns: [{
-                    x: -245,
+                    x: -250,
                     y: 0
                 }, {
-                    x: 245,
+                    x: 250,
                     y: 0
                 }],
                 tiers: [5, 6],
@@ -4916,10 +5097,10 @@ class GameMap {
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
                     x: 0,
-                    y: -205
+                    y: -185
                 }, {
                     x: 0,
-                    y: 205
+                    y: 185
                 }],
                 portals: [
                     {
@@ -5005,10 +5186,10 @@ class GameMap {
                     "999999999999999999999999999999999999999999999999999999999999\n"+
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
-                    x: -180,
+                    x: -190,
                     y: 0
                 }, {
-                    x: 180,
+                    x: 190,
                     y: 0
                 }],
                 portals: [
@@ -5046,12 +5227,12 @@ class GameMap {
                     "999999999999999999999999999999999999999999999999999999999999\n"+
                     "99     9999                                      9999     99\n"+
                     "99   9999                                          9999   99\n"+
-                    "99 9999        9   99 99999      99999 99   9        9999 99\n"+
-                    "99999            9999 999999    999999 9999            99999\n"+
-                    "9999     9       9999 9999 99  99 9999 9999       9     9999\n"+
-                    "9999         9   9999 9999  9999  9999 9999   9         9999\n"+
-                    "999          99  9999 9999999999999999 9999  99          999\n"+
-                    "999       9  99  9999 9999        9999 9999  99  9       999\n"+
+                    "99 9999        9   99  9999      9999  99   9        9999 99\n"+
+                    "99999            9999  99999    99999  9999            99999\n"+
+                    "9999     9       9999  999 99  99 999  9999       9     9999\n"+
+                    "9999         9   9999  999  9999  999  9999   9         9999\n"+
+                    "999          99  9999  99999999999999  9999  99          999\n"+
+                    "999       9  99  9999  999        999  9999  99  9       999\n"+
                     "999      99  99  9999                  9999  99  99      999\n"+
                     "9999     99  99  99                      99  99  99     9999\n"+
                     "99999    99  99        9            9        99  99    99999\n"+
@@ -5092,22 +5273,22 @@ class GameMap {
                     "99999    99  99        9            9        99  99    99999\n"+
                     "9999     99  99  99                      99  99  99     9999\n"+
                     "999      99  99  9999                  9999  99  99      999\n"+
-                    "999       9  99  9999 9999        9999 9999  99  9       999\n"+
-                    "999          99  9999 9999999999999999 9999  99          999\n"+
-                    "9999         9   9999 9999  9999  9999 9999   9         9999\n"+
-                    "9999     9       9999 9999 99  99 9999 9999       9     9999\n"+
-                    "99999            9999 999999    999999 9999            99999\n"+
-                    "99 9999        9   99 99999      99999 99   9        9999 99\n"+
+                    "999       9  99  9999  999        999  9999  99  9       999\n"+
+                    "999          99  9999  99999999999999  9999  99          999\n"+
+                    "9999         9   9999  999  9999  999  9999   9         9999\n"+
+                    "9999     9       9999  999 99  99 999  9999       9     9999\n"+
+                    "99999            9999  99999    99999  9999            99999\n"+
+                    "99 9999        9   99  9999      9999  99   9        9999 99\n"+
                     "99   9999                                          9999   99\n"+
                     "99     9999                                      9999     99\n"+
                     "999999999999999999999999999999999999999999999999999999999999\n"+
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
                     x: 0,
-                    y: -185
+                    y: -170
                 }, {
                     x: 0,
-                    y: 185
+                    y: 170
                 }],
                 portals: [
                     {
@@ -5121,10 +5302,10 @@ class GameMap {
                 ],
                 spawns: [{
                     x: 0,
-                    y: -235
+                    y: -260
                 }, {
                     x: 0,
-                    y: 235
+                    y: 260
                 }],
                 tiers: [],
                 asteroids: []
@@ -5193,33 +5374,32 @@ class GameMap {
                     "8888889999998888888888889999999888999999999999999   99    99\n"+
                     "8888888888888888888888888888888888899999989999999   999    9",
                 flags: [{
-                    x: -190,
-                    y: -150
+                    x: -220,
+                    y: -170
                 }, {
-                    x: 190,
-                    y: 190
+                    x: 210,
+                    y: 210
                 }],
                 portals: [
                     {
                         x: -220,
-                        y: 160
-                    },
-                    {
-                        x: 210,
-                        y: -240
+                        y: 150
                     },
                     {
                         x: -60,
                         y: 240
                     }
                 ],
-                spawns: [{
-                    x: -240,
-                    y: -180
-                }, {
-                    x: 230,
-                    y: 230
-                }],
+                spawns: [
+                    {
+                        x: -215,
+                        y: 0
+                    }, 
+                    {
+                        x: 210,
+                        y: -240
+                    }
+                ],
                 tiers: [],
                 asteroids: []
             },
@@ -5377,11 +5557,11 @@ class GameMap {
                     "799999999999999999999675554553432222333434224423422233434322\n" +
                     "677677766666666667767755555455544445554544553445444444554445",
                 flags: [{
-                    x: -232,
-                    y: -225
+                    x: -230,
+                    y: -230
                 }, {
-                    x: 232,
-                    y: 225
+                    x: 230,
+                    y: 230
                 }],
                 portals: [
                     {
@@ -5395,10 +5575,10 @@ class GameMap {
                 ],
                 spawns: [{
                     x: -170,
-                    y: 110
+                    y: 115
                 }, {
                     x: 170,
-                    y: -110
+                    y: -115
                 }],
                 tiers: [],
                 asteroids: []
@@ -5574,10 +5754,10 @@ class GameMap {
                     }
                 ],
                 spawns: [{
-                    x: -200,
+                    x: -205,
                     y: -225
                 }, {
-                    x: 200,
+                    x: 205,
                     y: 225
                 }],
                 tiers: [],
@@ -5648,9 +5828,9 @@ class GameMap {
                     "466799   999    999  974333444432344334344434333334334344344",
                 flags: [{
                     x: -275,
-                    y: 130
+                    y: 150
                 }, {
-                    x: -130,
+                    x: -150,
                     y: 275
                 }],
                 portals: [
@@ -5741,10 +5921,10 @@ class GameMap {
                     "                      999          999                      \n"+
                     "   999999999999999999999            999999999999999999999   ",
                 flags: [{
-                    x: -250,
+                    x: -255,
                     y: 0
                 }, {
-                    x: 250,
+                    x: 255,
                     y: 0
                 }],
                 portals: [
@@ -5831,10 +6011,10 @@ class GameMap {
                     "956868576568775887856657765658856567756658788577865675868659\n" +
                     "999999999999999999999999999999999999999999999999999999999999",
                 flags: [{
-                    x: -180,
+                    x: -165,
                     y: 0
                 }, {
-                    x: 180,
+                    x: 165,
                     y: 0
                 }],
                 portals: [
@@ -5922,11 +6102,11 @@ class GameMap {
                     "356699999999999999999999999999999999999999999997677754454333\n" +
                     "334669999999999999999999999999999999999999776667454554453333",
                 flags: [{
-                    x: -100,
-                    y: -100
+                    x: -110,
+                    y: -110
                 }, {
-                    x: 100,
-                    y: 100
+                    x: 110,
+                    y: 110
                 }],
                 portals: [
                     {
@@ -6754,15 +6934,19 @@ class Helper {
         return "#" + Math.floor(Math.random()*16777215).toString(16);
     }
 
-    static getRandomVividHSL(alpha = 100) {
-        let hue = Math.floor(Math.random() * 361);
-        let saturation = 100;
-        let lightness = Math.floor(Math.random() * 21) + 40;
-        
-        return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    static getRandomVividHSLA(a = 100, returnObject = false) {
+        let h = Math.floor(Math.random() * 361);
+        let s = 100;
+        let l = Math.floor(Math.random() * 21) + 40;
+
+        if (returnObject) {
+            return { h, s, l, a };
+        }
+
+        return `hsla(${h}, ${s}%, ${l}%, ${a})`;
     }
 
-    static hexToHsla(hex) {
+    static hexToHsla(hex, returnObject = false) {
         hex = hex.replace(/^#/, '');
     
         if (hex.length === 3) {
@@ -6794,7 +6978,11 @@ class Helper {
     
         s = Math.round(s * 100);
         l = Math.round(l * 100);
-    
+
+        if (returnObject) {
+            return { h, s, l, a };
+        }
+
         return `hsla(${h}, ${s}%, ${l}%, ${parseFloat(a.toFixed(2))})`;
     }
 
@@ -6827,6 +7015,42 @@ class Helper {
         }
 
         return hex;
+    }
+
+    static adjustSaturation(hex, percent) {
+        let { h, s, l, a } = Helper.hexToHsla(hex, true);
+        s = Math.min(100, Math.max(0, s + percent * 100));
+        return Helper.hslaToHex(h, s, l, a);
+    }
+
+
+    static adjustBrightness(hex, percent) {
+        hex = hex.replace(/^#/, '');
+
+        let r = parseInt(hex.substring(0, 2), 16);
+        let g = parseInt(hex.substring(2, 4), 16);
+        let b = parseInt(hex.substring(4, 6), 16);
+
+        if (percent > 0) {
+            r += (255 - r) * percent;
+            g += (255 - g) * percent;
+            b += (255 - b) * percent;
+        } else {
+            r *= 1 + percent;
+            g *= 1 + percent;
+            b *= 1 + percent;
+        }
+
+        r = Math.round(Math.min(255, Math.max(0, r)));
+        g = Math.round(Math.min(255, Math.max(0, g)));
+        b = Math.round(Math.min(255, Math.max(0, b)));
+
+        return (
+            '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0')
+        ).toUpperCase();
     }
 
     static getRandomRectCoordinate(min, max) {
