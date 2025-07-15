@@ -11,7 +11,8 @@
     Ships from Vanilla Revamp (V3) and MCST
 */
 
-class Game {
+// IF YOU DON'T USE CLASS EXPRESSION IT IS NOT MODDING SPACE COMPATIBLE!!!
+const Game = class {
     static shipGroups = [];
     shipGroup = null;
 
@@ -1670,7 +1671,7 @@ class Game {
     }
 }
 
-class Team {
+const Team = class {
     team = 0;
     color = '';
     hex = 0;
@@ -1773,7 +1774,7 @@ class Team {
     }
 }
 
-class Ship {    
+const Ship = class {
     team = null;
     ship = null;
 
@@ -2207,7 +2208,7 @@ class Ship {
     }
 }
 
-class Alien {
+const Alien = class {
     name = '';
 
     alien = null;
@@ -2355,7 +2356,7 @@ class Alien {
     }
 }
 
-class Collectible {
+const Collectible = class {
     name = '';
 
     static C = {
@@ -2420,7 +2421,7 @@ class Collectible {
     }
 }
 
-class AsteroidPath {
+const AsteroidPath = class {
     asteroid = null;
     initialPos = null;
     velocity = null;
@@ -2460,7 +2461,7 @@ class AsteroidPath {
     }
 }
 
-class Asteroid {
+const Asteroid = class {
     asteroid = null;
 
     constructor(position, velocity, size) {
@@ -2506,7 +2507,7 @@ class Asteroid {
     }
 }
 
-class TimedAsteroid {
+const TimedAsteroid = class {
     asteroid = null;
     time = 0;
 
@@ -2535,7 +2536,7 @@ class TimedAsteroid {
     }
 }
 
-class Flag {
+const Flag = class {
     flagPos = null;
     flag = null;
     flagHidden = false;
@@ -2661,7 +2662,7 @@ class Flag {
     }
 }
 
-class Portal {
+const Portal = class {
     portalPos = null;
     portal = null;
     portalGlow = null;
@@ -2732,7 +2733,7 @@ class Portal {
     }
 }
 
-class Beacon {
+const Beacon = class {
     beaconPos = null;
     color = '';
     beacon = null;
@@ -2804,7 +2805,7 @@ class Beacon {
     }
 }
 
-class Obj {
+const Obj = class {
     originalObj = null;
     prevObj = null;
     obj = null;
@@ -3319,7 +3320,7 @@ class Obj {
     }
 }
 
-class TimedObj {
+const TimedObj = class {
     obj = null;
     time = 0;
 
@@ -3353,7 +3354,7 @@ class TimedObj {
     }
 }
 
-class ObjectType {
+const ObjectType = class {
     objectType = null;
 
     constructor(
@@ -3377,7 +3378,7 @@ class ObjectType {
     }
 }
 
-class ObjectPhysics {
+const ObjectPhysics = class {
     objectPhysics = null;
 
     constructor(
@@ -3391,7 +3392,7 @@ class ObjectPhysics {
     }
 }
 
-class TimedUI {
+const TimedUI = class {
     startTime = 0;
     running = false;
 
@@ -3424,7 +3425,7 @@ class TimedUI {
     }
 }
 
-class UIComponent {
+const UIComponent = class {
     uiComponent = null;
 
     static C = {
@@ -3966,7 +3967,7 @@ class UIComponent {
     }
 }
 
-class UISubComponent {
+const UISubComponent = class {
     uiSubComponent = null;
 
     constructor(
@@ -4034,7 +4035,7 @@ class UISubComponent {
     }
 }
 
-class GameMap {
+const GameMap = class {
     name = '';
     author = '';
     map = '';
@@ -6441,7 +6442,7 @@ class GameMap {
     }
 }
 
-class ShipGroup {
+const ShipGroup = class {
     tier = 0;
     ships = [];
     normalShips = [];
@@ -6681,7 +6682,7 @@ class ShipGroup {
     }
 }
 
-class Vector2 {
+const Vector2 = class {
     x = 0;
     y = 0;
 
@@ -6757,7 +6758,7 @@ class Vector2 {
     }
 }
 
-class Vector3 {
+const Vector3 = class {
     x = 0;
     y = 0;
     z = 0;
@@ -6837,7 +6838,7 @@ class Vector3 {
     }
 }
 
-class TimeoutCreator {
+const TimeoutCreator = class {
     startTime = 0;
     duration = 0;
     callback = null;
@@ -6865,7 +6866,7 @@ class TimeoutCreator {
     }
 }
 
-class ConditionCreator {
+const ConditionCreator = class {
     condition = null;
     callback = null;
     running = false;
@@ -6891,7 +6892,7 @@ class ConditionCreator {
     }
 }
 
-class Helper {
+const Helper = class {
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = this.getRandomInt(0, i);
