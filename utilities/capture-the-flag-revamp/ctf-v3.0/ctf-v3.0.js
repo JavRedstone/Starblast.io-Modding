@@ -111,7 +111,7 @@ class Game {
 
             GAME_MANAGER: 30,
 
-            WAIT: 3600 * 3,
+            WAIT: 3600 * 0.1,
             ROUND: 3600 * 10,
             BETWEEN: 60 * 10
         },
@@ -542,36 +542,39 @@ class Game {
                             if (randShip && !this.changeTeamShip) {
                                 this.changeTeamShip = randShip;
                                 randShip.changeTeamTime = game.step;
-                                randShip.timeouts.push(new TimeoutCreator(() => {
-                                    if (randShip) {
-                                        let team = randShip.team;
-                                        let opp = this.getOppTeam(team);
-                                        if (team.flag && team.flagHolder && team.flagHolder.id == randShip.ship.id) {
-                                            team.flagHolder = null;
-                                            opp.flag.reset();
-                                        }
-                                        this.resetShip(randShip, true);
-                                        randShip.chosenType = 0;
-                                        randShip.chooseShipTime = game.step;
-                                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                        bottomMessage.components[1].value = `You have been moved to the ${opp.color.toUpperCase()} team due to team player imbalance.`;
-                                        bottomMessage.components[0].fill = '#8B008B80';
-                                        randShip.sendTimedUI(bottomMessage);
-
-                                        if (this.changeTeamShip && this.changeTeamShip.ship.id == randShip.ship.id) {
-                                            this.changeTeamShip = null;
-                                        }
-                                    }
-                                }, Ship.C.SWITCH_SHIP_TIME).start());
                             }
                         }
                         
-                        if (this.changeTeamShip && this.changeTeamShip.changeTeamTime != -1 && game.step - this.changeTeamShip.changeTeamTime < Ship.C.SWITCH_SHIP_TIME) {
-                            let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                            let oppTeam = this.getOppTeam(this.changeTeamShip.team);
-                            bottomMessage.components[1].value = `You will be switched to the ${oppTeam.color.toUpperCase()} team in ${Helper.formatTime(Ship.C.SWITCH_SHIP_TIME - (game.step - this.changeTeamShip.changeTeamTime))}.`;
-                            bottomMessage.components[0].fill = '#8B8B0080';
-                            this.changeTeamShip.sendUI(bottomMessage);
+                        if (this.changeTeamShip) {
+                            if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || (this.changeTeamShip.team && this.changeTeamShip.team.flag && this.changeTeamShip.team.flagHolder && this.changeTeamShip.team.flagHolder.ship.id == this.changeTeamShip.ship.id)) {
+                                this.changeTeamShip.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                this.changeTeamShip.changeTeamTime = -1;
+                                this.changeTeamShip = null;
+                            }
+                            if (this.changeTeamShip.changeTeamTime != -1 && game.step - this.changeTeamShip.changeTeamTime < Ship.C.SWITCH_SHIP_TIME) {
+                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                let oppTeam = this.getOppTeam(this.changeTeamShip.team);
+                                bottomMessage.components[1].value = `You will be switched to the ${oppTeam.color.toUpperCase()} team in ${Helper.formatTime(Ship.C.SWITCH_SHIP_TIME - (game.step - this.changeTeamShip.changeTeamTime))}.`;
+                                bottomMessage.components[0].fill = '#8B8B0080';
+                                this.changeTeamShip.sendUI(bottomMessage);
+                            } else {
+                                let team = this.changeTeamShip.team;
+                                let opp = this.getOppTeam(team);
+                                if (team.flag && team.flagHolder && team.flagHolder.id == this.changeTeamShip.ship.id) {
+                                    team.flagHolder = null;
+                                    opp.flag.reset();
+                                }
+                                this.resetShip(this.changeTeamShip, true);
+                                this.changeTeamShip.chosenType = 0;
+                                this.changeTeamShip.chooseShipTime = game.step;
+                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                bottomMessage.components[1].value = `You have been moved to the ${opp.color.toUpperCase()} team due to team player imbalance.`;
+                                bottomMessage.components[0].fill = '#8B008B80';
+                                this.changeTeamShip.sendTimedUI(bottomMessage);
+
+                                this.changeTeamShip.changeTeamTime = -1;
+                                this.changeTeamShip = null;
+                            }
                         }
                     }
                 }
@@ -782,7 +785,7 @@ class Game {
                 Helper.deleteFromArray(this.aliens, alien);
             }
 
-            let notFoundShips = [];
+            let notFoundShips = new Set([]);
             for (let ship of this.ships) {
                 let found = false;
                 for (let gameShip of game.ships) {
@@ -792,10 +795,24 @@ class Game {
                     }
                 }
                 if (!found) {
-                    notFoundShips.push(ship);
+                    notFoundShips.add(ship);
                 }
             }
-            for (let ship of notFoundShips) {
+            for (let team of this.teams) {
+                for (let ship of team.ships) {
+                    let found = false;
+                    for (let gameShip of game.ships) {
+                        if (ship.ship.id == gameShip.id) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && !notFoundShips.has(ship)) {
+                        notFoundShips.add(ship);
+                    }
+                }
+            }
+            for (let ship of notFoundShips.values()) {
                 if (ship.team) {
                     ship.team.removeShip(ship);
                 }
@@ -4398,81 +4415,81 @@ class GameMap {
             {
                 name: "Square Roundabout",
                 author: "JavRedstone",
-                map: "9999999999999999999997999    99    9999999999999999999999999\n"+
-                    "97      79    99  9977779    77    9777799  99    97      79\n"+
-                    "9 7    7 9    99999975579          9755799  99    9 7    7 9\n"+
-                    "9  7  7  9    99  9975579          9755799  99    9  7  7  9\n"+
-                    "9   77   9    99999975579          97557999999    9   77   9\n"+
-                    "9   77   9    99999977779          97777999999    9   77   9\n"+
-                    "9  7  7  9    99  9999997          7999999  99    9  7  7  9\n"+
-                    "9 7    7 9    999999597                 99  99    9 7    7 9\n"+
-                    "97      79    99  9957      7777        99  99    97      79\n"+
-                    "9999999999999999999979    79999997      999999    9999999999\n"+
-                    "9        99999999999       999999       999999   7         9\n"+
-                    "9        99    99997        9999            99  7          9\n"+
-                    "9        99    9             99             99 7           9\n"+
-                    "9        99                                 997            9\n"+
-                    "99999999999            9                    9999999999999999\n"+
-                    "9999999999999      7999                     9999999999999999\n"+
-                    "9   99   999      99    9                        99 9 99 9 9\n"+
-                    "9   99   999     99    99    99                  99 9 99 9 9\n"+
-                    "999999999999    99    9999999999                 99999999999\n"+
-                    "977799999997   99      999999  99     99         99999999999\n"+
-                    "9777779557     9        9999    99    99             9777779\n"+
-                    "9755579979     9         99      99                  9755579\n"+
-                    "97555797       9  9     999       99     99          9755579\n"+
-                    "9777779       9  999   999         99    97          9777779\n"+
-                    "9999997         99999 9977777777777799               7999999\n"+
-                    "                  9999997    55    7 99     99              \n"+
-                    "                  99999 7   5  5   7  99    99              \n"+
-                    "                  999   7  5    5  7   99                   \n"+
-                    "       7          99    7 5 3333 5 7    99          7       \n"+
-                    "99999999         99     75  3  3  57     99         99999999\n"+
-                    "99999999         99     75  3  3  57     99         99999999\n"+
-                    "       7          99    7 5 3333 5 7    99          7       \n"+
-                    "                   99   7  5    5  7   999                  \n"+
-                    "              99    99  7   5  5   7 99999                  \n"+
-                    "              99     99 7    55    7999999                  \n"+
-                    "9999997               9977777777777799 99999         7999999\n"+
-                    "9777779          79    99         999   999  9       9777779\n"+
-                    "9755579          99     99       999     9  9      979755579\n"+
-                    "9755579                  99      99         9      759755579\n"+
-                    "9777779             99    99    9999        9     7959777779\n"+
-                    "99999999999         99     99  999999      99   799999999999\n"+
-                    "99999999999                 9999999999    99    999999999999\n"+
-                    "9 9 99 9 99                  99    99    99     999   99   9\n"+
-                    "9 9 99 9 99                        9    99      999   99   9\n"+
-                    "9999999999999999                     9999      9999999999999\n"+
-                    "9999999999999999                    9            99999999999\n"+
-                    "9            799                                 99        9\n"+
-                    "9           7 99             99             9    99        9\n"+
-                    "9          7  99            9999        79999    99        9\n"+
-                    "9         7   999999       999999       99999999999        9\n"+
-                    "9999999999    999999      79999997     799999999999999999999\n"+
-                    "97      79    99  99        7777     97999  99    97      79\n"+
-                    "9 7    7 9    99  99                 755999999    9 7    7 9\n"+
-                    "9  7  7  9    99  9999997          7999999  99    9  7  7  9\n"+
-                    "9   77   9    99999977779          97777999999    9   77   9\n"+
-                    "9   77   9    99999975579          97557999999    9   77   9\n"+
-                    "9  7  7  9    99  9975579          9755799  99    9  7  7  9\n"+
-                    "9 7    7 9    99  9975579          97557999999    9 7    7 9\n"+
-                    "97      79    99  9977779    77    9777799  99    97      79\n"+
-                    "9999999999999999999999999    99    9999999999999999999999999",
+                map: "     99 99  99   99  99      99      99  99   99  99 99     \n"+
+                    " 999 9999  999   99 99       99       99 99   999  9999 999 \n"+
+                    " 999 999  9999   9999        99        9999   9999  999 999 \n"+
+                    " 999 99  99 99   999       999999       999   99999  99 999 \n"+
+                    "     99 99  99   99                      99   999999 99     \n"+
+                    "999999999   999  99                      99  9999  999999999\n"+
+                    "99999999    9999 99                      99 99999   99999999\n"+
+                    " 99  99      999999                      999999 9   999  99 \n"+
+                    "99  99        99999                      99999  9 9 9 99  99\n"+
+                    "9  99                    9999999999         999   9 9  99  9\n"+
+                    "  99                      99999999           999  9 9  999  \n"+
+                    " 99                        999999             999 9   99999 \n"+
+                    "9999999                     9999               9999  9999999\n"+
+                    "99999999                     99                 999 99999999\n"+
+                    "     9999                    99                  999999     \n"+
+                    "      999                    99                   9999      \n"+
+                    "       99           999999  9999  999999           99       \n"+
+                    "999999999            9999  999999  9999            999999999\n"+
+                    "999999999             99  999  999  99             999999999\n"+
+                    "  99                     999    999                     99  \n"+
+                    " 99             9       999      999       9             99 \n"+
+                    "99              99     999        9       99              99\n"+
+                    "9               999   9999  9999         999               9\n"+
+                    "                999  99999   999         999                \n"+
+                    "                99  9999999            9  99                \n"+
+                    "         9      9  999999999          999  9      9         \n"+
+                    "         99       999   99999          999       99         \n"+
+                    "   9     999     999     99999          999     999     9   \n"+
+                    "   9     9999   999   9   99999     99   999   9999     9   \n"+
+                    "9999     999999999    99   99999    99    999999999     9999\n"+
+                    "9999     999999999    99    99999   99    999999999     9999\n"+
+                    "   9     9999   999   99     99999   9   999   9999     9   \n"+
+                    "   9     999     999          99999     999     999     9   \n"+
+                    "         99       999          99999   999       99         \n"+
+                    "         9      9  999          999999999  9      9         \n"+
+                    "                99  9            9999999  99                \n"+
+                    "                999         999   99999  999                \n"+
+                    "9               999         9999  9999   999               9\n"+
+                    "99              99       9        999     99              99\n"+
+                    " 99             9       999      999       9             99 \n"+
+                    "  99                     999    999                     99  \n"+
+                    "999999999             99  999  999  99             999999999\n"+
+                    "999999999            9999  999999  9999            999999999\n"+
+                    "       99           999999  9999  999999           99       \n"+
+                    "      9999                   99                    999      \n"+
+                    "     999999                  99                    9999     \n"+
+                    "99999999 999                 99                     99999999\n"+
+                    "9999999  9999               9999                     9999999\n"+
+                    " 99999   9 999             999999                        99 \n"+
+                    "  999  9 9  999           99999999                      99  \n"+
+                    "9  99  9 9   999         9999999999                    99  9\n"+
+                    "99  99 9 9 9  99999                      99999        99  99\n"+
+                    " 99  999   9 999999                      999999      99  99 \n"+
+                    "99999999   99999 99                      99 9999    99999999\n"+
+                    "999999999  9999  99                      99  999   999999999\n"+
+                    "     99 999999   99                      99   99  99 99     \n"+
+                    " 999 99  99999   999       999999       999   99 99  99 999 \n"+
+                    " 999 999  9999   9999        99        9999   9999  999 999 \n"+
+                    " 999 9999  999   99 99       99       99 99   999  9999 999 \n"+
+                    "     99 99  99   99  99      99      99  99   99  99 99     ",
                 flags: [{
-                    x: -160,
-                    y: 160
+                    x: -30,
+                    y: -30
                 }, {
-                    x: 160,
-                    y: -160
+                    x: 30,
+                    y: 30
                 }],
                 portals: [
                     {
-                        x: 150,
-                        y: 100
+                        x: 200,
+                        y: -200
                     },
                     {
-                        x: -150,
-                        y: -100,
+                        x: -200,
+                        y: 200,
                     }
                 ],
                 spawns: [{
@@ -4482,7 +4499,7 @@ class GameMap {
                     x: 90,
                     y: -90
                 }],
-                tiers: [4, 5, 6],
+                tiers: [],
                 asteroids: []
             },
             {
@@ -4752,7 +4769,7 @@ class GameMap {
                     x: 210,
                     y: -210
                 }],
-                tiers: [3, 4, 5],
+                tiers: [4, 5, 6],
                 asteroids: []
             },
             {
@@ -4949,7 +4966,7 @@ class GameMap {
                     x: 200,
                     y: 200
                 }],
-                tiers: [5, 6],
+                tiers: [],
                 asteroids: []
             },
             {
@@ -5030,7 +5047,7 @@ class GameMap {
                     x: 250,
                     y: 0
                 }],
-                tiers: [5, 6],
+                tiers: [],
                 asteroids: []
             },
             {
@@ -5120,7 +5137,7 @@ class GameMap {
                     x: 0,
                     y: 265
                 }],
-                tiers: [5, 6],
+                tiers: [],
                 asteroids: []
             },
             {
@@ -5308,7 +5325,7 @@ class GameMap {
                     x: 0,
                     y: 260
                 }],
-                tiers: [],
+                tiers: [4, 5, 6],
                 asteroids: []
             },
             {
@@ -5581,7 +5598,7 @@ class GameMap {
                     x: 170,
                     y: -115
                 }],
-                tiers: [],
+                tiers: [4, 5, 6],
                 asteroids: []
             },
             {
@@ -5855,7 +5872,7 @@ class GameMap {
                     x: -225,
                     y: 5
                 }],
-                tiers: [],
+                tiers: [4, 5, 6],
                 asteroids: []
             },
             {
@@ -5945,7 +5962,7 @@ class GameMap {
                     x: 180,
                     y: 0
                 }],
-                tiers: [4, 5, 6],
+                tiers: [],
                 asteroids: []
             },
             {
@@ -6035,7 +6052,7 @@ class GameMap {
                     x: 265,
                     y: 0
                 }],
-                tiers: [3, 4],
+                tiers: [],
                 asteroids: []
             },
 
@@ -6216,7 +6233,7 @@ class GameMap {
                     x: 255,
                     y: 0
                 }],
-                tiers: [],
+                tiers: [4, 5, 6],
                 asteroids: []
             },
             {
