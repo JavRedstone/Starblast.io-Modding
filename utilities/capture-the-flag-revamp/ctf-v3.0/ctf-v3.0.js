@@ -128,6 +128,7 @@ class Game {
     }
 
     static setShipGroups() {
+        Game.shipGroups = [];
         Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
         for (let group of ShipGroup.C.GROUPS) {
             if (ShipGroup.C.ALLOWED_TIERS.includes(group.TIER)) {
@@ -3454,7 +3455,7 @@ class UIComponent {
                     }
                 ],
                 START: 8,
-                HEIGHT: 6.5
+                HEIGHT: 6
             },
             RADAR_BACKGROUND: {
                 id: 'radar_background',
@@ -3647,30 +3648,6 @@ class UIComponent {
                         position: [2.5, 52.5, 60, 42.5],
                         align: "left",
                         color: '#ffffffaa'
-                    }
-                ]
-            },
-            MIDDLE_MESSAGE: {
-                id: "middle_message",
-                position: [20, 47.5, 40, 5],
-                visible: true,
-                components: [
-                    {
-                        type: 'box',
-                        position: [0, 0, 100, 0],
-                        stroke: '#ffffff',
-                        width: 4
-                    },
-                    {
-                        type: 'box',
-                        position: [0, 100, 100, 0],
-                        stroke: '#ffffff',
-                        width: 4
-                    },
-                    {
-                        type: "text",
-                        position: [10, 10, 80, 80],
-                        color: '#ffffff'
                     }
                 ]
             },
@@ -3951,15 +3928,17 @@ class UIComponent {
     }
 
     static convertUIHexToHsla(ui) {
-        for (let c of ui.components) {
-            if (c.fill) {
-                c.fill = Helper.hexToHsla(c.fill);
-            }
-            if (c.stroke) {
-                c.stroke = Helper.hexToHsla(c.stroke);
-            }
-            if (c.color) {
-                c.color = Helper.hexToHsla(c.color);
+        if (ui.components) {
+            for (let c of ui.components) {
+                if (c.fill) {
+                    c.fill = Helper.hexToHsla(c.fill);
+                }
+                if (c.stroke) {
+                    c.stroke = Helper.hexToHsla(c.stroke);
+                }
+                if (c.color) {
+                    c.color = Helper.hexToHsla(c.color);
+                }
             }
         }
         return ui;
