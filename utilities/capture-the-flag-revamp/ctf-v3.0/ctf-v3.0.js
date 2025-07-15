@@ -89,7 +89,8 @@ class Game {
                 { text: "Help", icon: "\u004a", key: "H" },
                 { text: "Hmmm?", icon: "\u004b", key: "Q" },
                 { text: "GoodGame", icon: "\u00a3", key: "G" },
-                { text: "Wait", icon: "\u0048", key: "T" },
+                { text: "Wait", icon: "\u0048", key: "J" },
+                { text: 'Time', icon: "⌛", key: "T" },
                 { text: "Follow", icon: "\u0050", key: "F" },
                 { text: "Love", icon: "\u0024", key: "L" },
                 { text: "Base", icon: "\u0034", key: "B" },
@@ -116,7 +117,7 @@ class Game {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_MODDING: true,
+        IS_SINGLE: false,
         IS_EVENT: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
@@ -138,7 +139,7 @@ class Game {
     }
 
     constructor() {
-        if (Game.C.IS_MODDING) {
+        if (Game.C.IS_SINGLE) {
             Game.C.TICKS.ROUND = 3600 * 12;
             Game.C.NUM_ROUNDS = 1;
         }
@@ -914,7 +915,7 @@ class Game {
                         if (this.numRounds < Game.C.NUM_ROUNDS) {
                             bottomMessage.components[1].value += "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
                         } else {
-                            if (Game.C.IS_MODDING) {
+                            if (Game.C.IS_SINGLE) {
                                 bottomMessage.components[1].value += 'Good game everyone!';
                             } else {
                                 bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
@@ -1168,7 +1169,7 @@ class Game {
 
                     if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-                        if (!Game.C.IS_MODDING) {
+                        if (!Game.C.IS_SINGLE) {
                             topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
                         }
                         let oppTeam = this.getOppTeam(ship.team);
@@ -1177,7 +1178,7 @@ class Game {
                             topMessage.components[0].fill = '#8B000080';
                         }
 
-                        if ((Game.C.IS_MODDING && oppTeam && oppTeam.flagHolder) || !Game.C.IS_MODDING) {
+                        if ((Game.C.IS_SINGLE && oppTeam && oppTeam.flagHolder) || !Game.C.IS_SINGLE) {
                             ship.sendUI(topMessage);
                         } else {
                             ship.hideUI(topMessage);
@@ -1796,7 +1797,7 @@ class Ship {
         RULES: [
             'Choose from 5 randomly selected ships on the spawn hexagon.',
             'Capture the enemy flag and bring it back to win points.',
-            (Game.C.IS_MODDING ? `Scoring ${Game.C.ROUND_MAX} points causes your team to win.` : `Scoring ${Game.C.ROUND_MAX} points causes your team to win the round. There are ${Game.C.IS_EVENT ? 5 : Game.C.NUM_ROUNDS} rounds.`),
+            (Game.C.IS_SINGLE ? `Scoring ${Game.C.ROUND_MAX} points causes your team to win.` : `Scoring ${Game.C.ROUND_MAX} points causes your team to win the round. There are ${Game.C.IS_EVENT ? 5 : Game.C.NUM_ROUNDS} rounds.`),
             'If both teams have a flagholder, you must kill the enemy flagholder to be able to score.',
             'Teleport using the green hexagonal portals.',
             'Use collectibles to your advantage.',
@@ -2161,7 +2162,7 @@ class Ship {
 
     gameOver() {
         if (game.ships.includes(this.ship)) {
-            if (Game.C.IS_MODDING) {
+            if (Game.C.IS_SINGLE) {
                 let winningTeam = g.getWinningTeam();
                 this.ship.gameover({
                     "Good game!": "Thanks for playing!",
@@ -3134,7 +3135,7 @@ class Obj {
                 },
                 EXISTENCE_TIME: 300,
                 SPAWN_RATE: 30,
-                SPAWN_AMOUNT: 2,
+                SPAWN_AMOUNT: 1,
                 DISTANCE_FROM_CENTER: 60
             },
             BEACON_GLOW: {
