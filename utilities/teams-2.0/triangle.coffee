@@ -28,7 +28,7 @@ return model =
         z: [0,0,0,0]
       width: [0,200,200,0]
       height: [0,70,70,0]
-      texture: [64,3.74,64]
+      texture: [14.9,3.74,14.9]
       propeller: 0
       vertical: 1
     Depot_Base_square:
@@ -43,7 +43,7 @@ return model =
         z: [0,0,0,0]
       width: [0,200,200,0]
       height: [0,100,100,0]
-      texture: [4,1,4]
+      texture: [4,4,4]
       propeller: 0
       vertical: 0
     Depot_base_square_rounded:
@@ -73,7 +73,7 @@ return model =
         z: [0,0,0,0]
       width: [0,60,60,0]
       height: [0,100,100,0]
-      texture: [4,10,4]
+      texture: [4,4,4]
       propeller: 0
       vertical: 0
       angle: 45
@@ -105,7 +105,7 @@ return model =
         z: [0,0,0,0]
       width: [0,150,150,0]
       height: [0,100,100,0]
-      texture: [4,1,4]
+      texture: [4,4,4]
       propeller: 0
       vertical: 0
       angle: -23
