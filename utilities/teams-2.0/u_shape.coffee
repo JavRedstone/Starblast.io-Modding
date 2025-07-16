@@ -17,28 +17,28 @@ return model =
       acceleration: [60,110]
   bodies:
     uwings:
-      section_segments: [0,90,180,]
+      section_segments: [0,90,180]
       offset:
         x: -55
         y: -30
         z: 0
       position:
         x: [0,0,0,0,0,0]
-        y: [-90,-100,40,80,90,100]
+        y: [-60,-50,40,80,90,100]
         z: [0,0,0,0,0,0]
       width: [0,5,20,25,25]
       height: [0,5,60,80,85]
-      texture: [17,15,10.6,10]
+      texture: [4,17.9,10.6,10]
   wings:
-    inner:
+    forward:
       offset:
-        x: -58
+        x: -55
         y: -15
         z: 0
       length: [ 10 ]
-      width: [270,270]
+      width: [150,200]
       angle: [ 0 ]
-      position: [20, -20]
+      position: [0, 0]
       texture: [17,17]
       doubleside: true
       bump:
