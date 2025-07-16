@@ -1,5 +1,5 @@
 return model =
-  name: 'U-Sniper Mk 2'
+  name: 'U-Shape'
   level: 1
   model: 1
   size: 1.8
@@ -17,7 +17,7 @@ return model =
       acceleration: [60,110]
   bodies:
     uwings:
-      section_segments: [0,45,90,135,180]
+      section_segments: [0,90,180]
       offset:
         x: -55
         y: -30
@@ -26,21 +26,6 @@ return model =
         x: [0,0,0,0,0,0]
         y: [-90,-100,40,80,90,100]
         z: [0,0,0,0,0,0]
-      width: [0,0,25,20,0]
-      height: [0,5,25,20,0]
-      texture: [12,1,11,3]
-  wings:
-    inner:
-      offset:
-        x: -58
-        y: -20
-        z: 0
-      length: [ 10 ]
-      width: [165,165]
-      angle: [ 0 ]
-      position: [20,-30]
-      texture: [17,63]
-      doubleside: true
-      bump:
-        position: 30
-        size: 4
+      width: [0,5,20,25,25]
+      height: [0,5,60,80,85]
+      texture: [17,9,10.6,10]
