@@ -28,7 +28,7 @@ return model =
         z: [0,0,0,0,0,0]
       width: [0,5,20,25,25]
       height: [0,5,60,80,85]
-      texture: [4,17.9,10.6,10]
+      texture: [4,13,10.6,10]
   wings:
     forward:
       offset:
