@@ -1660,7 +1660,10 @@ const Game = class {
     onUIComponentClicked(gameShip, id) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-            if (id.includes(UIComponent.C.UIS.CHOOSE_SHIP.id) && !ship.hiddenUIIDs.has(id)) {
+            if (ship.hiddenUIIDs.has(id)) {
+                return;
+            }
+            if (id.includes(UIComponent.C.UIS.CHOOSE_SHIP.id)) {
                 if (ship.allowChooseShip && ship.choosingShip) {
                     if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
                         this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
@@ -1678,19 +1681,19 @@ const Game = class {
                     ship.chooseShipTime = -1;
                 }
             }
-            if (id == UIComponent.C.UIS.CHANGE_SHIP.id && !ship.hiddenUIIDs.has(id)) {
+            if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
                 if (ship.allowChooseShip) {
                     ship.chooseShipTime = ship.chooseShipTime == -1 ? game.step : -1;
                 }
             }
-            if (id == UIComponent.C.UIS.RULES_TOGGLE.id && !ship.hiddenUIIDs.has(id)) {
+            if (id == UIComponent.C.UIS.RULES_TOGGLE.id) {
                 ship.instructionsStep = ship.instructionsStep == -1 ? 0 : -1;
                 if (ship.instructionsStep == -1) {
                     ship.hideUI(UIComponent.C.UIS.RULES);
                     ship.hideUI(UIComponent.C.UIS.RULES_NEXT);
                 }
             }
-            if (id == UIComponent.C.UIS.RULES_NEXT.id && !ship.hiddenUIIDs.has(id)) {
+            if (id == UIComponent.C.UIS.RULES_NEXT.id) {
                 ship.instructionsStep++;
                 if (ship.instructionsStep >= Ship.C.RULES.length) {
                     ship.instructionsStep = -1;
