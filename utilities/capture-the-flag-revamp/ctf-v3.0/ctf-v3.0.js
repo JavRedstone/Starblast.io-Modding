@@ -19,6 +19,8 @@ const Game = class {
     timeouts = [];
     conditions = [];
 
+    shipResetQueue = null;
+
     ships = [];
     leftShips = [];
     changeTeamShip = null;
@@ -112,7 +114,7 @@ const Game = class {
 
             GAME_MANAGER: 30,
 
-            WAIT: 3600 * 0.1,
+            WAIT: 3600 * 3,
             ROUND: 3600 * 10,
             BETWEEN: 60 * 10
         },
@@ -152,12 +154,14 @@ const Game = class {
 
             ShipGroup.C.NUM_SHIPS = 7;
         }
+        this.shipResetQueue = new StaggeredQueueCreator(Game.C.TICKS.RESET_STAGGER);
         // this.reset();
     }
 
     tick() {
         this.manageTimeouts();
         this.manageConditions();
+        this.manageQueues();
         this.manageEntities();
 
         this.manageGameState();
@@ -197,6 +201,10 @@ const Game = class {
         for (let condition of removedConditions) {
             Helper.deleteFromArray(this.conditions, condition);
         }
+    }
+
+    manageQueues() {
+        this.shipResetQueue.tick();
     }
 
     reset(newRound = false, resetUIs = false) {
@@ -373,9 +381,9 @@ const Game = class {
         this.ships = Helper.shuffleArray(this.ships);
         for (let i = 0; i < this.ships.length; i++) {
             let ship = this.ships[i];
-            ship.timeouts.push(new TimeoutCreator(() => {
-                this.resetShip(ship, false, newRound, resetUIs);                
-            }, Game.C.TICKS.RESET_STAGGER * i).start())
+            this.shipResetQueue.add(() => {
+                this.resetShip(ship, false, newRound, resetUIs);
+            });
         }
         this.timeouts.push(new TimeoutCreator(() => {
             this.isResetting = false;
@@ -445,6 +453,7 @@ const Game = class {
         ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
         ship.sendUI(UIComponent.C.UIS.RULES_TOGGLE);
         ship.isResetting = false;
+        ship.done = true;
     }
 
     gameOver() {
@@ -462,6 +471,16 @@ const Game = class {
             }
         }
         return minScore;
+    }
+
+    getMaxScore(team) {
+        let maxScore = 0;
+        for (let ship of team.ships) {
+            if (ship.score > maxScore) {
+                maxScore = ship.score;
+            }
+        }
+        return maxScore;
     }
 
     getWinningTeam() {
@@ -493,7 +512,9 @@ const Game = class {
                     let t = diff > 0 ? 0 : 1;
                     let randShip = Helper.getRandomArrayElement(this.teams[t].ships);
                     if (randShip) {
-                        this.resetShip(randShip, true);
+                        this.shipResetQueue.add(() => {
+                            this.resetShip(randShip, true);
+                        });
                     }
                 }
             }
@@ -566,7 +587,9 @@ const Game = class {
                                     team.flagHolder = null;
                                     opp.flag.reset();
                                 }
-                                this.resetShip(this.changeTeamShip, true);
+                                this.shipResetQueue.add(() => {
+                                    this.resetShip(this.changeTeamShip, true);
+                                });
                                 this.changeTeamShip.chosenType = 0;
                                 this.changeTeamShip.chooseShipTime = game.step;
                                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -860,14 +883,15 @@ const Game = class {
             }
             for (let ship of this.ships) {
                 if (!ship.done) {
-                    this.resetShip(ship);
-                    ship.done = true;
+                    this.shipResetQueue.add(() => {
+                        this.resetShip(ship);
 
-                    ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
+                        ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
 
-                    if (!this.isWaiting) {
-                        ship.chooseShipTime = game.step;
-                    }
+                        if (!this.isWaiting) {
+                            ship.chooseShipTime = game.step;
+                        }
+                    });
                 }
 
                 if (this.isWaiting) {
@@ -891,6 +915,7 @@ const Game = class {
                     ship.sendUI(radarBackground);
 
                     ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
+                    ship.allowChooseShip = true;
 
                     ship.setMaxStats();
                 } else if (this.map && !ship.isResetting) {
@@ -946,70 +971,74 @@ const Game = class {
                         ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
                     } else {
                         ship.setCollider(true);
-                        let oppTeam = this.getOppTeam(ship.team);
-                        if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
-                            let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                            bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
-                            ship.sendUI(bottomMessage);
+                        if (ship.team) {
+                            let oppTeam = this.getOppTeam(ship.team);
+                            if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
+                                ship.sendUI(bottomMessage);
 
-                            if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
-                                ship.setType(ship.chosenType + this.shipGroup.normalShips.length);
-                                ship.setMaxStats();
+                                if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
+                                    ship.setType(ship.chosenType + this.shipGroup.normalShips.length);
+                                    ship.setMaxStats();
+                                }
+                                if (ship.ship.hue != ship.team.flagged) {
+                                    ship.setHue(ship.team.flagged);
+                                }
+                            } else if (ship.chosenType != 0) {
+                                if (ship.ship.type != ship.chosenType) {
+                                    ship.setType(ship.chosenType);
+                                    ship.setMaxStats();
+                                }
+                                if (ship.ship.hue != ship.team.hue) {
+                                    ship.setHue(ship.team.hue);
+                                }
                             }
-                            if (ship.ship.hue != ship.team.flagged) {
-                                ship.setHue(ship.team.flagged);
+
+                            if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                                    ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
+                                    ship.allowChooseShip = true;
+                                } else {
+                                    ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
+                                    ship.allowChooseShip = false;
+                                }
                             }
-                        } else if (ship.chosenType != 0) {
-                            if (ship.ship.type != ship.chosenType) {
-                                ship.setType(ship.chosenType);
-                                ship.setMaxStats();
-                            }
-                            if (ship.ship.hue != ship.team.hue) {
-                                ship.setHue(ship.team.hue);
-                            }
-                        }
 
-                        if (this.map && this.map.spawns.length == 2 && ship.team) {
-                            if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
-                                ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
-                            } else {
-                                ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
-                            }
-                        }
+                            if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
+                                if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                    ship.team.flagHolder = ship;
+                                    oppTeam.flag.hide();
 
-                        if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
-                            if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                ship.team.flagHolder = ship;
-                                oppTeam.flag.hide();
+                                    ship.flagTime = game.step;
+                                    ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
+                                    ship.setMaxStats();
+                                    ship.setHue(ship.team.flagged);
+                                    
+                                    this.sendNotifications(`${ship.ship.name} has stolen ${oppTeam.color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
+                                }
+                                if (ship.team.flag && !ship.team.flag.flagHidden && !ship.team.flag.isAtStand() && ship.team.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                    ship.team.flag.reset();
 
-                                ship.flagTime = game.step;
-                                ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
-                                ship.setMaxStats();
-                                ship.setHue(ship.team.flagged);
-                                
-                                this.sendNotifications(`${ship.ship.name} has stolen ${oppTeam.color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
-                            }
-                            if (ship.team.flag && !ship.team.flag.flagHidden && !ship.team.flag.isAtStand() && ship.team.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                ship.team.flag.reset();
+                                    this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
+                                }
+                                if (!oppTeam.flagHolder && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                    ship.team.flagHolder = null;
+                                    oppTeam.flag.reset();
 
-                                this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
-                            }
-                            if (!oppTeam.flagHolder && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                ship.team.flagHolder = null;
-                                oppTeam.flag.reset();
+                                    ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
+                                    ship.setMaxStats();
+                                    ship.setHue(ship.team.hue);
+                                    ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                    ship.setScore(ship.score + 1);
+                                    ship.setTotalScore(ship.totalScore + 1);
 
-                                ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
-                                ship.setMaxStats();
-                                ship.setHue(ship.team.hue);
-                                ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                ship.setScore(ship.score + 1);
-                                ship.setTotalScore(ship.totalScore + 1);
+                                    ship.team.setScore(ship.team.score + 1);
 
-                                ship.team.setScore(ship.team.score + 1);
+                                    this.beacons.push(new Beacon(ship.team.flag.flagStandPos, ship.team.hex).spawn());
 
-                                this.beacons.push(new Beacon(ship.team.flag.flagStandPos, ship.team.hex).spawn());
-
-                                this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
+                                    this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
+                                }
                             }
                         }
 
@@ -1186,7 +1215,7 @@ const Game = class {
 
                     ship.sendUI(scoreboard);
 
-                    if (!ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
+                    if (ship.team && !ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
                         let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
                         if (!Game.C.IS_SINGLE) {
                             topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
@@ -1248,8 +1277,12 @@ const Game = class {
                 }
 
                 let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
-                mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
-                ship.sendUI(mapAuthor);
+                if (this.map) {
+                    mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
+                    ship.sendUI(mapAuthor);
+                } else {
+                    ship.hideUI(mapAuthor);
+                }
 
                 if (this.betweenTime != -1) {
                     ship.chooseShipTime = -1;
@@ -1628,7 +1661,7 @@ const Game = class {
         let ship = this.findShip(gameShip);
         if (ship != null) {
             if (id.includes(UIComponent.C.UIS.CHOOSE_SHIP.id)) {
-                if (ship.choosingShip) {
+                if (ship.allowChooseShip && ship.choosingShip) {
                     if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
                         this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
                     }
@@ -1646,7 +1679,9 @@ const Game = class {
                 }
             }
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
-                ship.chooseShipTime = ship.chooseShipTime == -1 ? game.step : -1;
+                if (ship.allowChooseShip) {
+                    ship.chooseShipTime = ship.chooseShipTime == -1 ? game.step : -1;
+                }
             }
             if (id == UIComponent.C.UIS.RULES_TOGGLE.id) {
                 ship.instructionsStep = ship.instructionsStep == -1 ? 0 : -1;
@@ -1795,6 +1830,7 @@ const Ship = class {
     totalScore = 0;
 
     chooseShipTime = -1;
+    allowChooseShip = false;
     choosingShip = false;
     loadingChooseShip = false;
 
@@ -1836,6 +1872,7 @@ const Ship = class {
         this.setScore(0);
 
         this.choosingShip = false;
+        this.allowChooseShip = false;
         this.loadingChooseShip = false;
         this.chooseShipTime = -1;
         this.chosenType = 0;
@@ -6892,6 +6929,34 @@ const ConditionCreator = class {
     }
 }
 
+const StaggeredQueueCreator = class {
+    queue = [];
+    stagger = 0;
+    processingCurrent = false;
+
+    constructor(stagger) {
+        this.stagger = stagger;
+    }
+
+    add(callback) {
+        this.queue.push(callback);
+        return this;
+    }
+
+    tick() {
+        if (this.queue.length > 0 && !this.processingCurrent) {
+            const callback = this.queue[0];
+            this.processingCurrent = true;
+            g.timeouts.push(new TimeoutCreator(() => {
+                this.queue.shift();
+                this.processingCurrent = false;
+                callback();
+            }, this.stagger).start());
+        }
+        return this;
+    }
+}
+
 const Helper = class {
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
@@ -7196,7 +7261,7 @@ this.tick = function () {
         };
 
         game.custom.showIDs = function () {
-            let list = "PLAYER LIST:\n";
+            let list = `Player List ${game.ships.length}:\n`
             for (let ship of game.ships) {
                 list += `${ship.id}: ${ship.name}\n`;
             }
