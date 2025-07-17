@@ -21,107 +21,87 @@ const Game = class {
         OPTIONS: {
             ROOT_MODE: '',
 
-            MAP_SIZE: 100,
-            MAP: "              98 9 3 5 7             2 4 6 8 9 4                  9 9 4 6 859                       \n"+
-                "             4963 6 8 9               6 9 9 4                      4 6 8 984                        \n"+
-                "            6496 8 9 3               9 2 4 6                      6 9 9 4 6 8                       \n"+
-                "         7 9 2849 4 6                 4 7 9                      9 2 4 6 8 9                      2 \n"+
-                "        9 2 4974 6 8                   9 2                        4 7 9 2 4 6                    4 6\n"+
-                "       3 5 749628 9                   2 5                        7 9 2 4 6 9 9                  7 9 \n"+
-                "    3 5 7 9 2952                       7                          2 5 7 9 2 4                  9 2 4\n"+
-                "   5 7 9 3 52749                                                 5 7 9 2 4 7 9                  5 7 \n"+
-                "    9 3 5 74973 5                                               7 9 3 5 7 9                    7 9 2\n"+
-                "   3 5 8 9 3 5 7                                                   5 7 9                      9 3 5 \n"+
-                "  6 8 9 3 5 7 9 3                                                   9 3                        5 7 9\n"+
-                "   9 3 5 849 3 5                                                                              7 9 3 \n"+
-                "  4 6 84963 5 7                                                                              9 3 597\n"+
-                " 6 8 96386 8 9 3                                                                              59839 \n"+
-                "  9 4969849 3 5                                                                              8496385\n"+
-                " 4 6284964 6 8                                                                              9638698 \n"+
-                "629497496 8 9                                                                             6 96984963\n"+
-                "52749628 9 4                                                                             9 28496386 \n"+
-                "4962959 4 6                                                                             2 49749628 9\n"+
-                "395274 6                                                                             2 5 7 9628496  \n"+
-                "27497 9                                                                             5 7 9 2949749   \n"+
-                "97 9 2                                                                             7 9 3 5 74962 4  \n"+
-                "9 2                                                9 3                              3 5 7 972 5 7   \n"+
-                " 5                                                  5                                7 9 395 7 9    \n"+
-                "7                                                  8                                  3 5 7 9 3     \n"+
-                "                                                    3                                  8 9 3 5 7    \n"+
-                "                                                   6                                    3 5 7 9     \n"+
-                "                                                  8                                    6 8 9 3 5    \n"+
-                "                                                   4                                    9 3         \n"+
-                "                                                  6                                                 \n"+
-                "                                                 9                                                  \n"+
-                "                                                  4                                                 \n"+
-                "                                                 7                                                  \n"+
-                "                                                9                                                   \n"+
-                "                                                                                                    \n"+
-                "                                                                                                    \n"+
-                "                                                                       6                            \n"+
-                "                                                                      8                             \n"+
-                "                                                                     9                              \n"+
-                "                                              9                     4 6                             \n"+
-                "                                               5                     8      3                       \n"+
-                "                                              8                     9                               \n"+
-                "                                             9 3                     6                              \n"+
-                "                                              6                     9                              9\n"+
-                "                                             8                     2                              2 \n"+
-                "      7                                     9 4                     7                            4 6\n"+
-                "     9 3                                     6                     9                              9 \n"+
-                "      5                                     9                     2                              2 4\n"+
-                "     7 9                                     4                     7                            5 7 \n"+
-                "    9 3                                     6                     9                              9 2\n"+
-                "     5 8                            5      9                     3                              3 5 \n"+
-                "    8 9                            8        4                     7                            5 739\n"+
-                "     3 6                          9        7                     9                              9638\n"+
-                "    6 8                            6      9              9      3                              3 5 7\n"+
-                "   849 4                          8                     2        8                            5 8 9 \n"+
-                "   74 6                          9                     4 7      9                              9 3 5\n"+
-                "  9628 9                          6                     9      4                              3 6 8 \n"+
-                " 2959 4                          8                     2                                       8 9 3\n"+
-                "5 7496 8                        2                     5 7                                     9 4 6 \n"+
-                " 9729 2 4                        6                     9                                     4 6 8  \n"+
-                "395274 6                        9                     3                                       8 9   \n"+
-                " 7597                          2 4                     7                                     9      \n"+
-                "9739                            7                     9                                     4       \n"+
-                "9537                           9                                                                    \n"+
-                "8 9                           3 5                                                                   \n"+
-                " 3 5                           7                                                          7         \n"+
-                "6 8                           9                                                                     \n"+
-                " 9 3                         3 5                                                          5         \n"+
-                "4 6                           8                                                          8 9        \n"+
-                " 8                                                                                      9 3 5       \n"+
-                "9                                                                                        6 8 9      \n"+
-                "                                                                                        8 9         \n"+
-                "9                                                                                      9 4          \n"+
-                "                                                   9                                  4 6           \n"+
-                "                                                  2                                  6              \n"+
-                "                                                 5                                                  \n"+
-                "                                                  9                                                 \n"+
-                "                                                                                                    \n"+
-                "                                                                                                    \n"+
-                "                  9                                                                                 \n"+
-                "              4  3 5                                                                                \n"+
-                "             6 8  8 9                                                                               \n"+
-                "            9 9  9 3 5                                                                              \n"+
-                "         9 2 4 64 6 8                                                                               \n"+
-                "        2 4 7 9 28 9                                                                               9\n"+
-                "       5 7 9 2 49 4                                                                                 \n"+
-                "        9 2 5 749                                                                                  7\n"+
-                "       3 5 7 9 2 4                                                                                9 \n"+
-                "        7 9 3 5 7                                                   5 7 9                          5\n"+
-                "       9 3 5 7 9                                                   7 9 2 5                        7 \n"+
-                "      3 5 7 9 3 5                    3                         9 3  3 5 7                        9 2\n"+
-                "       8 963 5 7                    5 7 9                     4 6  5 7 9                          59\n"+
-                "      9 385 7 9 3                    9 3 5  5                  8 98 9 3                          739\n"+
-                "     3869849 3 5                    3 5 8 9                     4 6385                         3 638\n"+
-                "     98496385 8 9                  6 8 9 3                     6 859 4                        6 8597\n"+
-                "    49648698 9 3                    9 3 6 8                     984 6 8                      8 98496\n"+
-                " 4 7496284963                      4 6 8 9 3                     6 8 9                    9 9 4 6385\n"+
-                "7 9 28496496                      6 8 9 3 6                     9 9 4                    2 4 6 86984\n"+
-                " 2 527496284                       974 6 8 9                     4 6 8                  4 7 9 284963\n"+
-                "5 7496294 7                       496 8 9 4 6                     9 2                  7 9 2 4 649 9",
+            MAP_SIZE: 80,
+            MAP: "5 7                        9                         8597 9 3 5                 \n"+
+                " 9 3                    9 3 5                     8 9849 3 5 7                  \n"+
+                "3 5                    3 6 8 9                   9 4 6385 7 9                   \n"+
+                " 8 9                  6 8 9 3                   4 6 8698 9                      \n"+
+                "9 3 5                  9 4 6 85              4 6 9 9849 3                       \n"+
+                " 6 8                  4 6 8                   9 2 4  4 6                        \n"+
+                "8 9                  6 8 9                          6 8                         \n"+
+                " 4                    9 4                                                      9\n"+
+                "6                    4 6                                                      2 \n"+
+                "                    7 9                                                    2 5 7\n"+
+                "                     2                                                    5 7 9 \n"+
+                "                    5                                                    7 9 3 5\n"+
+                "                                                                        9 3 5 7 \n"+
+                "                                                                         5 7 9 3\n"+
+                "                                                                        8 9 3 5 \n"+
+                "                                                                       9 3 5 8 9\n"+
+                "                                                                        6 8 963 \n"+
+                "                                                                       8 9 386 8\n"+
+                "          4                                                           9 4 698 9 \n"+
+                "         6 9                                                           6284963 6\n"+
+                "        9 2                                                           8497496 8 \n"+
+                "         4                              4                              4 6 8 9 4\n"+
+                "        7 9                            7                              6 9 9 4 6 \n"+
+                "         2                            9                                2 4 6 8  \n"+
+                "        5                                                               7 9 2   \n"+
+                "       7                                                                 2      \n"+
+                "        3                                                               5       \n"+
+                "       5                                                                        \n"+
+                "      8                                                                         \n"+
+                "       3                            9                                           \n"+
+                "      6                              5                                          \n"+
+                "  9  8                              8                                           \n"+
+                " 2    4                            9 3                                          \n"+
+                "4 7  6                              6                                           \n"+
+                " 9  8 9                            8                                            \n"+
+                "2 5  4                            9 4                     7                     \n"+
+                " 7  6                              6                     9                      \n"+
+                "9 29                              9 9                   2 5                     \n"+
+                " 5                                 4                     7                      \n"+
+                "7 9                               6                     9                       \n"+
+                " 3                        5      9 2                   3 5                      \n"+
+                "5 7                      8        4                     7                       \n"+
+                "49 3                    9 3      7              6      9                        \n"+
+                "3 5                      6      9              9      3 5                       \n"+
+                "98 9                    8                     2        8                        \n"+
+                "9 3                    9 4                   4 7      9                         \n"+
+                " 6 8                    6                     9      4                          \n"+
+                "8                                            2 5                                \n"+
+                "                      2                     5 7                              7 9\n"+
+                "                                             9                              9 2 \n"+
+                "                                            3 5                            3 5 7\n"+
+                "                                             7                            5 7 9 \n"+
+                "                                            9                              9 3 5\n"+
+                "                                             5                            3 5 7 \n"+
+                "                                                                         5 7 9 3\n"+
+                "                                                                          9 3 5 \n"+
+                "                                                                         3 5 8 9\n"+
+                "                                                                        6 8 963 \n"+
+                "           9                                                             96386 8\n"+
+                "            6                                                           4969849 \n"+
+                "           9                                                           6284964 6\n"+
+                "          2 4                                                        2 49749628 \n"+
+                "           7 9                                                      5 74962849 4\n"+
+                "          9 2                                                      7 96295974 6 \n"+
+                "         2 5 7                                                  7 9 3 527496    \n"+
+                "          7 9 2                                                9 3 5 749739     \n"+
+                "         953 5                                                3 5 7 973952      \n"+
+                "        385 7 9                                              6 8 9 3 527        \n"+
+                "        97 9 3 5                                              9 3 5 859 3       \n"+
+                "       49 3 5 7                                              4 6 8 9 3 5        \n"+
+                "    4 6385 7 9 3                                            6 8 9 3 6 8 9       \n"+
+                "   6 8 9849 3 5                                              9 4 6 8 9 3        \n"+
+                "  9 9 4963 5 8                                              4 6 8 9 4 6 8       \n"+
+                " 2 4 648698                                                6 9 9 4 6 8 9        \n"+
+                "4 7 9 28496                           8 9 3                 27496 8 9 4         \n"+
+                " 9 2 49649 9                      2  9 4 6 8               49629 9 4 6 8        \n"+
+                "2 5 749 2 4                      4 74 6 8 9 3             7395274 6 8 9         \n"+
+                " 7 9 274 7 9                    7 9 28 9 4 6              527497 9 2            \n"+
+                "9 3 597 9 2                  7 9 2 5974 6              5 759739 2 4             \n"+
+                " 59739 2 5 7                9 3 5 749628              8 973952 5 7              ",
 
             ASTEROIDS_STRENGTH: 0.75,
             RELEASE_CRYSTAL: true,
@@ -158,7 +138,7 @@ const Game = class {
                 { text: "Attack", icon: "\u0049", key: "A" },
                 { text: "Alien", icon:"\u0030", key:"L" },
                 { text: "Follow", icon:"\u0050", key:"F" },
-                { text: "Gems", icon:"\u0044", key:"M" },
+                { text: "Mine", icon:"\u0044", key:"M" },
                 { text: "Defend", icon:"\u0025", key:"D" },
 
                 { text: "Wait", icon:"\u0048", key:"T" },
@@ -184,7 +164,7 @@ const Game = class {
             BASE_MANAGER_FAST: 5,
 
             RESET_STAGGER: 5,
-            BASE_STAGGER: 10,
+            BASE_STAGGER: 15,
 
             GAME_MANAGER: 30
         },
@@ -593,7 +573,7 @@ const Game = class {
                     if (ship && !ship.upgradeCodes.includes(ship.ship.type)) {
                         ship.upgradeCodes.push(ship.ship.type);
                     }
-
+                    
                     this.handleShipScoreboard(ship);
                     this.handleShipRadar(ship);
                 }
@@ -630,6 +610,7 @@ const Game = class {
                             for (let ship of team.ships) {
                                 ship.gameOver();
                             }
+                            this.sendNotifications('Base Destroyed', `${team.name}'s base has been destroyed!`, this.getOppTeam(team));
                         }
                     }
                 }
@@ -658,10 +639,16 @@ const Game = class {
         }
     }
 
-    sendNotifications(title, message, supportingTeam) {
-        for (let ship of this.ships) {
+    sendNotifications(title, message, team = null, supportingTeam = null) {
+        let targetShips = [];
+        if (team) {
+            targetShips = team.ships;
+        } else {
+            targetShips = this.ships;
+        }
+        for (let ship of targetShips) {
             let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
-            if (supportingTeam.team == ship.team.team) {
+            if (supportingTeam && supportingTeam.team == ship.team.team) {
                 notification.components[0].stroke = '#00ff00';
             }
             else {
@@ -711,7 +698,7 @@ const Game = class {
 
     handleShipUpgradeBlockers(ship) {
         if (ship && ship.team && ship.team.base) {
-            let allowedTiers = ship.team.base.credits >= Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1] ? [7] : Base.C.ALLOWED_TIERS[ship.team.base.baseLevel - 1];
+            let allowedTiers = ship.team.base.crystals >= Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1] ? [7] : Base.C.ALLOWED_TIERS[ship.team.base.baseLevel - 1];
             let technicallyAllowedTiers = allowedTiers[0] == 6 ? [6, 7] : allowedTiers;
             if (ship.getLevel() >= allowedTiers[allowedTiers.length - 1]) {
                 ship.sendUI(UIComponent.C.UIS.LEFT_LEVELUP_BLOCKER);
@@ -754,8 +741,8 @@ const Game = class {
             scoreboard.components[2].value = 'L' + ship.scoreboardTeam.base.baseLevel;
             scoreboard.components[3].value = ship.scoreboardTeam.name;
             scoreboard.components[4].value = (ship.scoreboardTeam.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ' + ship.scoreboardTeam.ships.length + '♟';
-            scoreboard.components[5].value = ship.scoreboardTeam.base.credits + '/' + Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] + '💎';
-            scoreboard.components[7].position[2] = ship.scoreboardTeam.base.credits / Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] * scoreboard.components[6].position[2];
+            scoreboard.components[5].value = ship.scoreboardTeam.base.crystals + '/' + Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] + '💎';
+            scoreboard.components[7].position[2] = ship.scoreboardTeam.base.crystals / Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] * scoreboard.components[6].position[2];
             for (let subBaseModule of ship.scoreboardTeam.base.subBaseModules) {
                 let angleToBase = subBaseModule.pose.position.getAngleTo(ship.scoreboardTeam.base.pose.position);
                 let baseW = 5;
@@ -828,7 +815,7 @@ const Game = class {
         if (ship && ship.team) {
             let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
             for (let team of this.teams) {
-                if (team.base && team.base.pose) {
+                if (team.base && !team.base.dead && team.base.pose) {
                     radarBackground.components.push(
                         {
                             type: 'round',
@@ -844,6 +831,23 @@ const Game = class {
                             color: team.hex,
                         }
                     );
+
+                    let shipPose = ship.getPose();
+                    let offEdge = (Game.C.OPTIONS.MAP_SIZE + 40) * Game.C.OPTIONS.RADAR_ZOOM;
+                    let offEdgeScaled = (Game.C.OPTIONS.MAP_SIZE + 40 * Base.C.SCALES[team.base.baseLevel - 1]) * Game.C.OPTIONS.RADAR_ZOOM;
+                    if (shipPose && Math.abs(shipPose.position.x - team.base.pose.position.x) >= offEdgeScaled || Math.abs(shipPose.position.y - team.base.pose.position.y) >= offEdgeScaled) {
+                        let radarRectangle = new Rectangle(shipPose.position, new Vector2(1, 1).multiply(offEdge * 2 * 0.7));
+                        let edgePoint = radarRectangle.mapPointToEdge(team.base.pose.position);
+                        radarBackground.components.push(
+                            {
+                                type: 'text',
+                                position: Helper.getRadarSpotPosition(edgePoint, new Vector2(1, 1).multiply(30)),
+                                value: '🏘',
+                                color: team.hex,
+                                align: 'center'
+                            },
+                        );
+                    }
 
                     for (let subBaseModule of team.base.subBaseModules) {
                         if (subBaseModule && subBaseModule.pose && !subBaseModule.dead) {
@@ -965,14 +969,16 @@ const Game = class {
                 ship.setScore(ship.ship.score + donateAmount);
                 if (ship.team) {
                     if (!ship.team.base.dead) {
-                        ship.team.base.credits += donateAmount;
-                        if (ship.team.base.credits >= Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1]) {
+                        ship.team.base.crystals += donateAmount;
+                        if (ship.team.base.crystals >= Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1]) {
                             if (ship.team.base.baseLevel < 4) {
                                 ship.team.base.baseLevel += 1;
-                                ship.team.base.credits = 0;
+                                ship.team.base.crystals = 0;
                                 ship.team.base.spawnBase();
+                                this.sendNotifications("Base Upgrade", ship.team.name + " has upgraded their base to level " + ship.team.base.baseLevel + "!", null, ship.team);
                             } else {
-                                ship.team.base.credits = Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1];
+                                ship.team.base.crystals = Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1];
+                                this.sendNotifications("Base Maxed Out", ship.team.name + " has maxed out their base at level " + ship.team.base.baseLevel + "!", null, ship.team);
                             }
                         }
                     }
@@ -1096,7 +1102,7 @@ const Game = class {
                             if (shipVel.length() < TurretBaseModule.C.MIN_SHIP_VELOCITY) {
                                 turretPose.rotation = shipPos.getAngleTo(turretPos);
                             } else {
-                                const timeToReach = distance / bulletSpeed;
+                                const timeToReach = distance / (bulletSpeed * TurretBaseModule.C.OVERESTIMATION_FACTOR);
                                 const predictedPos = shipPos.add(shipVel.multiply(timeToReach));
                                 turretPose.rotation = predictedPos.getAngleTo(turretPos);
                             }
@@ -1711,7 +1717,7 @@ const Ship = class {
 
     static C = {
         INVULNERABLE_TIME: 360,
-        LERP_INVULNERABLE_TIME: 240,
+        LERP_INVULNERABLE_TIME: 540,
     }
 
     constructor(ship) {
@@ -2145,7 +2151,7 @@ const Base = class {
 
     safeAliens = [];
 
-    credits = 0;
+    crystals = 0;
     baseLevel = 1;
     dead = false;
     
@@ -2165,10 +2171,10 @@ const Base = class {
             5
         ],
         MAX_CRYSTALS: [
-            1, // 720
-            6, // 1440
-            14, // 2880
-            24 // 5760
+            720,
+            1440,
+            2880,
+            5760
         ],
         RADII: [
             30,
@@ -2176,14 +2182,14 @@ const Base = class {
             50,
             60,
         ],
-        ORBIT_RADIUS: 335,
+        ORBIT_RADIUS: 270, // 2/3
         ALLOWED_TIERS: [
             [1, 2, 3],
             [4],
             [5],
             [6]
         ],
-        ROTATION_RATE: -Math.PI / (60 * 15),
+        ROTATION_RATE: -Math.PI / (60 * 5),
         ORBIT_RATE: Math.PI / (60 * 15),
         INITIAL_ORBIT_ROTATION: Math.PI / 3,
     };
@@ -2236,7 +2242,7 @@ const Base = class {
                 );
                 subBase.baseModules.push(
                     new StaticBaseModule(this, subBase, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(5))),
-                    new SpawnBaseModule(this, subBase, new Pose(new Vector2(0, 9.5), Math.PI * -1.9 / 3, new Vector3(3, 5, 1)))
+                    new SpawnBaseModule(this, subBase, new Pose(new Vector2(0, 9.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(5)))
                 );
                 for (let j = 0; j < 2; j++) {
                     let angle = Math.PI * 1 / 8;
@@ -2265,7 +2271,7 @@ const Base = class {
                     subBase.baseModules.push(turretModule);
                 }
                 subBase.baseModules.push(
-                    new AlienBaseModule(this, subBase, new Pose(new Vector2(7, -2.5), Math.PI, new Vector3(6, 8, 1)), () => {
+                    new AlienBaseModule(this, subBase, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10)), () => {
                         this.spawning = false;
                     })
                 );
@@ -2343,7 +2349,6 @@ const BaseModule = class {
             CONTAINER: 'container',
             SUB: 'sub'
         },
-        RESET_MULTIPLIER: 1
     };
 
     constructor(base, subBase, type, relativePose, spawnCallback = null) {
@@ -2386,12 +2391,11 @@ const BaseModule = class {
         if (!this.dead && this.ready) {
             for (let obj of this.objs) {
                 if (obj) {
-                    obj.show();
-                    obj.setPose(this.pose, true);
+                    obj.setPoseTransformed(this.pose, true);
                     obj.update();
                 }
             }
-            if ((game.step % (Game.C.TICKS.BASE_MANAGER * BaseModule.C.RESET_MULTIPLIER)) / Game.C.TICKS.BASE_MANAGER == 0) {
+            if (game.step % Game.C.TICKS.BASE_MANAGER == 0) {
                 g.timeouts.push(new TimeoutCreator(() => {
                     if (this.dead || !this.ready) return;
                     for (let obj of this.objs) {
@@ -2399,8 +2403,10 @@ const BaseModule = class {
                             obj.destroySelf();
                         }
                     }
-                    game.removeObject();
-                }, Game.C.TICKS.BASE_MANAGER - 1).start());
+                    g.timeouts.push(new TimeoutCreator(() => {
+                        game.removeObject();
+                    }, 1).start());
+                }, Game.C.TICKS.BASE_MANAGER - 2).start());
             }
         }
         return this;
@@ -2408,9 +2414,9 @@ const BaseModule = class {
 
     createUShape() {
         let uShape = Helper.deepCopy(Obj.C.OBJS.U_SHAPE);
-        uShape = this.pose.transformObj(uShape, true);
-        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true, this.base.team.hex).update();
-        this.objs.push(uShapeObj);
+        let uShapeObj = new Obj(uShape.id, uShape.type, uShape.position, uShape.rotation, uShape.scale, true, true, this.base.team.hex);
+        uShapeObj.setPoseTransformed(this.pose, true);
+        this.objs.push(uShapeObj.update());
         return this;
     }
 
@@ -2519,10 +2525,10 @@ const SubBaseModule = class extends ContainerBaseModule {
 
     static C = {
         MAX_HEALTH: [
-            2000,
-            4000,
-            6000,
-            8000
+            1500,
+            3000,
+            5000,
+            7000
         ]
     }
 
@@ -2599,6 +2605,15 @@ const SpawnBaseModule = class extends BaseModule {
     createObjs() {
         super.createObjs();
         this.createUShape();
+        // this.createSpawnGlow();
+    }
+
+    createSpawnGlow() {
+        let spawnGlow = Helper.deepCopy(Obj.C.OBJS.SPAWN_GLOW);
+        let spawnGlowObj = new Obj(spawnGlow.id, spawnGlow.type, spawnGlow.position, spawnGlow.rotation, spawnGlow.scale, true, true, this.base.team.hex);
+        spawnGlowObj.setPoseTransformed(this.pose, true);
+        this.objs.push(spawnGlowObj);
+        return this;
     }
 }
 
@@ -2759,34 +2774,35 @@ const TurretBaseModule = class extends BaseModule {
         },
         BULLETS: [
             {
-                SPEED: 0.2,
+                SPEED: 1,
                 DAMAGE: 10,
                 RANGE: 40,
-                SHOOT_DELAY: 240
+                SHOOT_DELAY: 60
             },
             {
-                SPEED: 0.3,
+                SPEED: 1,
+                DAMAGE: 15,
+                RANGE: 40,
+                SHOOT_DELAY: 60
+            },
+            {
+                SPEED: 1,
                 DAMAGE: 20,
                 RANGE: 50,
-                SHOOT_DELAY: 180
+                SHOOT_DELAY: 60
             },
             {
-                SPEED: 0.4,
-                DAMAGE: 30,
-                RANGE: 60,
-                SHOOT_DELAY: 120
-            },
-            {
-                SPEED: 0.5,
-                DAMAGE: 40,
-                RANGE: 70,
-                SHOOT_DELAY: 120
+                SPEED: 1,
+                DAMAGE: 25,
+                RANGE: 50,
+                SHOOT_DELAY: 60
             }
         ],
-        MIN_SHIP_VELOCITY: 0.5,
+        MIN_SHIP_VELOCITY: 0.6,
+        OVERESTIMATION_FACTOR: 0.3,
         LERP: {
-            BLEND_FACTOR: 0.5,
-            MAX_ANG_VEL: 0.25
+            BLEND_FACTOR: 0.75,
+            MAX_ANG_VEL: 0.75
         }
     }
 
@@ -2804,9 +2820,9 @@ const TurretBaseModule = class extends BaseModule {
 
     createTurret() {
         let turret = Helper.deepCopy(Obj.C.OBJS.TURRET);
-        turret = this.pose.transformObj(turret, true);
-        let turretObj = new Obj(turret.id, turret.type, turret.position, turret.rotation, turret.scale, true, true, this.base.team.hex).update();
-        this.objs.push(turretObj);
+        let turretObj = new Obj(turret.id, turret.type, turret.position, turret.rotation, turret.scale, true, true, this.base.team.hex);
+        turretObj.setPoseTransformed(this.pose, true);
+        this.objs.push(turretObj.update());
         return this;
     }
 
@@ -2829,7 +2845,7 @@ const TurretBaseModule = class extends BaseModule {
     }
 
     shoot() {
-        if (this.base && !this.base.dead) {
+        if (this.base && !this.base.dead && !this.dead) {
             let bulletOption = TurretBaseModule.C.BULLETS[this.base.baseLevel - 1];
             let baseBulletPose = this.pose.add(new Pose(new Vector2(TurretBaseModule.C.OFFSETS.BASE.x, TurretBaseModule.C.OFFSETS.BASE.y).multiplyComponents(this.pose.scale).rotateBy(this.pose.rotation), 0));
             if (game.step - this.shotTimeUpper >= bulletOption.SHOOT_DELAY) {
@@ -2871,9 +2887,9 @@ const StaticBaseModule = class extends BaseModule {
 
     createTriangle() {
         let triangle = Helper.deepCopy(Obj.C.OBJS.TRIANGLE);
-        triangle = this.pose.transformObj(triangle, true);
-        let triangleObj = new Obj(triangle.id, triangle.type, triangle.position, triangle.rotation, triangle.scale, true, true, this.base.team.hex).update();
-        this.objs.push(triangleObj);
+        let triangleObj = new Obj(triangle.id, triangle.type, triangle.position, triangle.rotation, triangle.scale, true, true, this.base.team.hex);
+        triangleObj.setPoseTransformed(this.pose, true);
+        this.objs.push(triangleObj.update());
         return this;
     }
 }
@@ -2992,6 +3008,7 @@ const SafeAlien = class {
                 SHIELD: 50,
                 POINTS: 5,
                 CRYSTAL_DROP: 0, // 5
+                CRYSTALS_BASE_REMOVED: 5,
                 CODE: 10,
                 LEVEL: 2
             },
@@ -3001,6 +3018,7 @@ const SafeAlien = class {
                 SHIELD: 75,
                 POINTS: 10,
                 CRYSTAL_DROP: 0, // 10
+                CRYSTALS_BASE_REMOVED: 10,
                 CODE: 19,
                 LEVEL: 0
             },
@@ -3010,6 +3028,7 @@ const SafeAlien = class {
                 SHIELD: 100,
                 POINTS: 25,
                 CRYSTAL_DROP: 0, // 20
+                CRYSTALS_BASE_REMOVED: 20,
                 CODE: 19,
                 LEVEL: 1
             },
@@ -3019,6 +3038,7 @@ const SafeAlien = class {
                 SHIELD: 150,
                 POINTS: 50,
                 CRYSTAL_DROP: 0, // 40
+                CRYSTALS_BASE_REMOVED: 40,
                 CODE: 19,
                 LEVEL: 2
             }
@@ -3093,6 +3113,10 @@ const SafeAlien = class {
                     if (ship.team) {
                         if (ship.team.team != this.baseModule.base.team.team) {
                             this.baseModule.subBase.health -= this.baseLevelFields.SHIELD;
+                            this.baseModule.base.crystals -= this.baseLevelFields.CRYSTALS_BASE_REMOVED;
+                            if (this.baseModule.base.crystals < 0) {
+                                this.baseModule.base.crystals = 0;
+                            }
                             if (this.baseModule.subBase.health <= 0) {
                                 this.baseModule.subBase.destroySelf();
                             }
@@ -3456,7 +3480,6 @@ const Obj = class {
     obj = null;
 
     static C = {
-        GHOST_SUFFIX: '-ghost',
         OBJS: {
             PLANE: {
                 id: 'plane',
@@ -3615,7 +3638,30 @@ const Obj = class {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
                     transparent: false,
                 }
-            }
+            },
+            SPAWN_GLOW: {
+                id: 'spawn_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 50,
+                    y: 50,
+                    z: 1
+                },
+                type: {
+                    id: 'spawn_glow',
+                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/teams-2.0/spawn_glow.png',
+                }
+            },
         }
     }
 
@@ -3704,6 +3750,11 @@ const Obj = class {
             y: pose.scale.y,
             z: disregardZScale ? this.obj.scale.z : pose.scale.z
         };
+        return this;
+    }
+
+    setPoseTransformed(pose, disregardZScale = false) {
+        this.obj = pose.transformObj(Helper.deepCopy(this.originalObj), disregardZScale);
         return this;
     }
 
@@ -4367,6 +4418,18 @@ const Rectangle = class {
             localPoint.x >= -halfWidth && localPoint.x <= halfWidth &&
             localPoint.y >= -halfHeight && localPoint.y <= halfHeight
         );
+    }
+
+    mapPointToEdge(point) {
+        const localPoint = point.subtract(this.center).rotateBy(-this.angle);
+
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        let mappedX = Math.max(-halfWidth, Math.min(halfWidth, localPoint.x));
+        let mappedY = Math.max(-halfHeight, Math.min(halfHeight, localPoint.y));
+
+        return new Vector2(mappedX, mappedY).rotateBy(this.angle).add(this.center);
     }
 }
 
