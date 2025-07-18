@@ -159,10 +159,10 @@ const Game = class {
     }
 
     tick() {
+        this.manageEntities();
         this.manageTimeouts();
         this.manageConditions();
         this.manageQueues();
-        this.manageEntities();
 
         this.manageGameState();
 
@@ -391,6 +391,8 @@ const Game = class {
     }
 
     resetShip(ship, fast = false, newRound = false, resetUIs = false) {
+        if (!ship) return;
+
         ship.isResetting = true;
 
         ship.reset();
@@ -557,8 +559,8 @@ const Game = class {
                         this.betweenTime = game.step;
                         this.timesUp = true;
                     } else {
-                        if (this.teams.length == 2 && Math.abs(this.teams[0].ships.length - this.teams[1].ships.length) >= Game.C.TEAM_PLAYER_DEFICIT) {
-                            let diff = this.teams[0].ships.length - this.teams[1].ships.length;
+                        let diff = this.teams[0].ships.length - this.teams[1].ships.length;
+                        if (this.teams.length == 2 && Math.abs(diff) >= Game.C.TEAM_PLAYER_DEFICIT) {
                             let t = diff > 0 ? 0 : 1;
                             let minScore = this.getMinScore(this.teams[t]);
                             let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
@@ -569,7 +571,7 @@ const Game = class {
                         }
                         
                         if (this.changeTeamShip) {
-                            if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || (this.changeTeamShip.team && this.changeTeamShip.team.flag && this.changeTeamShip.team.flagHolder && this.changeTeamShip.team.flagHolder.ship.id == this.changeTeamShip.ship.id)) {
+                            if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || (this.changeTeamShip.team && this.changeTeamShip.team.flag && this.changeTeamShip.team.flagHolder && this.changeTeamShip.team.flagHolder.ship.id == this.changeTeamShip.ship.id) || Math.abs(diff) < Game.C.TEAM_PLAYER_DEFICIT) {
                                 this.changeTeamShip.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                 this.changeTeamShip.changeTeamTime = -1;
                                 this.changeTeamShip = null;
@@ -582,23 +584,24 @@ const Game = class {
                                 this.changeTeamShip.sendUI(bottomMessage);
                             } else {
                                 let team = this.changeTeamShip.team;
-                                let opp = this.getOppTeam(team);
+                                let oppTeam = this.getOppTeam(team);
                                 if (team.flag && team.flagHolder && team.flagHolder.id == this.changeTeamShip.ship.id) {
                                     team.flagHolder = null;
-                                    opp.flag.reset();
+                                    oppTeam.flag.reset();
                                 }
                                 this.shipResetQueue.add(() => {
                                     this.resetShip(this.changeTeamShip, true);
-                                });
-                                this.changeTeamShip.chosenType = 0;
-                                this.changeTeamShip.chooseShipTime = game.step;
-                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                bottomMessage.components[1].value = `You have been moved to the ${opp.color.toUpperCase()} team due to team player imbalance.`;
-                                bottomMessage.components[0].fill = '#8B008B80';
-                                this.changeTeamShip.sendTimedUI(bottomMessage);
 
-                                this.changeTeamShip.changeTeamTime = -1;
-                                this.changeTeamShip = null;
+                                    this.changeTeamShip.chosenType = 0;
+                                    this.changeTeamShip.chooseShipTime = game.step;
+                                    let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                    bottomMessage.components[1].value = `You have been moved to the ${oppTeam.color.toUpperCase()} team due to team player imbalance.`;
+                                    bottomMessage.components[0].fill = '#8B008B80';
+                                    this.changeTeamShip.sendTimedUI(bottomMessage);
+
+                                    this.changeTeamShip.changeTeamTime = -1;
+                                    this.changeTeamShip = null;
+                                });
                             }
                         }
                     }
@@ -882,533 +885,535 @@ const Game = class {
                 }
             }
             for (let ship of this.ships) {
-                if (!ship.done) {
-                    this.shipResetQueue.add(() => {
-                        this.resetShip(ship);
+                if (ship) {
+                    if (!ship.done) {
+                        this.shipResetQueue.add(() => {
+                            this.resetShip(ship);
 
-                        ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
+                            ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
 
-                        if (!this.isWaiting) {
-                            ship.chooseShipTime = game.step;
-                        }
-                    });
-                }
-
-                if (this.isWaiting) {
-                    ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
-                    let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                    bottomMessage.components[1].value = "Waiting for players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
-                    if (this.waitTimer != -1) {
-                        bottomMessage.components[1].value = "Game starts in: " + Helper.formatTime(Game.C.TICKS.WAIT - (game.step - this.waitTimer));
-                    }
-                    ship.sendUI(bottomMessage);
-
-                    let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
-                    for (let beacon of this.beacons) {
-                        radarBackground.components.push({
-                            type: "text",
-                            position: Helper.getRadarSpotPosition(beacon.beaconPos, new Vector2(20, 20)),
-                            value: '⬢',
-                            color: beacon.color.substring(0, 7) + '80'
+                            if (!this.isWaiting) {
+                                ship.chooseShipTime = game.step;
+                            }
                         });
                     }
-                    ship.sendUI(radarBackground);
 
-                    ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
-                    ship.allowChooseShip = true;
-
-                    ship.setMaxStats();
-                } else if (this.map && !ship.isResetting) {
-                    if (ship.chosenType == 0) {
-                        if (this.map.spawns.length == 2 && ship.team) {
-                            ship.setPosition(this.map.spawns[ship.team.team]);
-                        }
-                        ship.setVelocity(new Vector2(0, 0));
-                        if (ship.ship.type != 101) {
-                            ship.setType(101);
-                        }
-                        ship.setCrystals(0);
-                        ship.setCollider(false);
-                    }
-
-                    if (this.betweenTime != -1) {
-                        ship.setCollider(false);
-                        ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
-
-                        if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
-                            ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
-                            ship.setMaxStats();
-                            ship.setHue(ship.team.hue);
-
-                            ship.team.flagHolder = null;
-                            this.getOppTeam(ship.team).flag.reset();
-                        }
-
+                    if (this.isWaiting) {
+                        ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-
-                        let winningTeam = this.getWinningTeam();
-                        if (this.timesUp) {
-                            bottomMessage.components[1].value = "Time's up! ";
-                        }
-                        if (winningTeam != null) {
-                            bottomMessage.components[1].value += "The " + winningTeam.color.toUpperCase() + " team won! ";
-                            bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#008B0080' : '#8B000080';
-                        } else {
-                            bottomMessage.components[1].value += "It's a tie and no team won. ";
-                        }
-                        if (this.numRounds < Game.C.NUM_ROUNDS) {
-                            bottomMessage.components[1].value += "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
-                        } else {
-                            if (Game.C.IS_SINGLE) {
-                                bottomMessage.components[1].value += 'Good game everyone!';
-                            } else {
-                                bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
-                            }
+                        bottomMessage.components[1].value = "Waiting for players... (" + this.ships.length + "/" + Game.C.MIN_PLAYERS + ")";
+                        if (this.waitTimer != -1) {
+                            bottomMessage.components[1].value = "Game starts in: " + Helper.formatTime(Game.C.TICKS.WAIT - (game.step - this.waitTimer));
                         }
                         ship.sendUI(bottomMessage);
 
-                        ship.hideUI(UIComponent.C.UIS.TIMER);
-                        ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
-                    } else {
-                        ship.setCollider(true);
-                        if (ship.team) {
-                            let oppTeam = this.getOppTeam(ship.team);
-                            if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
-                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
-                                ship.sendUI(bottomMessage);
-
-                                if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
-                                    ship.setType(ship.chosenType + this.shipGroup.normalShips.length);
-                                    ship.setMaxStats();
-                                }
-                                if (ship.ship.hue != ship.team.flagged) {
-                                    ship.setHue(ship.team.flagged);
-                                }
-                            } else if (ship.chosenType != 0) {
-                                if (ship.ship.type != ship.chosenType) {
-                                    ship.setType(ship.chosenType);
-                                    ship.setMaxStats();
-                                }
-                                if (ship.ship.hue != ship.team.hue) {
-                                    ship.setHue(ship.team.hue);
-                                }
-                            }
-
-                            if (this.map && this.map.spawns.length == 2 && ship.team) {
-                                if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
-                                    ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
-                                    ship.allowChooseShip = true;
-                                } else {
-                                    ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
-                                    ship.allowChooseShip = false;
-                                }
-                            }
-
-                            if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
-                                if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                    ship.team.flagHolder = ship;
-                                    oppTeam.flag.hide();
-
-                                    ship.flagTime = game.step;
-                                    ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
-                                    ship.setMaxStats();
-                                    ship.setHue(ship.team.flagged);
-                                    
-                                    this.sendNotifications(`${ship.ship.name} has stolen ${oppTeam.color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
-                                }
-                                if (ship.team.flag && !ship.team.flag.flagHidden && !ship.team.flag.isAtStand() && ship.team.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                    ship.team.flag.reset();
-
-                                    this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
-                                }
-                                if (!oppTeam.flagHolder && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
-                                    ship.team.flagHolder = null;
-                                    oppTeam.flag.reset();
-
-                                    ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
-                                    ship.setMaxStats();
-                                    ship.setHue(ship.team.hue);
-                                    ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                    ship.setScore(ship.score + 1);
-                                    ship.setTotalScore(ship.totalScore + 1);
-
-                                    ship.team.setScore(ship.team.score + 1);
-
-                                    this.beacons.push(new Beacon(ship.team.flag.flagStandPos, ship.team.hex).spawn());
-
-                                    this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
-                                }
-                            }
-                        }
-
-                        if (Game.C.TICKS.ROUND - (game.step - this.roundTime) >= 0) {
-                            let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
-                            let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
-                            timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
-                            if (timeLeft <= UIComponent.C.TICKS.WARNING) {
-                                timer.components[0].fill = '#8B000080';
-                                timer.components[0].stroke = '#FFBBBB';
-                                timer.components[0].width = 2;
-                                timer.components[1].color = '#FFBBBB';
-                            }
-                            ship.sendUI(timer);
-                        }
-                    }
-
-                    let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
-                    for (let i = 0; i < this.teams.length; i++) {
-                        if (this.teams[i].flag) {
+                        let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
+                        for (let beacon of this.beacons) {
                             radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(this.teams[i].flag.flagStandPos, new Vector2(100, 100)),
-                                value: '⬡',
-                                color: this.teams[i].hex
+                                type: "text",
+                                position: Helper.getRadarSpotPosition(beacon.beaconPos, new Vector2(20, 20)),
+                                value: '⬢',
+                                color: beacon.color.substring(0, 7) + '80'
                             });
+                        }
+                        ship.sendUI(radarBackground);
 
-                            if (!this.teams[i].flag.flagHidden) {
+                        ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
+                        ship.allowChooseShip = true;
+
+                        ship.setMaxStats();
+                    } else if (this.map && !ship.isResetting) {
+                        if (ship.chosenType == 0) {
+                            if (this.map.spawns.length == 2 && ship.team) {
+                                ship.setPosition(this.map.spawns[ship.team.team]);
+                            }
+                            ship.setVelocity(new Vector2(0, 0));
+                            if (ship.ship.type != 101) {
+                                ship.setType(101);
+                            }
+                            ship.setCrystals(0);
+                            ship.setCollider(false);
+                        }
+
+                        if (this.betweenTime != -1) {
+                            ship.setCollider(false);
+                            ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
+
+                            if (ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                                ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
+                                ship.setMaxStats();
+                                ship.setHue(ship.team.hue);
+
+                                ship.team.flagHolder = null;
+                                this.getOppTeam(ship.team).flag.reset();
+                            }
+
+                            let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+
+                            let winningTeam = this.getWinningTeam();
+                            if (this.timesUp) {
+                                bottomMessage.components[1].value = "Time's up! ";
+                            }
+                            if (winningTeam != null) {
+                                bottomMessage.components[1].value += "The " + winningTeam.color.toUpperCase() + " team won! ";
+                                bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#008B0080' : '#8B000080';
+                            } else {
+                                bottomMessage.components[1].value += "It's a tie and no team won. ";
+                            }
+                            if (this.numRounds < Game.C.NUM_ROUNDS) {
+                                bottomMessage.components[1].value += "Next round starts in: " + Helper.formatTime(Game.C.TICKS.BETWEEN - (game.step - this.betweenTime));
+                            } else {
+                                if (Game.C.IS_SINGLE) {
+                                    bottomMessage.components[1].value += 'Good game everyone!';
+                                } else {
+                                    bottomMessage.components[1].value += `${Game.C.NUM_ROUNDS} rounds have been played!`;
+                                }
+                            }
+                            ship.sendUI(bottomMessage);
+
+                            ship.hideUI(UIComponent.C.UIS.TIMER);
+                            ship.hideUI(UIComponent.C.UIS.PORTAL_COOLDOWN);
+                        } else {
+                            ship.setCollider(true);
+                            if (ship.team) {
+                                let oppTeam = this.getOppTeam(ship.team);
+                                if (ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+                                    let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                    bottomMessage.components[1].value = 'Time left for holding the flag: ' + Helper.formatTime((Obj.C.OBJS.FLAG.DROP - (game.step - ship.flagTime)));
+                                    ship.sendUI(bottomMessage);
+
+                                    if (ship.ship.type != ship.chosenType + this.shipGroup.normalShips.length) {
+                                        ship.setType(ship.chosenType + this.shipGroup.normalShips.length);
+                                        ship.setMaxStats();
+                                    }
+                                    if (ship.ship.hue != ship.team.flagged) {
+                                        ship.setHue(ship.team.flagged);
+                                    }
+                                } else if (ship.chosenType != 0) {
+                                    if (ship.ship.type != ship.chosenType) {
+                                        ship.setType(ship.chosenType);
+                                        ship.setMaxStats();
+                                    }
+                                    if (ship.ship.hue != ship.team.hue) {
+                                        ship.setHue(ship.team.hue);
+                                    }
+                                }
+
+                                if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                    if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                                        ship.sendUI(UIComponent.C.UIS.CHANGE_SHIP);
+                                        ship.allowChooseShip = true;
+                                    } else {
+                                        ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
+                                        ship.allowChooseShip = false;
+                                    }
+                                }
+
+                                if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
+                                    if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                        ship.team.flagHolder = ship;
+                                        oppTeam.flag.hide();
+
+                                        ship.flagTime = game.step;
+                                        ship.setType((ship.chosenType == 0 ? ship.ship.type : ship.chosenType) + this.shipGroup.normalShips.length);
+                                        ship.setMaxStats();
+                                        ship.setHue(ship.team.flagged);
+                                        
+                                        this.sendNotifications(`${ship.ship.name} has stolen ${oppTeam.color.toUpperCase()} team's flag!`, `Bring it back to ${ship.team.color.toUpperCase()} team's stand to score a point.`, ship.team);
+                                    }
+                                    if (ship.team.flag && !ship.team.flag.flagHidden && !ship.team.flag.isAtStand() && ship.team.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                        ship.team.flag.reset();
+
+                                        this.sendNotifications(`${ship.ship.name} has returned the ${ship.team.color.toUpperCase()} team's flag!`, `Chance for ${oppTeam.color.toUpperCase()} team is over.`, ship.team);
+                                    }
+                                    if (!oppTeam.flagHolder && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id && ship.team.flag.flagStandPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
+                                        ship.team.flagHolder = null;
+                                        oppTeam.flag.reset();
+
+                                        ship.setType(ship.chosenType == 0 ? ship.ship.type - this.shipGroup.normalShips.length : ship.chosenType);
+                                        ship.setMaxStats();
+                                        ship.setHue(ship.team.hue);
+                                        ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                        ship.setScore(ship.score + 1);
+                                        ship.setTotalScore(ship.totalScore + 1);
+
+                                        ship.team.setScore(ship.team.score + 1);
+
+                                        this.beacons.push(new Beacon(ship.team.flag.flagStandPos, ship.team.hex).spawn());
+
+                                        this.sendNotifications(`${ship.ship.name} has scored a point for the ${ship.team.color.toUpperCase()} team!`, `Will ${oppTeam.color.toUpperCase()} team score next?`, ship.team);
+                                    }
+                                }
+                            }
+
+                            if (Game.C.TICKS.ROUND - (game.step - this.roundTime) >= 0) {
+                                let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
+                                let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
+                                timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
+                                if (timeLeft <= UIComponent.C.TICKS.WARNING) {
+                                    timer.components[0].fill = '#8B000080';
+                                    timer.components[0].stroke = '#FFBBBB';
+                                    timer.components[0].width = 2;
+                                    timer.components[1].color = '#FFBBBB';
+                                }
+                                ship.sendUI(timer);
+                            }
+                        }
+
+                        let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
+                        for (let i = 0; i < this.teams.length; i++) {
+                            if (this.teams[i].flag) {
                                 radarBackground.components.push({
                                     type: 'text',
-                                    position: Helper.getRadarSpotPosition(this.teams[i].flag.flagPos, new Vector2(50, 50)),
-                                    value: '⚑',
+                                    position: Helper.getRadarSpotPosition(this.teams[i].flag.flagStandPos, new Vector2(100, 100)),
+                                    value: '⬡',
+                                    color: this.teams[i].hex
+                                });
+
+                                if (!this.teams[i].flag.flagHidden) {
+                                    radarBackground.components.push({
+                                        type: 'text',
+                                        position: Helper.getRadarSpotPosition(this.teams[i].flag.flagPos, new Vector2(50, 50)),
+                                        value: '⚑',
+                                        color: this.teams[i].hex
+                                    });
+                                }
+
+                                let oppTeam = this.getOppTeam(this.teams[i]);
+                                if (oppTeam && this.teams[i].flagHolder) {
+                                    radarBackground.components.push({
+                                        type: 'text',
+                                        position: Helper.getRadarSpotPosition(new Vector2(this.teams[i].flagHolder.ship.x, this.teams[i].flagHolder.ship.y), new Vector2(50, 50)),
+                                        value: '⚑',
+                                        color: oppTeam.hex
+                                    });
+                                }
+                            }
+                        }
+                        if (this.map) {
+                            for (let i = 0; i < this.map.spawns.length; i++) {
+                                let spawn = this.map.spawns[i];
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
+                                    value: '⬢',
+                                    color: this.teams[i].hex + '40'
+                                });
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
+                                    value: '⬡',
                                     color: this.teams[i].hex
                                 });
                             }
+                            for (let i = 0; i < this.map.portals.length; i++) {
+                                let portal = this.map.portals[i];
 
-                            let oppTeam = this.getOppTeam(this.teams[i]);
-                            if (oppTeam && this.teams[i].flagHolder) {
+                                let portalColor = '#00ff00';
+                                if (ship.portalTime != -1 && game.step - ship.portalTime < Ship.C.PORTAL_TIME) {
+                                    portalColor = '#808080';
+                                }
+
                                 radarBackground.components.push({
                                     type: 'text',
-                                    position: Helper.getRadarSpotPosition(new Vector2(this.teams[i].flagHolder.ship.x, this.teams[i].flagHolder.ship.y), new Vector2(50, 50)),
-                                    value: '⚑',
-                                    color: oppTeam.hex
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(100, 100)),
+                                    value: '⬡',
+                                    color: portalColor + '80'
+                                });
+
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(70, 70)),
+                                    value: '⬡',
+                                    color: portalColor + '60'
+                                });
+
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(40, 40)),
+                                    value: '⬡',
+                                    color: portalColor + '40'
+                                });
+                                
+                                radarBackground.components.push({
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(20, 20)),
+                                    value: '⬡',
+                                    color: portalColor + '20'
                                 });
                             }
                         }
-                    }
-                    if (this.map) {
-                        for (let i = 0; i < this.map.spawns.length; i++) {
-                            let spawn = this.map.spawns[i];
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
-                                value: '⬢',
-                                color: this.teams[i].hex + '40'
-                            });
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(spawn.x, spawn.y), new Vector2(40, 40)),
-                                value: '⬡',
-                                color: this.teams[i].hex
-                            });
+                        ship.sendUI(radarBackground);
+
+                        let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
+                        scoreboard.components[0].fill = this.teams[0].hex + 'BF';
+                        scoreboard.components[2].fill = this.teams[1].hex + 'BF';
+                        scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} (${this.teams[0].ships.length}♟)`;
+                        if (this.teams[0].color == 'Yellow' || this.teams[0].color == 'Cyan') {
+                            scoreboard.components[1].color = '#000000';
                         }
-                        for (let i = 0; i < this.map.portals.length; i++) {
-                            let portal = this.map.portals[i];
-
-                            let portalColor = '#00ff00';
-                            if (ship.portalTime != -1 && game.step - ship.portalTime < Ship.C.PORTAL_TIME) {
-                                portalColor = '#808080';
-                            }
-
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(100, 100)),
-                                value: '⬡',
-                                color: portalColor + '80'
-                            });
-
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(70, 70)),
-                                value: '⬡',
-                                color: portalColor + '60'
-                            });
-
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(40, 40)),
-                                value: '⬡',
-                                color: portalColor + '40'
-                            });
-                            
-                            radarBackground.components.push({
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(new Vector2(portal.x, portal.y), new Vector2(20, 20)),
-                                value: '⬡',
-                                color: portalColor + '20'
-                            });
+                        scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} (${this.teams[1].ships.length}♟)`;
+                        if (this.teams[1].color == 'Yellow' || this.teams[1].color == 'Cyan') {
+                            scoreboard.components[3].color = '#000000';
                         }
-                    }
-                    ship.sendUI(radarBackground);
 
-                    let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
-                    scoreboard.components[0].fill = this.teams[0].hex + 'BF';
-                    scoreboard.components[2].fill = this.teams[1].hex + 'BF';
-                    scoreboard.components[1].value = `${this.teams[0].color.toUpperCase()} (${this.teams[0].ships.length}♟)`;
-                    if (this.teams[0].color == 'Yellow' || this.teams[0].color == 'Cyan') {
-                        scoreboard.components[1].color = '#000000';
-                    }
-                    scoreboard.components[3].value = `${this.teams[1].color.toUpperCase()} (${this.teams[1].ships.length}♟)`;
-                    if (this.teams[1].color == 'Yellow' || this.teams[1].color == 'Cyan') {
-                        scoreboard.components[3].color = '#000000';
-                    }
-
-                    for (let i = 0; i < this.teams.length; i++) {
-                        let team = this.teams[i];
-                        if (team.ships) {
-                            let players = team.ships.sort((a, b) => b.score - a.score);
-                            let flagHolder = team.flagHolder;
-                            if (flagHolder) {
-                                Helper.deleteFromArray(players, flagHolder);
-                                players.unshift(flagHolder);
-                            }
-                            for (let j = 0; j < players.length; j++) {
-                                let player = players[j];
-                                let color = '#ffffff';
-
-                                let pos = [i * 50, UIComponent.C.UIS.SCOREBOARD.START + UIComponent.C.UIS.SCOREBOARD.HEIGHT * j, 50, UIComponent.C.UIS.SCOREBOARD.HEIGHT];
-
-                                if (flagHolder && flagHolder.ship.id == player.ship.id) {
-                                    if (ship.team.team == team.team) {
-                                        color = '#00ff00';
-                                    } else {
-                                        color = '#ff0000';
-                                    }
-
-                                    scoreboard.components.push({
-                                        type: 'box',
-                                        position: pos,
-                                        fill: color + '40'
-                                    });
+                        for (let i = 0; i < this.teams.length; i++) {
+                            let team = this.teams[i];
+                            if (team.ships) {
+                                let players = team.ships.sort((a, b) => b.score - a.score);
+                                let flagHolder = team.flagHolder;
+                                if (flagHolder) {
+                                    Helper.deleteFromArray(players, flagHolder);
+                                    players.unshift(flagHolder);
                                 }
-                                else if (player.ship.id == ship.ship.id) {
-                                    scoreboard.components.push({
-                                        type: 'box',
-                                        position: pos,
-                                        fill: '#ffffff20'
-                                    });
-                                }
-                                scoreboard.components.push({
-                                    type: 'text',
-                                    position: pos,
-                                    value: '',
-                                    color: '#ffffff',
-                                    align: 'left'
-                                },
-                                {
-                                    type: 'player',
-                                    position: [pos[0], pos[1], pos[2]-10, pos[3]],
-                                    id: player.ship.id,
-                                    color: color,
-                                    align: 'left'
-                                },
-                                {
-                                    type: 'text',
-                                    position: pos,
-                                    value: `${flagHolder && flagHolder.ship.id == player.ship.id ? '⚑ ' : ''}${player.score}`,
-                                    color: color,
-                                    align: 'right'
-                                });
-                            }
-                        }
-                    }
+                                for (let j = 0; j < players.length; j++) {
+                                    let player = players[j];
+                                    let color = '#ffffff';
 
-                    ship.sendUI(scoreboard);
+                                    let pos = [i * 50, UIComponent.C.UIS.SCOREBOARD.START + UIComponent.C.UIS.SCOREBOARD.HEIGHT * j, 50, UIComponent.C.UIS.SCOREBOARD.HEIGHT];
 
-                    if (ship.team && !ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
-                        let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-                        if (!Game.C.IS_SINGLE) {
-                            topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
-                        }
-                        let oppTeam = this.getOppTeam(ship.team);
-                        if (oppTeam && oppTeam.flagHolder) {
-                            topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to be able to score!`;
-                            topMessage.components[0].fill = '#8B000080';
-                        }
-
-                        if ((Game.C.IS_SINGLE && oppTeam && oppTeam.flagHolder) || !Game.C.IS_SINGLE) {
-                            ship.sendUI(topMessage);
-                        } else {
-                            ship.hideUI(topMessage);
-                        }
-
-                        let roundScores = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
-                        let winningTeam = this.getWinningTeam();
-                        if (winningTeam == null) {
-                            roundScores.components[0].value = 'TIE';
-                            roundScores.components[0].color = '#ffffff';
-                        }
-                        else {
-                            roundScores.components[0].value = winningTeam.color.toUpperCase();
-                            roundScores.components[0].color = winningTeam.hex;
-                        }
-                        if (this.teams[0].flagHolder) {
-                            roundScores.components[1].value = '⚑';
-                            roundScores.components[1].color = this.teams[0].hex;
-                        }
-                        if (this.teams[1].flagHolder) {
-                            roundScores.components[5].value = '⚑';
-                            roundScores.components[5].color = this.teams[1].hex;
-                        }
-                        roundScores.components[2].value = this.teams[0].score;
-                        roundScores.components[2].color = this.teams[0].hex;
-                        roundScores.components[4].value = this.teams[1].score;
-                        roundScores.components[4].color = this.teams[1].hex;
-                        roundScores = UIComponent.addTextShadow(roundScores, '#2C2C2C', 0, 0.04, true);
-                        ship.sendUI(roundScores);
-
-                        if (this.betweenTime == -1) {
-                            let portalCooldown = Helper.deepCopy(UIComponent.C.UIS.PORTAL_COOLDOWN);
-                            let portalTime = Ship.C.PORTAL_TIME - (game.step - ship.portalTime);
-                            if (portalTime < 0) {
-                                portalTime = 0;
-                            }
-                            portalCooldown.components[2].value = Helper.formatTime(portalTime);
-                            if (portalTime == 0) {
-                                portalCooldown.components[0].stroke = "#00ff00";
-                                portalCooldown.components[2].color = "#00ff00";
-                            } else {
-                                portalCooldown.components[0].stroke = "#ff0000";
-                                portalCooldown.components[2].color = "#ff0000";
-                            }
-                            ship.sendUI(portalCooldown);
-                        }
-                    }
-                }
-
-                let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
-                if (this.map) {
-                    mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
-                    ship.sendUI(mapAuthor);
-                } else {
-                    ship.hideUI(mapAuthor);
-                }
-
-                if (this.betweenTime != -1) {
-                    ship.chooseShipTime = -1;
-                }
-                if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
-                    if (!ship.loadingChooseShip) {
-                        if (!ship.choosingShip && !ship.loadingChooseShip) {
-                            ship.loadingChooseShip = true;
-                        }
-                        ship.choosingShip = true;
-
-                        if (this.map && this.map.spawns.length == 2 && ship.team) {
-                            if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) >= Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
-                                ship.chooseShipTime = -1;
-                            }
-                        }
-
-                        for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
-                            let isDisabled = false;
-                            if (ship.team && !this.isWaiting) {
-                                isDisabled = ship.team.disabledIdxs.includes(i);
-                            }
-                            let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
-                            chooseShip.clickable = !isDisabled;
-                            chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
-                            chooseShip.id += '-' + i;
-                            let separation = 100 / (ShipGroup.C.NUM_SHIPS * 9/5);
-                            let width = separation * 9 / 10;
-                            let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
-                            chooseShip.position[0] = start + separation * i;
-                            chooseShip.position[2] = width;
-                            let opacity = 'BF';
-                            let disabledOpacity = '80';
-                            const colorPalette = [
-                                { fill: '#e74c3c', accent: '#c0392b' },   // Red
-                                { fill: '#27ae60', accent: '#145a32' },   // Green
-                                { fill: '#2980b9', accent: '#154360' },   // Blue
-                                { fill: '#f1c40f', accent: '#b7950b' },   // Yellow
-                                { fill: '#9b59b6', accent: '#512e5f' },   // Purple
-                                { fill: '#e67e22', accent: '#784212' },   // Orange
-                                { fill: '#16a085', accent: '#0e6251' },   // Teal
-                                { fill: '#34495e', accent: '#212f3c' },   // Navy
-                                { fill: '#fd79a8', accent: '#6c3483' },   // Pink
-                                { fill: '#95a5a6', accent: '#566573' }    // Gray
-                            ];
-                            const palette = colorPalette[i % colorPalette.length];
-                            chooseShip.components[0].fill = palette.fill + opacity;
-                            chooseShip.components[2].fill = palette.accent + opacity;
-                            if (isDisabled) {
-                                chooseShip.components[0].fill = '#8B8B8B' + disabledOpacity;
-                                chooseShip.components[2].fill = '#222222' + disabledOpacity;
-
-                                for (let component of chooseShip.components) {
-                                    if (component.type == 'text') {
-                                        if (component.color.length == 9) {
-                                            component.color = component.color.substring(0, 7) + '60';
-                                        } else if (component.color.length == 7) {
-                                            component.color += '80';
+                                    if (flagHolder && flagHolder.ship.id == player.ship.id) {
+                                        if (ship.team.team == team.team) {
+                                            color = '#00ff00';
+                                        } else {
+                                            color = '#ff0000';
                                         }
-                                    } else if (component.type == 'box' && component.position[3] == 0) {
-                                        component.fill += '80';
+
+                                        scoreboard.components.push({
+                                            type: 'box',
+                                            position: pos,
+                                            fill: color + '40'
+                                        });
                                     }
+                                    else if (player.ship.id == ship.ship.id) {
+                                        scoreboard.components.push({
+                                            type: 'box',
+                                            position: pos,
+                                            fill: '#ffffff20'
+                                        });
+                                    }
+                                    scoreboard.components.push({
+                                        type: 'text',
+                                        position: pos,
+                                        value: '',
+                                        color: '#ffffff',
+                                        align: 'left'
+                                    },
+                                    {
+                                        type: 'player',
+                                        position: [pos[0], pos[1], pos[2]-10, pos[3]],
+                                        id: player.ship.id,
+                                        color: color,
+                                        align: 'left'
+                                    },
+                                    {
+                                        type: 'text',
+                                        position: pos,
+                                        value: `${flagHolder && flagHolder.ship.id == player.ship.id ? '⚑ ' : ''}${player.score}`,
+                                        color: color,
+                                        align: 'right'
+                                    });
                                 }
                             }
-                            chooseShip.components[1].value = i + 1;
-                            chooseShip.components[5].value = this.shipGroup.chosenNames[i];
-                            chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
-                            if (ship.loadingChooseShip) {
-                                let distFromMiddle = Math.abs(i - Math.round((ShipGroup.C.NUM_SHIPS - 1) / 2));
-                                ship.timeouts.push(new TimeoutCreator(() => {
-                                    ship.sendUI(chooseShip);
-                                    if (i == ShipGroup.C.NUM_SHIPS - 1) {
-                                        ship.loadingChooseShip = false;
-                                    }
-                                }, distFromMiddle * Ship.C.CHOOSE_SHIP_ANIMATION_TIME).start());
+                        }
+
+                        ship.sendUI(scoreboard);
+
+                        if (ship.team && !ship.hasUI(UIComponent.C.UIS.LOGO) && this.teams) {
+                            let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
+                            if (!Game.C.IS_SINGLE) {
+                                topMessage.components[1].value = `Round ${this.numRounds} of ${Game.C.NUM_ROUNDS}`;
+                            }
+                            let oppTeam = this.getOppTeam(ship.team);
+                            if (oppTeam && oppTeam.flagHolder) {
+                                topMessage.components[1].value = `Your flag is stolen. Kill the enemy flag carrier to be able to score!`;
+                                topMessage.components[0].fill = '#8B000080';
+                            }
+
+                            if ((Game.C.IS_SINGLE && oppTeam && oppTeam.flagHolder) || !Game.C.IS_SINGLE) {
+                                ship.sendUI(topMessage);
                             } else {
-                                ship.sendUI(chooseShip);
+                                ship.hideUI(topMessage);
+                            }
+
+                            let roundScores = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
+                            let winningTeam = this.getWinningTeam();
+                            if (winningTeam == null) {
+                                roundScores.components[0].value = 'TIE';
+                                roundScores.components[0].color = '#ffffff';
+                            }
+                            else {
+                                roundScores.components[0].value = winningTeam.color.toUpperCase();
+                                roundScores.components[0].color = winningTeam.hex;
+                            }
+                            if (this.teams[0].flagHolder) {
+                                roundScores.components[1].value = '⚑';
+                                roundScores.components[1].color = this.teams[0].hex;
+                            }
+                            if (this.teams[1].flagHolder) {
+                                roundScores.components[5].value = '⚑';
+                                roundScores.components[5].color = this.teams[1].hex;
+                            }
+                            roundScores.components[2].value = this.teams[0].score;
+                            roundScores.components[2].color = this.teams[0].hex;
+                            roundScores.components[4].value = this.teams[1].score;
+                            roundScores.components[4].color = this.teams[1].hex;
+                            roundScores = UIComponent.addTextShadow(roundScores, '#2C2C2C', 0, 0.04, true);
+                            ship.sendUI(roundScores);
+
+                            if (this.betweenTime == -1) {
+                                let portalCooldown = Helper.deepCopy(UIComponent.C.UIS.PORTAL_COOLDOWN);
+                                let portalTime = Ship.C.PORTAL_TIME - (game.step - ship.portalTime);
+                                if (portalTime < 0) {
+                                    portalTime = 0;
+                                }
+                                portalCooldown.components[2].value = Helper.formatTime(portalTime);
+                                if (portalTime == 0) {
+                                    portalCooldown.components[0].stroke = "#00ff00";
+                                    portalCooldown.components[2].color = "#00ff00";
+                                } else {
+                                    portalCooldown.components[0].stroke = "#ff0000";
+                                    portalCooldown.components[2].color = "#ff0000";
+                                }
+                                ship.sendUI(portalCooldown);
                             }
                         }
                     }
 
-                    let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
-                    chooseShipTime.components[1].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
-                    ship.sendUI(chooseShipTime);
-
-                    if (ship.chosenType == 0) {
-                        if (this.map && this.map.spawns.length == 2 && ship.team) {
-                            ship.setPosition(this.map.spawns[ship.team.team]);
-                        }
-                        ship.setType(101);
-                        ship.setCrystals(0);
-                        ship.setMaxStats();
-                        ship.setCollider(false);
+                    let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
+                    if (this.map) {
+                        mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
+                        ship.sendUI(mapAuthor);
+                    } else {
+                        ship.hideUI(mapAuthor);
                     }
-                } else {
-                    if (ship.choosingShip && !ship.loadingChooseShip) {
-                        if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
-                            this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
-                        }
 
-                        if (ship.chosenType == 0) {
-                            if (!ship.team || this.isWaiting) {
-                                ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
-                            } else {
-                                ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes.filter((type, idx) => !ship.team.disabledIdxs.includes(idx)));
-                            }
-                            ship.setType(ship.chosenType);
-                            ship.fillUp();
-                            ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
-                        }
-                        ship.setMaxStats();
-                        ship.setCollider(true);
-                        ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
-                        ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
-                        ship.choosingShip = false;
+                    if (this.betweenTime != -1) {
                         ship.chooseShipTime = -1;
                     }
-                }
+                    if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
+                        if (!ship.loadingChooseShip) {
+                            if (!ship.choosingShip && !ship.loadingChooseShip) {
+                                ship.loadingChooseShip = true;
+                            }
+                            ship.choosingShip = true;
 
-                if (ship.instructionsStep != -1) {
-                    let instructions = Helper.deepCopy(UIComponent.C.UIS.RULES);
-                    instructions.components[1].value = Ship.C.RULES[ship.instructionsStep];
-                    instructions.components[2].position[2] = 100 * (ship.instructionsStep + 1) / Ship.C.RULES.length;
-                    ship.sendUI(instructions);
-                    let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.RULES_NEXT);
-                    ship.sendUI(instructionsNext);
+                            if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                if (this.map.spawns[ship.team.team].getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) >= Obj.C.OBJS.SPAWN.CHOOSE_SHIP_DISTANCE) {
+                                    ship.chooseShipTime = -1;
+                                }
+                            }
+
+                            for (let i = 0; i < ShipGroup.C.NUM_SHIPS; i++) {
+                                let isDisabled = false;
+                                if (ship.team && !this.isWaiting) {
+                                    isDisabled = ship.team.disabledIdxs.includes(i);
+                                }
+                                let chooseShip = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP);
+                                chooseShip.clickable = !isDisabled;
+                                chooseShip.shortcut = isDisabled ? '' : `${i + 1}`;
+                                chooseShip.id += '-' + i;
+                                let separation = 100 / (ShipGroup.C.NUM_SHIPS * 9/5);
+                                let width = separation * 9 / 10;
+                                let start = (100 - (separation * (ShipGroup.C.NUM_SHIPS - 1) + width)) / 2;
+                                chooseShip.position[0] = start + separation * i;
+                                chooseShip.position[2] = width;
+                                let opacity = 'BF';
+                                let disabledOpacity = '80';
+                                const colorPalette = [
+                                    { fill: '#e74c3c', accent: '#c0392b' },   // Red
+                                    { fill: '#27ae60', accent: '#145a32' },   // Green
+                                    { fill: '#2980b9', accent: '#154360' },   // Blue
+                                    { fill: '#f1c40f', accent: '#b7950b' },   // Yellow
+                                    { fill: '#9b59b6', accent: '#512e5f' },   // Purple
+                                    { fill: '#e67e22', accent: '#784212' },   // Orange
+                                    { fill: '#16a085', accent: '#0e6251' },   // Teal
+                                    { fill: '#34495e', accent: '#212f3c' },   // Navy
+                                    { fill: '#fd79a8', accent: '#6c3483' },   // Pink
+                                    { fill: '#95a5a6', accent: '#566573' }    // Gray
+                                ];
+                                const palette = colorPalette[i % colorPalette.length];
+                                chooseShip.components[0].fill = palette.fill + opacity;
+                                chooseShip.components[2].fill = palette.accent + opacity;
+                                if (isDisabled) {
+                                    chooseShip.components[0].fill = '#8B8B8B' + disabledOpacity;
+                                    chooseShip.components[2].fill = '#222222' + disabledOpacity;
+
+                                    for (let component of chooseShip.components) {
+                                        if (component.type == 'text') {
+                                            if (component.color.length == 9) {
+                                                component.color = component.color.substring(0, 7) + '60';
+                                            } else if (component.color.length == 7) {
+                                                component.color += '80';
+                                            }
+                                        } else if (component.type == 'box' && component.position[3] == 0) {
+                                            component.fill += '80';
+                                        }
+                                    }
+                                }
+                                chooseShip.components[1].value = i + 1;
+                                chooseShip.components[5].value = this.shipGroup.chosenNames[i];
+                                chooseShip.components[8].value = this.shipGroup.chosenOrigins[i];
+                                if (ship.loadingChooseShip) {
+                                    let distFromMiddle = Math.abs(i - Math.round((ShipGroup.C.NUM_SHIPS - 1) / 2));
+                                    ship.timeouts.push(new TimeoutCreator(() => {
+                                        ship.sendUI(chooseShip);
+                                        if (i == ShipGroup.C.NUM_SHIPS - 1) {
+                                            ship.loadingChooseShip = false;
+                                        }
+                                    }, distFromMiddle * Ship.C.CHOOSE_SHIP_ANIMATION_TIME).start());
+                                } else {
+                                    ship.sendUI(chooseShip);
+                                }
+                            }
+                        }
+
+                        let chooseShipTime = Helper.deepCopy(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
+                        chooseShipTime.components[1].value = Helper.formatTime(ship.chooseShipTime - (game.step - Ship.C.CHOOSE_SHIP_TIME));
+                        ship.sendUI(chooseShipTime);
+
+                        if (ship.chosenType == 0) {
+                            if (this.map && this.map.spawns.length == 2 && ship.team) {
+                                ship.setPosition(this.map.spawns[ship.team.team]);
+                            }
+                            ship.setType(101);
+                            ship.setCrystals(0);
+                            ship.setMaxStats();
+                            ship.setCollider(false);
+                        }
+                    } else {
+                        if (ship.choosingShip && !ship.loadingChooseShip) {
+                            if (ship.chosenType == 0 && this.map && this.map.spawns.length == 2 && ship.team) {
+                                this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
+                            }
+
+                            if (ship.chosenType == 0) {
+                                if (!ship.team || this.isWaiting) {
+                                    ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes);
+                                } else {
+                                    ship.chosenType = Helper.getRandomArrayElement(this.shipGroup.chosenTypes.filter((type, idx) => !ship.team.disabledIdxs.includes(idx)));
+                                }
+                                ship.setType(ship.chosenType);
+                                ship.fillUp();
+                                ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
+                            }
+                            ship.setMaxStats();
+                            ship.setCollider(true);
+                            ship.hideUIsIncludingID(UIComponent.C.UIS.CHOOSE_SHIP);
+                            ship.hideUI(UIComponent.C.UIS.CHOOSE_SHIP_TIME);
+                            ship.choosingShip = false;
+                            ship.chooseShipTime = -1;
+                        }
+                    }
+
+                    if (ship.instructionsStep != -1) {
+                        let instructions = Helper.deepCopy(UIComponent.C.UIS.RULES);
+                        instructions.components[1].value = Ship.C.RULES[ship.instructionsStep];
+                        instructions.components[2].position[2] = 100 * (ship.instructionsStep + 1) / Ship.C.RULES.length;
+                        ship.sendUI(instructions);
+                        let instructionsNext = Helper.deepCopy(UIComponent.C.UIS.RULES_NEXT);
+                        ship.sendUI(instructionsNext);
+                    }
                 }
             }
         }
