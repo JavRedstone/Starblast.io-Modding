@@ -120,7 +120,7 @@ const Game = class {
         },
         IS_TESTING: false,
         IS_DEBUGGING: false,
-        IS_SINGLE: false,
+        IS_SINGLE: true,
         IS_EVENT: false,
         MIN_PLAYERS: 2,
         ROUND_MAX: 5,
@@ -1173,7 +1173,7 @@ const Game = class {
                                     let pos = [i * 50, UIComponent.C.UIS.SCOREBOARD.START + UIComponent.C.UIS.SCOREBOARD.HEIGHT * j, 50, UIComponent.C.UIS.SCOREBOARD.HEIGHT];
 
                                     if (flagHolder && flagHolder.ship.id == player.ship.id) {
-                                        if (ship.team.team == team.team) {
+                                        if (ship.team && ship.team.team == team.team) {
                                             color = '#00ff00';
                                         } else {
                                             color = '#ff0000';
@@ -2883,7 +2883,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'plane',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: '',
                 }
             },
@@ -2895,7 +2895,7 @@ const Obj = class {
                     z: -30
                 },
                 rotation: {
-                    x: Math.PI,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
@@ -2906,7 +2906,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'logo_waiting',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/logo_waiting.png',
                 }
             },
@@ -2918,7 +2918,7 @@ const Obj = class {
                     z: 5
                 },
                 rotation: {
-                    x: Math.PI,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
@@ -2929,7 +2929,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'warning_rule',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/warning_rule.png',
                 }
             },
@@ -2952,7 +2952,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'grid',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
             },
@@ -2964,7 +2964,7 @@ const Obj = class {
                     z: -7
                 },
                 rotation: {
-                    x: Math.PI,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
@@ -2975,7 +2975,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'spawn',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/spawn.png',
                 },
                 CHOOSE_SHIP_DISTANCE: 7.5
@@ -3044,7 +3044,7 @@ const Obj = class {
                     z: -7
                 },
                 rotation: {
-                    x: Math.PI,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
@@ -3055,7 +3055,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'flagstand_glow',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/flagstand_glow.png',
                 }
             },
@@ -3104,7 +3104,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'portal_glow',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/portal_glow.png',
                 }
             },
@@ -3127,7 +3127,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'portal_rim_glow',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/portal_rim_glow.png',
                 }
             },
@@ -3217,7 +3217,7 @@ const Obj = class {
                     z: 0
                 },
                 rotation: {
-                    x: Math.PI,
+                    x: 0,
                     y: 0,
                     z: 0
                 },
@@ -3228,7 +3228,7 @@ const Obj = class {
                 },
                 type: {
                     id: 'beacon_glow',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v3.0/beacon_glow.png',
                 }
             },
