@@ -783,7 +783,7 @@ const Game = class {
             for (let asteroid of this.asteroids) {
                 let found = false;
                 for (let gameAsteroid of game.asteroids) {
-                    if (asteroid.asteroid == gameAsteroid) {
+                    if (asteroid.asteroid.id == gameAsteroid.id) {
                         found = true;
                         break;
                     }
@@ -800,7 +800,7 @@ const Game = class {
             for (let alien of this.aliens) {
                 let found = false;
                 for (let gameAlien of game.aliens) {
-                    if (alien.alien == gameAlien) {
+                    if (alien.alien.id == gameAlien.id) {
                         found = true;
                         break;
                     }
@@ -1194,21 +1194,21 @@ const Game = class {
                                     }
                                     scoreboard.components.push({
                                         type: 'text',
-                                        position: pos,
+                                        position: [pos[0] + 1, pos[1] + 0.5, pos[2] - 7.5, pos[3] - 1],
                                         value: '',
                                         color: '#ffffff',
                                         align: 'left'
                                     },
                                     {
                                         type: 'player',
-                                        position: [pos[0], pos[1], pos[2]-10, pos[3]],
+                                        position: [pos[0] + 1, pos[1] + 0.5, pos[2] - 7.5, pos[3] - 1],
                                         id: player.ship.id,
                                         color: color,
                                         align: 'left'
                                     },
                                     {
                                         type: 'text',
-                                        position: pos,
+                                        position: [pos[0], pos[1] + 0.5, pos[2] - 1, pos[3] - 1],
                                         value: `${flagHolder && flagHolder.ship.id == player.ship.id ? '⚑ ' : ''}${player.score}`,
                                         color: color,
                                         align: 'right'
@@ -3638,9 +3638,9 @@ const UIComponent = class {
                 components: [
                     {
                         type: "text",
-                        position: [5, 0, 90, 10],
+                        position: [5, 5, 90, 5],
                         value: "Waiting for players...",
-                        color: "#ffffff"
+                        color: "#ffffff80"
                     }
                 ]
             },
