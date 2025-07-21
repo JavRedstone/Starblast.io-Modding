@@ -2435,14 +2435,14 @@ const Base = class {
         NUM_SIDES: [
             2,
             3,
-            4,
-            5
+            3,
+            4
         ],
         MAX_CRYSTALS: [
-            500, // 720
-            1000, // 1440
-            1600, // 2880
-            3000  // 5760
+            720, // 720
+            1440, // 1440
+            2880, // 2880
+            5760  // 5760
         ],
         RADII: [
             30,
@@ -2867,7 +2867,7 @@ const SubBaseModule = class extends ContainerBaseModule {
             1500,
             3000,
             5000,
-            6000
+            7500
         ]
     }
 
