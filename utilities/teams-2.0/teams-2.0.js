@@ -25,10 +25,14 @@ const Game = class {
 
     aliens = [];
 
+    timedObjs = [];
+
     asteroids = [];
     timedAsteroids = [];
     
     isGameOver = false;
+
+    resettingAliens = false;
 
     static C = {
         OPTIONS: {
@@ -131,7 +135,7 @@ const Game = class {
             WEAPONS_STORE: false,
             PROJECTILE_SPEED: 1,
 
-            STARTING_SHIP: 101,
+            STARTING_SHIP: 102,
             RESET_TREE: true,
             CHOOSE_SHIP: null,
 
@@ -173,13 +177,13 @@ const Game = class {
             SHIP_MANAGER: 30,
             SHIP_MANAGER_FAST: 15,
 
-            BASE_MANAGER_SLOW: 360,
-            BASE_MANAGER_MEDIUM: 30,
-            BASE_MANAGER_FAST: 10,
+            BASE_MANAGER_SLOW: 480,
+            BASE_MANAGER_MEDIUM: 45,
+            BASE_MANAGER_FAST: 15,
 
             RESET_STAGGER: 5,
-            BASE_STAGGER: 10,
-            BASE_STAGGER_FAST: 1,
+            BASE_STAGGER: 20,
+            BASE_STAGGER_FAST: 2,
 
             GAME_MANAGER: 30
         },
@@ -187,6 +191,7 @@ const Game = class {
     }
 
     static setShipGroups(shipGroups) {
+        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":2,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":2,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
         for (let [tier, shipMap] of Object.entries(shipGroups)) {
             let shipGroup = new ShipGroup(parseInt(tier), shipMap);
             Game.shipGroups.push(shipGroup);
@@ -340,38 +345,17 @@ const Game = class {
 
         ship.reset();
 
-        this.resetShipNext(ship);
-    }
+        ship.setType(102);
+        ship.setPosition(new Vector2());
 
-    resetShipNext(ship) {
-        if (this.teams.length == 2) {
-            if (this.teams[0].ships.length < this.teams[1].ships.length) {
-                this.teams[1].removeShip(ship);
-                ship.setTeam(this.teams[0]);
-            }
-            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-                this.teams[0].removeShip(ship);
-                ship.setTeam(this.teams[1]);
-            } else {
-                if (this.teams[0].score < this.teams[1].score) {
-                    this.teams[1].removeShip(ship);
-                    ship.setTeam(this.teams[0]);
-                } else if (this.teams[1].score < this.teams[0].score) {
-                    this.teams[0].removeShip(ship);
-                    ship.setTeam(this.teams[1]);
-                } else {
-                    let randTeam = this.teams[Helper.getRandomInt(0, 1)];
-                    this.teams[(randTeam.team + 1) % 2].removeShip(ship);
-                    ship.setTeam(randTeam);
-                }
-            }
-        }
         ship.hideAllUIs();
 
         ship.sendUI(UIComponent.C.UIS.SCOREBOARD_SWITCH);
 
         ship.done = true;
         ship.isResetting = false;
+
+        ship.selectingTeam = true;
     }
 
     gameOver() {
@@ -379,26 +363,6 @@ const Game = class {
         for (let ship of this.ships) {
             ship.gameOver();
         }
-    }
-
-    getMinScore(team) {
-        let minScore = Infinity;
-        for (let ship of team.ships) {
-            if (ship.ship.score < minScore) {
-                minScore = ship.ship.score;
-            }
-        }
-        return minScore;
-    }
-
-    getMaxScore(team) {
-        let maxScore = 0;
-        for (let ship of team.ships) {
-            if (ship.ship.score > maxScore) {
-                maxScore = ship.ship.score;
-            }
-        }
-        return maxScore;
     }
 
     getWinningTeam() {
@@ -426,6 +390,17 @@ const Game = class {
     }
 
     tickTimedEntities() {
+        let removedTimedObjs = [];
+        for (let timedObj of this.timedObjs) {
+            timedObj.tick();
+            if (!timedObj.running) {
+                removedTimedObjs.push(timedObj);
+            }
+        }
+        for (let timedObj of removedTimedObjs) {
+            Helper.deleteFromArray(this.timedObjs, timedObj);
+        }
+
         let removedTimedAsteroids = [];
         let removedAsteroids = [];
         for (let timedAsteroid of this.timedAsteroids) {
@@ -552,7 +527,6 @@ const Game = class {
                     if (!bothBasesSpawning) {
                         this.shipResetQueue.add(() => {
                             this.resetShip(ship);
-                            this.handleShipSpawnLerp(ship);
                         });
                     }
                 }
@@ -589,7 +563,7 @@ const Game = class {
                         ship.upgradeCodes.push(ship.ship.type);
                     }
                     
-                    this.handleShipScoreboard(ship);
+                    this.handleShipScoreboardTeamSelection(ship);
                     this.handleShipRadar(ship);
                 }
             }
@@ -640,29 +614,38 @@ const Game = class {
             game.removeObject();
         }
         if (game.step % Game.C.TICKS.BASE_MANAGER_MEDIUM == 0) {
+            let prevResettingAliens = this.resettingAliens;
             for (let team of this.teams) {
                 if (team.base) {
-                    let resetAllAliens = false;
+                    for (let safeAlien of team.base.safeAliens) {
+                        safeAlien.tick();
+                    }
                     for (let gameAlien of game.aliens) {
                         let safeAlien = this.findSafeAlien(gameAlien);
                         if (safeAlien) {
                             safeAlien.tick();
                         } else {
-                            resetAllAliens = true;
+                            this.resettingAliens = true;
                         }
                     }
 
-                    if (resetAllAliens) {
+                    if (this.resettingAliens) {
                         for (let gameAlien of game.aliens) {
                             gameAlien.set({ kill: true });
                         }
-                        for (let safeAlien of team.base.safeAliens) {
-                            safeAlien.reset();
-                        }
                     }
+                }
+            }
 
-                    for (let safeAlien of team.base.safeAliens) {
-                        safeAlien.tick();
+            if (!prevResettingAliens && this.resettingAliens) {
+                for (let team of this.teams) {
+                    if (team.base) {
+                        g.timeouts.push(new TimeoutCreator(() => {
+                            for (let safeAlien of team.base.safeAliens) {
+                                safeAlien.reset();
+                            }
+                            this.resettingAliens = false;
+                        }, Game.C.TICKS.BASE_MANAGER_SLOW).start());
                     }
                 }
             }
@@ -784,99 +767,145 @@ const Game = class {
         }
     }
 
-    handleShipScoreboard(ship) {
-        if (ship && ship.team) {
+    handleShipScoreboardTeamSelection(ship) {
+        let scoreboards = [];
+
+        for (let t = 0; t < this.teams.length; t++) {
+            let team = this.teams[t];
             let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
-            if (ship.scoreboardTeam) {
-                scoreboard.components[0].fill = ship.scoreboardTeam.hex + '20';
-                let orbitCenter = new Vector2(scoreboard.components[1].position[0] + scoreboard.components[1].position[2] / 2, scoreboard.components[1].position[1] + scoreboard.components[1].position[3] / 2);
-                let orbitRadius = scoreboard.components[1].position[2] / 2 - scoreboard.components[1].width / 2;
-                scoreboard.components[2].value = 'L' + ship.scoreboardTeam.base.baseLevel;
-                scoreboard.components[3].value = ship.scoreboardTeam.name;
-                scoreboard.components[4].value = (ship.scoreboardTeam.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ' + ship.scoreboardTeam.ships.length + '♟';
-                scoreboard.components[5].value = ship.scoreboardTeam.base.crystals + '/' + Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] + '💎';
-                scoreboard.components[7].fill = ship.scoreboardTeam.team == ship.team.team ? '#00ff00BF' : '#ff0000BF';
-                scoreboard.components[7].position[2] = ship.scoreboardTeam.base.crystals / Base.C.MAX_CRYSTALS[ship.scoreboardTeam.base.baseLevel - 1] * scoreboard.components[6].position[2];
-                for (let subBaseModule of ship.scoreboardTeam.base.subBaseModules) {
-                    let angleToBase = subBaseModule.pose.position.getAngleTo(ship.scoreboardTeam.base.pose.position);
-                    let baseW = 5;
-                    let baseH = 5;
-                    let basePosition = [
-                        orbitCenter.x - Math.cos(angleToBase) * orbitRadius - baseW / 2,
-                        orbitCenter.y + Math.sin(angleToBase) * orbitRadius - baseH / 2,
-                        baseW,
-                        baseH
-                    ];
+
+            scoreboard.components[0].fill = team.hex + '20';
+            let orbitCenter = new Vector2(scoreboard.components[1].position[0] + scoreboard.components[1].position[2] / 2, scoreboard.components[1].position[1] + scoreboard.components[1].position[3] / 2);
+            let orbitRadius = scoreboard.components[1].position[2] / 2 - scoreboard.components[1].width / 2;
+            scoreboard.components[2].value = 'L' + team.base.baseLevel;
+            scoreboard.components[3].value = team.name;
+            scoreboard.components[4].value = ship.team ? ((team.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ') : '' + team.ships.length + '♟';
+            scoreboard.components[5].value = team.base.crystals + '/' + Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] + '💎';
+            scoreboard.components[7].fill = ship.team ? (team.team == ship.team.team ? '#00ff00BF' : '#ff0000BF') : '#ffffffBF';
+            scoreboard.components[7].position[2] = team.base.crystals / Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] * scoreboard.components[6].position[2];
+            for (let subBaseModule of team.base.subBaseModules) {
+                let angleToBase = subBaseModule.pose.position.getAngleTo(team.base.pose.position);
+                let baseW = 5;
+                let baseH = 5;
+                let basePosition = [
+                    orbitCenter.x - Math.cos(angleToBase) * orbitRadius - baseW / 2,
+                    orbitCenter.y + Math.sin(angleToBase) * orbitRadius - baseH / 2,
+                    baseW,
+                    baseH
+                ];
+                scoreboard.components.push({
+                    type: 'round',
+                    position: basePosition,
+                    fill: subBaseModule.dead ? '#00000080' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1]),
+                });
+            }
+
+            let teamShips = [...team.ships];
+            teamShips.sort((a, b) => b.ship.score - a.ship.score);
+
+            for (let i = 0; i < teamShips.length; i++) {
+                let player = teamShips[i];
+                let height = 6.5;
+                let pos = [0, 30 + height * i, 100, height];
+                if (player.ship.id == ship.ship.id) {
                     scoreboard.components.push({
-                        type: 'round',
-                        position: basePosition,
-                        fill: subBaseModule.dead ? '#00000080' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[ship.scoreboardTeam.base.baseLevel - 1]),
-                        stroke: subBaseModule.dead ? '#ffffff80' : '#00000000',
-                        width: 2
+                        type: 'box',
+                        position: pos,
+                        fill: '#ffffff20'
                     });
                 }
-                
-                let teamShips = [...ship.scoreboardTeam.ships];
-                teamShips.sort((a, b) => b.ship.score - a.ship.score);
-
-                for (let i = 0; i < teamShips.length; i++) {
-                    let player = teamShips[i];
-                    let height = 6.5;
-                    let pos = [0, 30 + height * i, 100, height];
-                    if (player.ship.id == ship.ship.id) {
-                        scoreboard.components.push({
-                            type: 'box',
-                            position: pos,
-                            fill: '#ffffff20'
-                        });
-                    }
-                    scoreboard.components.push(
-                        {
-                            type: 'text',
-                            position: [pos[0] + 20,  pos[1], pos[2] - 10, pos[3]],
-                            value: '',
-                            color: '#ffffff',
-                            align: 'left'
-                        },
-                        {
-                            type: 'player',
-                            position: [pos[0] + 20,  pos[1], pos[2] - 10, pos[3]],
-                            id: player.ship.id,
-                            color: Helper.interpolateColor('#ff3636', '#ffffff', (player.ship.shield + player.ship.crystals) / (player.getMaxShield() + player.getMaxCrystals())),
-                            align: 'left'
-                        },
-                        {
-                            type: 'text',
-                            position: [pos[0] + 1, pos[1] + 1, pos[2] - 82, pos[3] - 2],
-                            value: 'L' + player.getLevel() + ' ' + player.getShipInfo().ABBREVIATION,
-                            color: Helper.interpolateColor('#ffffff', '#ffff00', player.getLevel() / 7),
-                            align: 'left'
-                        },
-                        {
-                            type: 'text',
-                            position: [pos[0], pos[1], pos[2] - 2.5, pos[3]],
-                            value: player.ship.score,
-                            color: Helper.interpolateColor('#ffffff', '#ffff00', (player.ship.score / (this.getMaxScore(ship.scoreboardTeam)) || 1)),
-                            align: 'right'
-                        },
-                    );
-                }
-            } else {
-                scoreboard.components = [
+                let shipInfo = player.getShipInfo();
+                scoreboard.components.push(
                     {
                         type: 'text',
-                        position: [5, 5, 90, 10],
-                        value: 'Scoreboard hidden. Press [TAB] to switch.',
-                        color: '#ffffff80',
-                    }
-                ]
+                        position: [pos[0] + 20,  pos[1] + 0.5, pos[2] - 55, pos[3] - 1],
+                        value: '',
+                        color: '#ffffff',
+                        align: 'left'
+                    },
+                    {
+                        type: 'player',
+                        position: [pos[0] + 22.5, pos[1] + 0.5, pos[2] - 60, pos[3] - 1],
+                        id: player.ship.id,
+                        color: Helper.interpolateColor('#ff3636', '#ffffff', (player.ship.shield + player.ship.crystals) / (player.getMaxShield() + player.getMaxCrystals())),
+                        align: 'left'
+                    },
+                    {
+                        type: 'text',
+                        position: [pos[0] + 2.5, pos[1] + 0.5, pos[2] - 82.5, pos[3] - 1],
+                        value: 'T' + player.getLevel() + ' ' + (shipInfo ? shipInfo.ABBREVIATION : ''),
+                        color: Helper.interpolateColor('#ffffff', '#ffff00', player.getLevel() / 7),
+                        align: 'left'
+                    },
+                    {
+                        type: 'text',
+                        position: [pos[0] + 85, pos[1] + 0.5, pos[2] - 85 - 2.5, pos[3] - 1],
+                        value: Helper.getCounterValue(player.ship.score),
+                        color: Helper.interpolateColor('#ffffff', '#ffff00', (player.ship.score / (team.getMaxScore()) || 1)),
+                        align: 'right'
+                    },
+                );
             }
-            ship.sendUI(scoreboard);
+
+            scoreboards.push(scoreboard);
+        }
+
+        let selectedScoreboard = null;
+        if (ship.scoreboardTeam) {
+            selectedScoreboard = scoreboards[ship.scoreboardTeam.team];
+        } else {
+            selectedScoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
+            selectedScoreboard.components = [
+                {
+                    type: 'text',
+                    position: [5, 5, 90, 10],
+                    value: 'Scoreboard hidden. Press [TAB] to switch.',
+                    color: '#ffffff80',
+                }
+            ];
+        }
+
+        
+        if (ship && ship.team) {
+            ship.sendUI(selectedScoreboard);
+        }
+
+        if (ship.selectingTeam) {
+            for (let i = 0; i < this.teams.length; i++) {
+                let team = this.teams[i];
+                let teamSelection = Helper.deepCopy(UIComponent.C.UIS.TEAM_SELECTION);
+                teamSelection.id += '-' + i;
+                // teamSelection.shortcut = `${i + 1}`; // You cannot upgrade using numbers anymore then
+                teamSelection.position = Helper.getGridUIPosition(21, 25, 2.5, 0, i, 0, this.teams.length, 1);
+                teamSelection.components = Helper.deepCopy(scoreboards[i]).components;
+                teamSelection.components[0].fill = this.teams[i].hex + '40';
+                teamSelection.components[0].stroke = this.teams[i].hex + '80';
+                teamSelection.components[0].width = 4;
+                
+                if (team.getBalancerMetric() > this.getOppTeam(team).getBalancerMetric()) {
+                    teamSelection.clickable = false;
+                    teamSelection.components.push(
+                        {
+                            type: 'box',
+                            position: [0, 0, 100, 100],
+                            fill: '#00000080'
+                        },
+                        {
+                            type: 'text',
+                            position: [10, 70, 80, 20],
+                            value: '🔒',
+                            color: '#ffffff',
+                        }
+                    );
+                }
+
+                ship.sendUI(teamSelection);
+            }
         }
     }
 
     handleShipRadar(ship) {
-        if (ship && ship.team) {
+        if (ship) {
             let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
             for (let team of this.teams) {
                 if (team.base && !team.base.dead && team.base.pose) {
@@ -897,48 +926,50 @@ const Game = class {
                     );
 
                     let shipPose = ship.getPose();
-                    let offEdge = (Game.C.OPTIONS.MAP_SIZE + 40) * Game.C.OPTIONS.RADAR_ZOOM;
-                    let offEdgeScaled = (Game.C.OPTIONS.MAP_SIZE + 40 * Base.C.SCALES[team.base.baseLevel - 1]) * Game.C.OPTIONS.RADAR_ZOOM;
-                    let flipX = false;
-                    let xDiff = Math.abs(shipPose.position.x - team.base.pose.position.x);
-                    let xDiffFlipped = Math.abs(xDiff - Game.C.OPTIONS.MAP_SIZE * 10);
-                    if (xDiffFlipped < xDiff) {
-                        flipX = true;
-                    }
-                    let flipY = false;
-                    let yDiff = Math.abs(shipPose.position.y - team.base.pose.position.y);
-                    let yDiffFlipped = Math.abs(yDiff - Game.C.OPTIONS.MAP_SIZE * 10);
-                    if (yDiffFlipped < yDiff) {
-                        flipY = true;
-                    }
-                    if (shipPose && ((xDiff >= offEdgeScaled && xDiffFlipped >= offEdgeScaled) || (yDiff >= offEdgeScaled && yDiffFlipped >= offEdgeScaled))) {
-                        let radarRectangle = new Rectangle(shipPose.position, new Vector2(1, 1).multiply(offEdge * 2 * 0.7));
-                        let edgePoint = radarRectangle.mapPointToEdge(team.base.pose.position);
-                        if (flipX) {
-                            edgePoint.x = shipPose.position.x - (edgePoint.x - shipPose.position.x);
+                    if (shipPose) {
+                        let offEdge = (Game.C.OPTIONS.MAP_SIZE + 40) * Game.C.OPTIONS.RADAR_ZOOM;
+                        let offEdgeScaled = (Game.C.OPTIONS.MAP_SIZE + 40 * Base.C.SCALES[team.base.baseLevel - 1]) * Game.C.OPTIONS.RADAR_ZOOM;
+                        let flipX = false;
+                        let xDiff = Math.abs(shipPose.position.x - team.base.pose.position.x);
+                        let xDiffFlipped = Math.abs(xDiff - Game.C.OPTIONS.MAP_SIZE * 10);
+                        if (xDiffFlipped < xDiff) {
+                            flipX = true;
                         }
-                        if (edgePoint.x >= Game.C.OPTIONS.MAP_SIZE * 5) {
-                            edgePoint.x -= Game.C.OPTIONS.MAP_SIZE * 5;
-                        } else if (edgePoint.x <= Game.C.OPTIONS.MAP_SIZE * -5) {
-                            edgePoint.x -= Game.C.OPTIONS.MAP_SIZE * -5;
+                        let flipY = false;
+                        let yDiff = Math.abs(shipPose.position.y - team.base.pose.position.y);
+                        let yDiffFlipped = Math.abs(yDiff - Game.C.OPTIONS.MAP_SIZE * 10);
+                        if (yDiffFlipped < yDiff) {
+                            flipY = true;
                         }
-                        if (flipY) {
-                            edgePoint.y = shipPose.position.y - (edgePoint.y - shipPose.position.y);
+                        if ((xDiff >= offEdgeScaled && xDiffFlipped >= offEdgeScaled) || (yDiff >= offEdgeScaled && yDiffFlipped >= offEdgeScaled)) {
+                            let radarRectangle = new Rectangle(shipPose.position, new Vector2(1, 1).multiply(offEdge * 2 * 0.7));
+                            let edgePoint = radarRectangle.mapPointToEdge(team.base.pose.position);
+                            if (flipX) {
+                                edgePoint.x = shipPose.position.x - (edgePoint.x - shipPose.position.x);
+                            }
+                            if (edgePoint.x >= Game.C.OPTIONS.MAP_SIZE * 5) {
+                                edgePoint.x -= Game.C.OPTIONS.MAP_SIZE * 5;
+                            } else if (edgePoint.x <= Game.C.OPTIONS.MAP_SIZE * -5) {
+                                edgePoint.x -= Game.C.OPTIONS.MAP_SIZE * -5;
+                            }
+                            if (flipY) {
+                                edgePoint.y = shipPose.position.y - (edgePoint.y - shipPose.position.y);
+                            }
+                            if (edgePoint.y >= Game.C.OPTIONS.MAP_SIZE * 5) {
+                                edgePoint.y -= Game.C.OPTIONS.MAP_SIZE * 5;
+                            } else if (edgePoint.y <= Game.C.OPTIONS.MAP_SIZE * -5) {
+                                edgePoint.y -= Game.C.OPTIONS.MAP_SIZE * -5;
+                            }
+                            radarBackground.components.push(
+                                {
+                                    type: 'text',
+                                    position: Helper.getRadarSpotPosition(edgePoint, new Vector2(1, 1).multiply(30)),
+                                    value: '⬟',
+                                    color: team.hex,
+                                    align: 'center'
+                                },
+                            );
                         }
-                        if (edgePoint.y >= Game.C.OPTIONS.MAP_SIZE * 5) {
-                            edgePoint.y -= Game.C.OPTIONS.MAP_SIZE * 5;
-                        } else if (edgePoint.y <= Game.C.OPTIONS.MAP_SIZE * -5) {
-                            edgePoint.y -= Game.C.OPTIONS.MAP_SIZE * -5;
-                        }
-                        radarBackground.components.push(
-                            {
-                                type: 'text',
-                                position: Helper.getRadarSpotPosition(edgePoint, new Vector2(1, 1).multiply(30)),
-                                value: '⬟',
-                                color: team.hex,
-                                align: 'center'
-                            },
-                        );
                     }
 
                     for (let subBaseModule of team.base.subBaseModules) {
@@ -1186,10 +1217,18 @@ const Game = class {
         }
     }
 
-    onShipDestroyed(gameShip) {
+    onShipDestroyed(gameShip, gameShipKiller) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
             ship.ship.alive = false;
+            ship.deaths++;
+            ship.setScore(ship.ship.score / 2);
+            if (gameShipKiller) {
+                let shipKiller = this.findShip(gameShipKiller);
+                if (shipKiller != null) {
+                    shipKiller.kills++;
+                }
+            }
         }
     }
 
@@ -1198,6 +1237,26 @@ const Game = class {
         if (ship != null) {
             if (ship.hiddenUIIDs.has(id)) {
                 return;
+            }
+            if (id.includes(UIComponent.C.UIS.TEAM_SELECTION.id)) {
+                if (ship.selectingTeam) {
+                    let teamIndex = parseInt(id.split('-')[1]);
+                    if (teamIndex >= 0 && teamIndex < this.teams.length) {
+                        let selectedTeam = this.teams[teamIndex];
+                        let selectedOppTeam = this.getOppTeam(selectedTeam);
+                        if (selectedTeam.getBalancerMetric() <= selectedOppTeam.getBalancerMetric()) {
+                            if (ship.team) {
+                                ship.team.removeShip(ship);
+                            }
+                            ship.setTeam(selectedTeam);
+                            ship.setType(101);
+                            this.handleShipSpawnLerp(ship);
+
+                            ship.selectingTeam = false;
+                            ship.hideUIsIncludingID(UIComponent.C.UIS.TEAM_SELECTION);
+                        }
+                    }
+                }
             }
             if (id == UIComponent.C.UIS.SCOREBOARD_SWITCH.id) {
                 if (ship.scoreboardTeam) {
@@ -1209,7 +1268,7 @@ const Game = class {
                 } else {
                     ship.scoreboardTeam = ship.team;
                 }
-                this.handleShipScoreboard(ship);
+                this.handleShipScoreboardTeamSelection(ship);
             }
             if (id == UIComponent.C.UIS.WEAPONS_STORE_DONATE.id) {
                 if (ship.inDepot) {
@@ -1363,6 +1422,63 @@ const Team = class {
         for (let s of removeShips) {
             Helper.deleteFromArray(this.ships, s);
         }
+    }
+
+    getMinScore() {
+        let minScore = Infinity;
+        for (let ship of this.ships) {
+            if (ship.ship.score < minScore) {
+                minScore = ship.ship.score;
+            }
+        }
+        return minScore;
+    }
+
+    getMaxScore() {
+        let maxScore = 0;
+        for (let ship of this.ships) {
+            if (ship.ship.score > maxScore) {
+                maxScore = ship.ship.score;
+            }
+        }
+        return maxScore;
+    }
+
+    getKills() {
+        let kills = 0;
+        for (let ship of this.ships) {
+            kills += ship.kills;
+        }
+        return kills;
+    }
+
+    getDeaths() {
+        let deaths = 0;
+        for (let ship of this.ships) {
+            deaths += ship.deaths;
+        }
+        return deaths;
+    }
+
+    getKD() {
+        let kills = this.getKills();
+        let deaths = this.getDeaths();
+        if (deaths == 0) {
+            return kills;
+        }
+        return kills / deaths;
+    }
+
+    getTotalLevel() {
+        let totalLevel = 0;
+        for (let ship of this.ships) {
+            totalLevel += ship.getLevel();
+        }
+        return totalLevel;
+    }
+
+    getBalancerMetric() {
+        return this.ships.length + this.getKD() * 0.75 + this.getTotalLevel() * 0.5;
     }
 }
 
@@ -1803,6 +1919,9 @@ const Ship = class {
     team = null;
     ship = null;
 
+    kills = 0;
+    deaths = 0;
+
     timeouts = [];
     conditions = [];
     lerp = null;
@@ -1818,6 +1937,7 @@ const Ship = class {
     credits = 0;
     selectedItems = [];
 
+    selectingTeam = false;
     scoreboardTeam = null;
 
     upgradeCodes = [];
@@ -2565,10 +2685,11 @@ const BaseModule = class {
         return this;
     }
 
-    updateObjs() {
+    updateObjs(preventDefaultFor = []) {
         if (this.ready) {
             for (let obj of this.objs) {
                 if (obj) {
+                    if (preventDefaultFor.includes(obj)) continue;
                     obj.setPoseTransformed(this.pose, true);
                     obj.update();
                 }
@@ -2964,7 +3085,7 @@ const TurretBaseModule = class extends BaseModule {
     type = BaseModule.C.TYPES.TURRET;
     isUpper = false;
     isShooting = false;
-    lasers = [];
+    turretRange = null;
     lasers = [];
 
     shotTime = 0;
@@ -3011,17 +3132,17 @@ const TurretBaseModule = class extends BaseModule {
         LASERS: [
             {
                 DAMAGE: 2.5,
-                RANGE: 30,
+                RANGE: 45,
                 SHOOT_DELAY: 20
             },
             {
                 DAMAGE: 5,
-                RANGE: 40,
+                RANGE: 50,
                 SHOOT_DELAY: 20
             },
             {
                 DAMAGE: 7.5,
-                RANGE: 50,
+                RANGE: 55,
                 SHOOT_DELAY: 20
             },
             {
@@ -3048,6 +3169,7 @@ const TurretBaseModule = class extends BaseModule {
     createObjs() {
         super.createObjs();
         this.createTurret();
+        this.createTurretRange();
     }
 
     createTurret() {
@@ -3055,6 +3177,16 @@ const TurretBaseModule = class extends BaseModule {
         let turretObj = new Obj(turret.id, turret.type, turret.position, turret.rotation, turret.scale, true, true, this.base.team.hex);
         turretObj.setPoseTransformed(this.pose, true);
         this.objs.push(turretObj.update());
+        return this;
+    }
+
+    createTurretRange() {
+        let turretRange = Helper.deepCopy(Obj.C.OBJS.TURRET_RANGE);
+        let turretRangeObj = new Obj(turretRange.id, turretRange.type, turretRange.position, turretRange.rotation, turretRange.scale, true, true, this.base.team.hex);
+        let laserOption = TurretBaseModule.C.LASERS[this.base.baseLevel - 1];
+        turretRangeObj.setPoseTransformed(new Pose(this.pose.position, 0, new Vector3(laserOption.RANGE * 2, laserOption.RANGE * 2, 1)), true);
+        this.objs.push(turretRangeObj.update());
+        this.turretRange = turretRangeObj;
         return this;
     }
 
@@ -3070,6 +3202,16 @@ const TurretBaseModule = class extends BaseModule {
         }
         for (let laser of removedLasers) {
             Helper.deleteFromArray(this.lasers, laser);
+        }
+        return this;
+    }
+
+    updateObjs() {
+        super.updateObjs([this.turretRange]);
+        if (this.turretRange) {
+            let laserOption = TurretBaseModule.C.LASERS[this.base.baseLevel - 1];
+            this.turretRange.setPoseTransformed(new Pose(this.pose.position, 0, new Vector3(laserOption.RANGE * 2, laserOption.RANGE * 2, 1)), true);
+            this.turretRange.update();
         }
         return this;
     }
@@ -3179,7 +3321,8 @@ const Laser = class {
                 Helper.adjustBrightness(this.hex, 0.5)
             ),
             this.existenceTime
-        ).spawn()
+        ).spawn();
+        g.timedObjs.push(this.laser);
 
         this.running = true;
         return this;
@@ -3187,9 +3330,7 @@ const Laser = class {
 
     tick() {
         if (this.laser) {
-            if (this.laser.running) {
-                this.laser.tick();
-            } else {
+            if (!this.laser.running) {
                 this.destroySelf();
             }
         }
@@ -3299,7 +3440,7 @@ const SafeAlien = class {
 
     static C = {
         TICKS: {
-            SPAWN_DELAY: 5,
+            SPAWN_DELAY: 10,
             SHIELD_RESET_TIME: 60 * 5
         },
         ALL: {
@@ -3386,6 +3527,12 @@ const SafeAlien = class {
                 this.lastSetShield = game.step;
                 this.timeouts.push(new TimeoutCreator(() => {
                     this.alien.setShield(this.baseLevelFields.SHIELD);
+                    this.alien.setPosition(this.pose.position);
+                    this.alien.setVelocity(new Vector2(SafeAlien.C.ALL.VELOCITY.x, SafeAlien.C.ALL.VELOCITY.y));
+                    this.alien.setRegen(SafeAlien.C.ALL.REGEN);
+                    this.alien.setDamage(SafeAlien.C.ALL.DAMAGE);
+                    this.alien.setLaserSpeed(SafeAlien.C.ALL.LASER_SPEED);
+                    this.alien.setRate(SafeAlien.C.ALL.RATE);
                 }, SafeAlien.C.TICKS.SPAWN_DELAY).start());
             }
             this.alien.setPosition(this.pose.position);
@@ -3978,7 +4125,7 @@ const Obj = class {
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/capture-the-flag-revamp/ctf-v3.0/laser.obj',
                     transparent: false
                 },
-                EXISTENCE_TIME: 7,
+                EXISTENCE_TIME: 5,
             },
             BASE_GLOW: {
                 id: 'base_glow',
@@ -4048,7 +4195,30 @@ const Obj = class {
                     obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/teams-2.0/depot_glow.png',
                 }
-            }
+            },
+            TURRET_RANGE: {
+                id: 'turret_range',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1.5,
+                    y: 1.5,
+                    z: 1.5
+                },
+                type: {
+                    id: 'turret_range',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/teams-2.0/turret_range.png',
+                }
+            },
         }
     }
 
@@ -4358,7 +4528,19 @@ const UIComponent = class {
                     {
                         type: 'box',
                         position: [30, 20, 65, 2.5],
-                    }
+                    },
+                    {
+                        type: 'box',
+                        position: [21, 27.5, 0, 70],
+                        stroke: '#ffffff40',
+                        width: 1,
+                    },
+                    {
+                        type: 'box',
+                        position: [84, 27.5, 0, 70],
+                        stroke: '#ffffff40',
+                        width: 1,
+                    },
                 ],
             },
             SCOREBOARD_SWITCH: {
@@ -4459,6 +4641,12 @@ const UIComponent = class {
                         color: '#ffffffaa'
                     }
                 ]
+            },
+            TEAM_SELECTION: {
+                id: "team_selection",
+                visible: true,
+                clickable: true,
+                components: []
             },
             WEAPONS_STORE: {
                 id: "weapons_store",
@@ -5202,6 +5390,16 @@ const StaggeredQueueCreator = class {
 }
 
 const Helper = class {
+    static getCounterValue(counter) {
+        if (counter < 1000) {
+            return counter.toString();
+        } else if (counter < 1000000) {
+            return (counter / 1000).toFixed(1) + 'K';
+        } else {
+            return (counter / 1000000).toFixed(1) + 'M';
+        }
+    }
+
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = this.getRandomInt(0, i);
@@ -5622,7 +5820,7 @@ this.event = function (event) {
                 echo(game.custom.showIDs());
                 break;
             case 'ship_destroyed':
-                g.onShipDestroyed(gameShip);
+                g.onShipDestroyed(gameShip, event.killer);
                 echo(game.custom.showIDs());
                 break;
             case 'ui_component_clicked':
