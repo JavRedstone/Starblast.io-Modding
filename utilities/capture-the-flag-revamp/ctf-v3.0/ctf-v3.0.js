@@ -465,26 +465,6 @@ const Game = class {
         }
     }
 
-    getMinScore(team) {
-        let minScore = Infinity;
-        for (let ship of team.ships) {
-            if (ship.score < minScore) {
-                minScore = ship.score;
-            }
-        }
-        return minScore;
-    }
-
-    getMaxScore(team) {
-        let maxScore = 0;
-        for (let ship of team.ships) {
-            if (ship.score > maxScore) {
-                maxScore = ship.score;
-            }
-        }
-        return maxScore;
-    }
-
     getWinningTeam() {
         let team0 = this.teams[0];
         let team1 = this.teams[1];
@@ -562,7 +542,7 @@ const Game = class {
                         let diff = this.teams[0].ships.length - this.teams[1].ships.length;
                         if (this.teams.length == 2 && Math.abs(diff) >= Game.C.TEAM_PLAYER_DEFICIT) {
                             let t = diff > 0 ? 0 : 1;
-                            let minScore = this.getMinScore(this.teams[t]);
+                            let minScore = this.teams[t].getMinScore();
                             let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
                             if (randShip && !this.changeTeamShip) {
                                 this.changeTeamShip = randShip;
@@ -1674,16 +1654,22 @@ const Game = class {
                         this.spawnShipBeacon(this.map.spawns[ship.team.team], ship.team.hex);
                     }
 
-                    let chosenType = this.shipGroup.chosenTypes[parseInt(id.split('-')[1])];
-                    ship.setType(chosenType);
-                    if (ship.chosenType == 0) {
-                        ship.fillUp();
-                        ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
+                    let chooseShipIdx = parseInt(id.split('-')[1]);
+                    if (ship.team && !ship.team.disabledIdxs.includes(chooseShipIdx)) {
+                        ship.team.setDisabledIdxs(this.shipGroup);
+
+                        let chosenType = this.shipGroup.chosenTypes[chooseShipIdx];
+                        
+                        ship.setType(chosenType);
+                        if (ship.chosenType == 0) {
+                            ship.fillUp();
+                            ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
+                        }
+                        ship.chosenType = chosenType;
+                        ship.setMaxStats();
+                        ship.setCollider(true);
+                        ship.chooseShipTime = -1;
                     }
-                    ship.chosenType = chosenType;
-                    ship.setMaxStats();
-                    ship.setCollider(true);
-                    ship.chooseShipTime = -1;
                 }
             }
             if (id == UIComponent.C.UIS.CHANGE_SHIP.id) {
@@ -1814,6 +1800,26 @@ const Team = class {
         for (let s of removeShips) {
             Helper.deleteFromArray(this.ships, s);
         }
+    }
+
+    getMinScore() {
+        let minScore = Infinity;
+        for (let ship of this.ships) {
+            if (ship.score < minScore) {
+                minScore = ship.score;
+            }
+        }
+        return minScore;
+    }
+
+    getMaxScore() {
+        let maxScore = 0;
+        for (let ship of this.ships) {
+            if (ship.score > maxScore) {
+                maxScore = ship.score;
+            }
+        }
+        return maxScore;
     }
 }
 
