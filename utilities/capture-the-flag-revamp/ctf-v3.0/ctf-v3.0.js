@@ -556,32 +556,34 @@ const Game = class {
                                 this.changeTeamShip.changeTeamTime = -1;
                                 this.changeTeamShip = null;
                             }
-                            if (this.changeTeamShip.changeTeamTime != -1 && game.step - this.changeTeamShip.changeTeamTime < Ship.C.SWITCH_SHIP_TIME) {
-                                let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                let oppTeam = this.getOppTeam(this.changeTeamShip.team);
-                                bottomMessage.components[1].value = `You will be switched to the ${oppTeam.color.toUpperCase()} team in ${Helper.formatTime(Ship.C.SWITCH_SHIP_TIME - (game.step - this.changeTeamShip.changeTeamTime))}.`;
-                                bottomMessage.components[0].fill = '#8B8B0080';
-                                this.changeTeamShip.sendUI(bottomMessage);
-                            } else {
-                                let team = this.changeTeamShip.team;
-                                let oppTeam = this.getOppTeam(team);
-                                if (team.flag && team.flagHolder && team.flagHolder.id == this.changeTeamShip.ship.id) {
-                                    team.flagHolder = null;
-                                    oppTeam.flag.reset();
-                                }
-                                this.shipResetQueue.add(() => {
-                                    this.resetShip(this.changeTeamShip, true);
-
-                                    this.changeTeamShip.chosenType = 0;
-                                    this.changeTeamShip.chooseShipTime = game.step;
+                            if (this.changeTeamShip) {
+                                if (this.changeTeamShip.changeTeamTime != -1 && game.step - this.changeTeamShip.changeTeamTime < Ship.C.SWITCH_SHIP_TIME) {
                                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                                    bottomMessage.components[1].value = `You have been moved to the ${oppTeam.color.toUpperCase()} team due to team player imbalance.`;
-                                    bottomMessage.components[0].fill = '#8B008B80';
-                                    this.changeTeamShip.sendTimedUI(bottomMessage);
+                                    let oppTeam = this.getOppTeam(this.changeTeamShip.team);
+                                    bottomMessage.components[1].value = `You will be switched to the ${oppTeam.color.toUpperCase()} team in ${Helper.formatTime(Ship.C.SWITCH_SHIP_TIME - (game.step - this.changeTeamShip.changeTeamTime))}.`;
+                                    bottomMessage.components[0].fill = '#8B8B0080';
+                                    this.changeTeamShip.sendUI(bottomMessage);
+                                } else {
+                                    let team = this.changeTeamShip.team;
+                                    let oppTeam = this.getOppTeam(team);
+                                    if (team.flag && team.flagHolder && team.flagHolder.id == this.changeTeamShip.ship.id) {
+                                        team.flagHolder = null;
+                                        oppTeam.flag.reset();
+                                    }
+                                    this.shipResetQueue.add(() => {
+                                        this.resetShip(this.changeTeamShip, true);
 
-                                    this.changeTeamShip.changeTeamTime = -1;
-                                    this.changeTeamShip = null;
-                                });
+                                        this.changeTeamShip.chosenType = 0;
+                                        this.changeTeamShip.chooseShipTime = game.step;
+                                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                                        bottomMessage.components[1].value = `You have been moved to the ${oppTeam.color.toUpperCase()} team due to team player imbalance.`;
+                                        bottomMessage.components[0].fill = '#8B008B80';
+                                        this.changeTeamShip.sendTimedUI(bottomMessage);
+
+                                        this.changeTeamShip.changeTeamTime = -1;
+                                        this.changeTeamShip = null;
+                                    });
+                                }
                             }
                         }
                     }
