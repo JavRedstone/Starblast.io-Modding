@@ -5402,7 +5402,7 @@ const StaggeredQueueCreator = class {
 const Helper = class {
     static getCounterValue(counter) {
         if (counter < 1000) {
-            return counter.toString();
+            return Math.round(counter).toString();
         } else if (counter < 1000000) {
             return (counter / 1000).toFixed(1) + 'K';
         } else {
