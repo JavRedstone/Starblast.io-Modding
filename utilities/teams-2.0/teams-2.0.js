@@ -532,6 +532,14 @@ const Game = class {
                 }
 
                 if (ship && !ship.isResetting) {
+                    if (ship.selectingTeam) {
+                        ship.setType(102);
+                        ship.setCrystals(0);
+                        ship.setPosition(new Vector2());
+                        ship.setIdle(true);
+                        ship.setCollider(false);
+                    }
+
                     this.handleShipDepotEnterLerp(ship);
 
                     this.handleWeaponsStore(ship);
@@ -1250,6 +1258,8 @@ const Game = class {
                             }
                             ship.setTeam(selectedTeam);
                             ship.setType(101);
+                            ship.setIdle(false);
+                            ship.setCollider(true);
                             this.handleShipSpawnLerp(ship);
 
                             ship.selectingTeam = false;
@@ -3490,7 +3500,7 @@ const SafeAlien = class {
                 SCORE: 75,
                 CRYSTALS_BASE_REMOVED: 40,
                 CODE: 19,
-                LEVEL: 2
+                LEVEL: 1
             }
             
         ]
