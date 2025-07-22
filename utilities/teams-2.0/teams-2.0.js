@@ -2867,7 +2867,7 @@ const SubBaseModule = class extends ContainerBaseModule {
             1500,
             3000,
             5000,
-            7500
+            6000
         ]
     }
 
