@@ -1,0 +1,68 @@
+return model =
+  name: 'Door Frame'
+  designer: 'ÆTHER'
+  level: 1
+  model: 1
+  size: 1
+  zoom: 1
+  specs:  
+    shield:
+      capacity: [150,150]
+      reload: [5,5]
+    generator:
+      capacity: [50,50]
+      reload: [50,50]
+    ship:
+      mass: 225
+      speed: [50,50]
+      rotation: [50,50]
+      acceleration: [50,50]
+  bodies:
+    Frame:
+      section_segments: [45,135,225,315]
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0,0,0,0,0,0,0]
+        y: [0,-20,-20,-10,10,20,20,0]
+        z: [0,0,0,0,0,0,0,0]
+      width: [240,235,275,275,275,275,235,240]
+      height: [240,235,275,275,275,275,235,240]
+      texture: [17,2,3,4,3,2,3]
+      propeller: 0
+      vertical: 0
+      angle: 0
+    Base_triangle:
+      section_segments: [45,135,225]
+      offset:
+        x: 0
+        y: -70
+        z: -180
+      position:
+        x: [0,0,0,0]
+        y: [-195,-195,195,195]
+        z: [0,0,0,0]
+      width: [0,75,75,0]
+      height: [0,20,20,0]
+      texture: [3]
+      propeller: 0
+      vertical: 0
+      angle: 90
+    WHATTWHATHWATHAHTHATHWHAHT:
+      section_segments: [45,135,225]
+      offset:
+        x: 0
+        y: 70
+        z: -180
+      position:
+        x: [0,0,0,0]
+        y: [-195,-195,195,195]
+        z: [0,0,0,0]
+      width: [0,75,75,0]
+      height: [0,20,20,0]
+      texture: [2]
+      propeller: 0
+      vertical: 0
+      angle: -90
