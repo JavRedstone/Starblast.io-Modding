@@ -30,39 +30,7 @@ return model =
         z: [0,0,0,0,0,0,0,0]
       width: [240,235,275,275,275,275,235,240]
       height: [240,235,275,275,275,275,235,240]
-      texture: [17,2,3,4,3,2,3]
+      texture: [11,2,3,17,3,2,11]
       propeller: 0
       vertical: 0
       angle: 0
-    Base_triangle:
-      section_segments: [45,135,225]
-      offset:
-        x: 0
-        y: -70
-        z: -180
-      position:
-        x: [0,0,0,0]
-        y: [-195,-195,195,195]
-        z: [0,0,0,0]
-      width: [0,75,75,0]
-      height: [0,20,20,0]
-      texture: [3]
-      propeller: 0
-      vertical: 0
-      angle: 90
-    WHATTWHATHWATHAHTHATHWHAHT:
-      section_segments: [45,135,225]
-      offset:
-        x: 0
-        y: 70
-        z: -180
-      position:
-        x: [0,0,0,0]
-        y: [-195,-195,195,195]
-        z: [0,0,0,0]
-      width: [0,75,75,0]
-      height: [0,20,20,0]
-      texture: [2]
-      propeller: 0
-      vertical: 0
-      angle: -90
