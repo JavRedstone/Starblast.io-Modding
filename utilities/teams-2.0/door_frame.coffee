@@ -34,3 +34,35 @@ return model =
       propeller: 0
       vertical: 0
       angle: 0
+    base_triangle:
+      section_segments: [45,135,225]
+      offset:
+        x: 0
+        y: -35
+        z: -180
+      position:
+        x: [0,0,0,0]
+        y: [-195,-195,195,195]
+        z: [0,0,0,0]
+      width: [0,25,25,0]
+      height: [0,20,20,0]
+      texture: [12.6]
+      propeller: 0
+      vertical: 0
+      angle: 90
+    base_triangle_2:
+      section_segments: [45,135,225]
+      offset:
+        x: 0
+        y: 35
+        z: -180
+      position:
+        x: [0,0,0,0]
+        y: [-195,-195,195,195]
+        z: [0,0,0,0]
+      width: [0,25,25,0]
+      height: [0,20,20,0]
+      texture: [12.6]
+      propeller: 0
+      vertical: 0
+      angle: -90
