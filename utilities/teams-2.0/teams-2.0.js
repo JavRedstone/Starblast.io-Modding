@@ -1248,6 +1248,11 @@ const Game = class {
                         respulseFinalPose.position = respulseFinalPose.position.add(new Vector2(DoorBaseModule.C.REPULSE_FINAL_OFFSET.x, DoorBaseModule.C.REPULSE_FINAL_OFFSET.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)).rotateBy(doorModule.pose.rotation));
                         respulseFinalPose.rotation += Math.PI;
                         ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.REPULSE_DOOR.NAME, respulseFinalPose, ShipLerp.C.TYPES.REPULSE_DOOR.BLEND_FACTOR, doorModule, true, 0, false);
+                        
+                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                        bottomMessage.components[0].fill = '#ff000080';
+                        bottomMessage.components[1].value = 'Base gates are currently closed! Attack enemies while waiting for it to open.';
+                        ship.sendTimedUI(bottomMessage);
                     }
                 }
             }
@@ -2482,7 +2487,7 @@ const Base = class {
     safeAliens = [];
 
     crystals = 0;
-    baseLevel = 2;
+    baseLevel = 1;
     dead = false;
     reachedMaxLevel = false;
     
@@ -2502,10 +2507,10 @@ const Base = class {
             4
         ],
         MAX_CRYSTALS: [
-            720, // 720
-            1440, // 1440
-            2880, // 2880
-            5760  // 5760
+            720,
+            1440,
+            2880,
+            5760
         ],
         RADII: [
             30,
@@ -2951,7 +2956,7 @@ const SubBaseModule = class extends ContainerBaseModule {
     static C = {
         MAX_HEALTH: [
             1500,
-            30,
+            3000,
             5000,
             6000
         ],
@@ -3466,8 +3471,11 @@ const DoorBaseModule = class extends BaseModule {
             if (this.lastOpenedTime == -1 || game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION + DoorBaseModule.C.CLOSED_DURATION) {
                 this.doorOpened = true;
                 this.lastOpenedTime = game.step;
+
+                g.sendNotifications('Base Gates Opened', `Your base gates are now open! You can now enter the base.`, this.base.team, this.base.team);
             } else if (game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION) {
                 this.doorOpened = false;
+                g.sendNotifications('Base Gates Closed', `Your base gates are now closed! Attack your enemies while waiting for it to open.`, this.base.team, this.base.team);
             }
         }
         if (this.door) {
