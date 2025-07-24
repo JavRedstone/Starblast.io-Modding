@@ -39,86 +39,86 @@ const Game = class {
             ROOT_MODE: '',
 
             MAP_SIZE: 80,
-            MAP: "5 7                        9                         8597 9 3 5                 \n"+
-                " 9 3                    9 3 5                     8 9849 3 5 7                  \n"+
-                "3 5                    3 6 8 9                   9 4 6385 7 9                   \n"+
-                " 8 9                  6 8 9 3                   4 6 8698 9                      \n"+
-                "9 3 5                  9 4 6 85              4 6 9 9849 3                       \n"+
-                " 6 8                  4 6 8                   9 2 4  4 6                        \n"+
-                "8 9                  6 8 9                          6 8                         \n"+
-                " 4                    9 4                                                      9\n"+
-                "6                    4 6                                                      2 \n"+
-                "                    7 9                                                    2 5 7\n"+
-                "                     2                                                    5 7 9 \n"+
-                "                    5                                                    7 9 3 5\n"+
-                "                                                                        9 3 5 7 \n"+
-                "                                                                         5 7 9 3\n"+
-                "                                                                        8 9 3 5 \n"+
-                "                                                                       9 3 5 8 9\n"+
-                "                                                                        6 8 963 \n"+
-                "                                                                       8 9 386 8\n"+
-                "          4                                                           9 4 698 9 \n"+
-                "         6 9                                                           6284963 6\n"+
-                "        9 2                                                           8497496 8 \n"+
-                "         4                              4                              4 6 8 9 4\n"+
-                "        7 9                            7                              6 9 9 4 6 \n"+
-                "         2                            9                                2 4 6 8  \n"+
-                "        5                                                               7 9 2   \n"+
-                "       7                                                                 2      \n"+
-                "        3                                                               5       \n"+
-                "       5                                                                        \n"+
-                "      8                                                                         \n"+
-                "       3                            9                                           \n"+
-                "      6                              5                                          \n"+
-                "  9  8                              8                                           \n"+
-                " 2    4                            9 3                                          \n"+
-                "4 7  6                              6                                           \n"+
-                " 9  8 9                            8                                            \n"+
-                "2 5  4                            9 4                     7                     \n"+
-                " 7  6                              6                     9                      \n"+
-                "9 29                              9 9                   2 5                     \n"+
-                " 5                                 4                     7                      \n"+
-                "7 9                               6                     9                       \n"+
-                " 3                        5      9 2                   3 5                      \n"+
-                "5 7                      8        4                     7                       \n"+
-                "49 3                    9 3      7              6      9                        \n"+
-                "3 5                      6      9              9      3 5                       \n"+
-                "98 9                    8                     2        8                        \n"+
-                "9 3                    9 4                   4 7      9                         \n"+
-                " 6 8                    6                     9      4                          \n"+
-                "8                                            2 5                                \n"+
-                "                      2                     5 7                              7 9\n"+
-                "                                             9                              9 2 \n"+
-                "                                            3 5                            3 5 7\n"+
-                "                                             7                            5 7 9 \n"+
-                "                                            9                              9 3 5\n"+
-                "                                             5                            3 5 7 \n"+
-                "                                                                         5 7 9 3\n"+
-                "                                                                          9 3 5 \n"+
-                "                                                                         3 5 8 9\n"+
-                "                                                                        6 8 963 \n"+
-                "           9                                                             96386 8\n"+
-                "            6                                                           4969849 \n"+
-                "           9                                                           6284964 6\n"+
-                "          2 4                                                        2 49749628 \n"+
-                "           7 9                                                      5 74962849 4\n"+
-                "          9 2                                                      7 96295974 6 \n"+
-                "         2 5 7                                                  7 9 3 527496    \n"+
-                "          7 9 2                                                9 3 5 749739     \n"+
-                "         953 5                                                3 5 7 973952      \n"+
-                "        385 7 9                                              6 8 9 3 527        \n"+
-                "        97 9 3 5                                              9 3 5 859 3       \n"+
-                "       49 3 5 7                                              4 6 8 9 3 5        \n"+
-                "    4 6385 7 9 3                                            6 8 9 3 6 8 9       \n"+
-                "   6 8 9849 3 5                                              9 4 6 8 9 3        \n"+
-                "  9 9 4963 5 8                                              4 6 8 9 4 6 8       \n"+
-                " 2 4 648698                                                6 9 9 4 6 8 9        \n"+
-                "4 7 9 28496                           8 9 3                 27496 8 9 4         \n"+
-                " 9 2 49649 9                      2  9 4 6 8               49629 9 4 6 8        \n"+
-                "2 5 749 2 4                      4 74 6 8 9 3             7395274 6 8 9         \n"+
-                " 7 9 274 7 9                    7 9 28 9 4 6              527497 9 2            \n"+
-                "9 3 597 9 2                  7 9 2 5974 6              5 759739 2 4             \n"+
-                " 59739 2 5 7                9 3 5 749628              8 973952 5 7              ",
+            MAP: "923         99344 6       23556 8       4 67          5 7           7 9  3      \n"+
+                "6          5 77 9        6 89 2       7  9          9  2          9 34 6        \n"+
+                " 3       8 99244       9 33 56         45 7          5  8          7 99         \n"+
+                "          5578          6799          8 9           9 2           9 4          3\n"+
+                "         9 22         99 3          2 4           4 6           5 7           6 \n"+
+                "       3 56  8       4 7                           9             2          9  3\n"+
+                "        99 3       8  9                                        5  8          77 \n"+
+                "      34466         5                                         9 2           9 4 \n"+
+                "     7799  3       8 9                                      3             55 7  \n"+
+                "   99 44 7       33                                        7 9           8 92 4 \n"+
+                "  5 78899       6 9                                           6        3  5 8   \n"+
+                "   22455      9  3 6                                        9           9922    \n"+
+                " 56888         779                                                     3 6      \n"+
+                "9 233 5       9 4                                                    7 99       \n"+
+                " 66 9       5 77                                                      44 6      \n"+
+                "9933         9                                                       7 9        \n"+
+                "67  9       5 8                                                    9 4          \n"+
+                "9 4       9922                                                      8           \n"+
+                "7        4 6                                                         5          \n"+
+                "       7 99 3                                                                  7\n"+
+                "        4 6                                                                  92 \n"+
+                "      78 9                                      2                           5 78\n"+
+                "     2 4                                                                  8  234\n"+
+                "      8                                        3                           5688 \n"+
+                "    2                             7             9                         9 23  \n"+
+                "   6 8                                                                  4 66  9 \n"+
+                "  9 3                        3 5             7                           99 3   \n"+
+                "    8                                                                     6     \n"+
+                "     5                      3             5                                     \n"+
+                "    9 2                      9                                                  \n"+
+                "  3 6                                  3             4                          \n"+
+                " 7 9                      7             9                                       \n"+
+                " 44 6                                                                           \n"+
+                "7899                   5             7 9           8 9                         2\n"+
+                " 45                                                                             \n"+
+                "89                       8 9      5             6 8                           23\n"+
+                " 5                     3    7      9 4             5                         6 8\n"+
+                "9                       9 9         8                                      9  3 \n"+
+                "                       3 6           5          3                           6  9\n"+
+                "                       9           8 99                                      3  \n"+
+                "                                    5 7      9             3               7    \n"+
+                "                                  89 2        7                                 \n"+
+                "     9                           3 5                    9                       \n"+
+                "    4                                        8                                  \n"+
+                "  7  9                          3             5                                 \n"+
+                "   4567                                                                         \n"+
+                "  8 9                        9             3 5           4                      \n"+
+                "2 45                                                                            \n"+
+                " 89 2                     8             9               4                       \n"+
+                "3356                       5 8             9                                  67\n"+
+                "899                                                                          9 3\n"+
+                "4                       3             5 7             8                       7 \n"+
+                " 9                                                                             4\n"+
+                "4                                    5             6                           9\n"+
+                "        66                            2                                       4 \n"+
+                "       9 3                                      4                           7 99\n"+
+                "     4  7                          9                                         457\n"+
+                "      99 4                                                                  8 99\n"+
+                "     5577                                                                 2 55  \n"+
+                "   8899                                                                    89 2 \n"+
+                "  3 55 8                                                                 33 5   \n"+
+                "6 89922                                                                 6799    \n"+
+                " 3356                                                                 99 34     \n"+
+                "7 99         8                                                       4 77  9    \n"+
+                "34          2 5                                                       92 4      \n"+
+                "  9          8 9                                                    55778       \n"+
+                "4          3 5                                                     8 92  5      \n"+
+                "          6 9                                                    3  56 8       4\n"+
+                "        9  3                                                      99 23         \n"+
+                "         77 9          8                                         3466          5\n"+
+                "        9 4           3 5                                      7799          899\n"+
+                "      5577          6 8                                       9 44          3 56\n"+
+                "     8 92          9 3                                      5  7  9       6 89 2\n"+
+                "   3  56 8       4 67 9          8             9             92 4          3456 \n"+
+                "    99223         9934          3 5           4 6           5 8           7 9   \n"+
+                "   4 66  9       5 78         66 9          7899          9 22          9 34    \n"+
+                " 7 999 3       8 922 5       9 33          2 45 7          6  8          7  9   \n"+
+                "  44 67         56688      4  77 9       5  8 9          99 3          92 4     \n"+
+                "78899         89923         99344         2355          4 66          5 78      \n"+
+                "2455         34566 9       5 778 9       6 89          8 9          89 2        ",
 
             ASTEROIDS_STRENGTH: 0.75,
             RELEASE_CRYSTAL: true,
@@ -182,8 +182,8 @@ const Game = class {
             BASE_MANAGER_FAST: 15,
 
             RESET_STAGGER: 5,
-            BASE_STAGGER: 20,
-            BASE_STAGGER_FAST: 2,
+            BASE_STAGGER: 15,
+            BASE_STAGGER_FAST: 3,
 
             GAME_MANAGER: 30
         },
@@ -581,6 +581,7 @@ const Game = class {
                 if (!ship.resetting) {
                     this.handleShipUpgradeBlockers(ship);
                     this.handleShipTurretUse(ship);
+                    this.handleShipDoorUse(ship);
                 }
 
                 ship.tick();
@@ -594,7 +595,7 @@ const Game = class {
                 if (team.base) {
                     team.base.tick();
 
-                    if (!team.base.spawning) {
+                    if (!team.base.spawning && !team.base.dead) {
                         let baseAlive = false;
                         for (let subBase of team.base.subBaseModules) {
                             if (!subBase.dead) {
@@ -603,11 +604,15 @@ const Game = class {
                             }
                         }
                         if (!baseAlive) {
-                            team.base.destroySelf();
+                            team.base.dead = true;
                             for (let ship of team.ships) {
                                 ship.gameOver();
                             }
                             this.sendNotifications('Base Destroyed', `${team.name}'s base has been destroyed!`, this.getOppTeam(team));
+
+                            this.timeouts.push(new TimeoutCreator(() => {
+                                this.gameOver();
+                            }, Game.C.TICKS.BASE_MANAGER_SLOW).start());
                         }
                     }
                 }
@@ -663,6 +668,9 @@ const Game = class {
                 if (team.base) {
                     for (let turretBaseModule of team.base.turretBaseModules) {
                         turretBaseModule.tick();
+                    }
+                    for (let doorModule of team.base.doorBaseModules) {
+                        doorModule.tick();
                     }
                 }
             }
@@ -972,7 +980,7 @@ const Game = class {
                                 {
                                     type: 'text',
                                     position: Helper.getRadarSpotPosition(edgePoint, new Vector2(1, 1).multiply(30)),
-                                    value: '⬟',
+                                    value: '▲',
                                     color: team.hex,
                                     align: 'center'
                                 },
@@ -1000,12 +1008,12 @@ const Game = class {
             let spawnModule = Helper.getRandomArrayElement(ship.team.base.spawnBaseModules.filter(module => module && module.ready && !module.dead));
             if (spawnModule && spawnModule.ready) {
                 let spawnInitialPose = spawnModule.pose.clone();
-                spawnInitialPose.position = spawnInitialPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.x, SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.y).multiply(spawnModule.pose.scale.x).rotateBy(spawnModule.pose.rotation));
+                spawnInitialPose.position = spawnInitialPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.x, SpawnBaseModule.C.SPAWN_INITIAL_OFFSET.y).multiplyComponents(new Vector2(spawnModule.pose.scale.x, spawnModule.pose.scale.y)).rotateBy(spawnModule.pose.rotation));
                 ship.setPosition(spawnInitialPose.position);
                 ship.setVelocity(new Vector2(0, 0));
 
                 let spawnFinalPose = spawnModule.pose.clone();
-                spawnFinalPose.position = spawnFinalPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_FINAL_OFFSET.x, SpawnBaseModule.C.SPAWN_FINAL_OFFSET.y).multiply(spawnModule.pose.scale.x).rotateBy(spawnModule.pose.rotation));
+                spawnFinalPose.position = spawnFinalPose.position.add(new Vector2(SpawnBaseModule.C.SPAWN_FINAL_OFFSET.x, SpawnBaseModule.C.SPAWN_FINAL_OFFSET.y).multiplyComponents(new Vector2(spawnModule.pose.scale.x, spawnModule.pose.scale.y)).rotateBy(spawnModule.pose.rotation));
                 spawnFinalPose.rotation += Math.PI;
                 ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_SPAWN.NAME, spawnFinalPose, ShipLerp.C.TYPES.EXIT_SPAWN.BLEND_FACTOR, spawnModule, true, SpawnBaseModule.C.SPAWN_DELAY);
             }
@@ -1017,7 +1025,7 @@ const Game = class {
             let depotModules = ship.team.base.depotBaseModules;
             for (let depotModule of depotModules) {
                 if (depotModule && depotModule.ready && !depotModule.dead) {
-                    let suckRectangle = new Rectangle(new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.CENTER.x, DepotBaseModule.C.SUCK_RECTANGLE.CENTER.y).multiply(depotModule.pose.scale.x).rotateBy(depotModule.pose.rotation).add(depotModule.pose.position), new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.SIZE.x, DepotBaseModule.C.SUCK_RECTANGLE.SIZE.y).multiply(depotModule.pose.scale.x), depotModule.pose.rotation);
+                    let suckRectangle = new Rectangle(new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.CENTER.x, DepotBaseModule.C.SUCK_RECTANGLE.CENTER.y).multiplyComponents(new Vector2(depotModule.pose.scale.x, depotModule.pose.scale.y)).rotateBy(depotModule.pose.rotation).add(depotModule.pose.position), new Vector2(DepotBaseModule.C.SUCK_RECTANGLE.SIZE.x, DepotBaseModule.C.SUCK_RECTANGLE.SIZE.y).multiplyComponents(new Vector2(depotModule.pose.scale.x, depotModule.pose.scale.y)), depotModule.pose.rotation);
                     let shipPosition = ship.getPosition();
                     if (shipPosition && suckRectangle.containsPoint(shipPosition) && !ship.lerp && Helper.angleWithinThreshold(ship.getPose().rotation, depotModule.pose.rotation, DepotBaseModule.C.ANGLE_THRESHOLD)) {
                         ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.ENTER_DEPOT.NAME, depotModule.pose, ShipLerp.C.TYPES.ENTER_DEPOT.BLEND_FACTOR, depotModule, false);
@@ -1037,7 +1045,7 @@ const Game = class {
         if (ship && ship.team && ship.team.base && ship.inDepot && ship.inDepot.ready && ship.ship.alive) {
             let depotModule = ship.inDepot;
             let depotFinalPose = depotModule.pose.clone();
-            depotFinalPose.position = depotFinalPose.position.add(new Vector2(DepotBaseModule.C.DEPOT_FINAL_OFFSET.x, DepotBaseModule.C.DEPOT_FINAL_OFFSET.y).multiply(depotModule.pose.scale.x).rotateBy(depotModule.pose.rotation));
+            depotFinalPose.position = depotFinalPose.position.add(new Vector2(DepotBaseModule.C.DEPOT_FINAL_OFFSET.x, DepotBaseModule.C.DEPOT_FINAL_OFFSET.y).multiplyComponents(new Vector2(depotModule.pose.scale.x, depotModule.pose.scale.y)).rotateBy(depotModule.pose.rotation));
             depotFinalPose.rotation += Math.PI;
             ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_DEPOT.NAME, depotFinalPose, ShipLerp.C.TYPES.EXIT_DEPOT.BLEND_FACTOR, depotModule, true);
             ship.inDepot = null;
@@ -1197,17 +1205,36 @@ const Game = class {
     }
 
     handleShipTurretUse(ship) {
-        // if (ship.team) {
-        //     let turretModules = ship.team.base.getModulesByType(BaseModule.C.TYPES.TURRET);
+        // if (ship && ship.team && ship.team.base) {
+        //     let turretModules = ship.team.base.turretBaseModules;
         //     for (let turretModule of turretModules) {
         //         let rectangle = turretModule.isUpper ? TurretBaseModule.C.CONTROL_RECTANGLES.UPPER : TurretBaseModule.C.CONTROL_RECTANGLES.LOWER;
-        //         let controlRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).rotateBy(turretModule.container.pose.rotation).add(turretModule.pose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y), turretModule.container.pose.rotation);
+        //         let controlRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).multiplyComponents(new Vector2(turretModule.pose.scale.x, turretModule.pose.scale.y)).rotateBy(turretModule.container.pose.rotation).add(turretModule.pose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y).multiplyComponents(new Vector2(turretModule.pose.scale.x, turretModule.pose.scale.y)), turretModule.container.pose.rotation);
         //         let shipPosition = ship.getPosition();
         //         if (shipPosition && controlRectangle.containsPoint(shipPosition) && !ship.lerp) {
         //             turretModule.setPose(new Pose(turretModule.pose.position, ship.getPose().rotation + Math.PI, turretModule.pose.scale), true);
         //         }
         //     }
         // }
+    }
+
+    handleShipDoorUse(ship) {
+        if (ship && ship.team && ship.team.base) {
+            let doorModules = ship.team.base.doorBaseModules;
+            for (let doorModule of doorModules) {
+                if (!doorModule.doorOpened) {
+                    let rectangle = DoorBaseModule.C.REPULSE_RECTANGLE;
+                    let repulseRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)).rotateBy(doorModule.container.pose.rotation).add(doorModule.pose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)), doorModule.container.pose.rotation);
+                    let shipPosition = ship.getPosition();
+                    if (shipPosition && repulseRectangle.containsPoint(shipPosition) && !ship.lerp) {
+                        let respulseFinalPose = doorModule.pose.clone();
+                        respulseFinalPose.position = respulseFinalPose.position.add(new Vector2(DoorBaseModule.C.REPULSE_FINAL_OFFSET.x, DoorBaseModule.C.REPULSE_FINAL_OFFSET.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)).rotateBy(doorModule.pose.rotation));
+                        respulseFinalPose.rotation += Math.PI;
+                        ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.REPULSE_DOOR.NAME, respulseFinalPose, ShipLerp.C.TYPES.REPULSE_DOOR.BLEND_FACTOR, doorModule, true, 0, false);
+                    }
+                }
+            }
+        }
     }
 
     onShipSpawned(gameShip) {
@@ -1817,6 +1844,8 @@ const ShipLerp = class {
     holdFor = 0;
     isAcceptable = false;
 
+    invulnerable = false;
+
     duration = 0;
 
     running = true;
@@ -1836,14 +1865,18 @@ const ShipLerp = class {
             EXIT_DEPOT: {
                 NAME: 'exit-depot',
                 BLEND_FACTOR: 0.25
-            }
+            },
+            REPULSE_DOOR: {
+                NAME: 'repulse-door',
+                BLEND_FACTOR: 0.25
+            },
         },
         MAX_VEL: 0.5,
         AUTO_STOP_THRESHOLD: 5,
         AUTO_STOP_TIMEOUT: 100
     }
 
-    constructor(ship, name, targetPose, t = 0.1, baseModule = null, autoStop = true, holdFor = 0) {
+    constructor(ship, name, targetPose, t = 0.1, baseModule = null, autoStop = true, holdFor = 0, invulnerable = true) {
         this.ship = ship;
         this.name = name;
         this.startPose = ship.getPose();
@@ -1852,6 +1885,7 @@ const ShipLerp = class {
         this.baseModule = baseModule;
         this.autoStop = autoStop;
         this.holdFor = holdFor;
+        this.invulnerable = invulnerable;
 
         if (this.baseModule) {
             this.targetDifference = this.targetPose.subtract(this.baseModule.pose);
@@ -1868,8 +1902,9 @@ const ShipLerp = class {
         }
         if (this.running) {
             this.ship.setIdle(true);
-            this.ship.setGenerator(0);
-            this.ship.setInvulnerable(Ship.C.LERP_INVULNERABLE_TIME);
+            if (this.invulnerable) {
+                this.ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
+            }
             this.ship.setCollider(false);
             this.ship.setAngle(this.targetPose.rotation);
             if (this.holdFor > 0) {
@@ -2424,12 +2459,13 @@ const Base = class {
     spawnBaseModules = [];
     depotBaseModules = [];
     turretBaseModules = [];
+    doorBaseModules = [];
     staticBaseModules = [];
 
     safeAliens = [];
 
     crystals = 0;
-    baseLevel = 1;
+    baseLevel = 2;
     dead = false;
     reachedMaxLevel = false;
     
@@ -2544,33 +2580,53 @@ const Base = class {
                 new SpawnBaseModule(this, subBase, new Pose(new Vector2(0.5, 10.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(5))),
                 new AlienBaseModule(this, subBase, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10)))
             );
+            let depotAngle = Math.PI * 1 / 8;
             for (let j = 0; j < 2; j++) {
-                let angle = Math.PI * 1 / 8;
                 let depotPose = new Pose(
                     new Vector2(
-                        -5 + Math.cos(angle + Math.PI / 2) * j * DepotBaseModule.C.STEP,
-                        -6.5 + Math.sin(angle + Math.PI / 2) * j * DepotBaseModule.C.STEP
+                        -5 + Math.cos(depotAngle + Math.PI / 2) * j * DepotBaseModule.C.STEP,
+                        -6.5 + Math.sin(depotAngle + Math.PI / 2) * j * DepotBaseModule.C.STEP
                     ),
-                    angle,
+                    depotAngle,
                     new Vector3(1, 1, 1).multiply(5)
                 );
                 let depotModule = new DepotBaseModule(this, subBase, depotPose);
                 subBase.baseModules.push(depotModule);
             }
+            let turretAngle = Math.PI * 1 / 12;
             for (let j = 0; j < 2; j++) {
-                let angle = Math.PI * 1 / 12;
                 let turretPose = new Pose(
                     new Vector2(
-                        1 + Math.cos(angle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
-                        -4 + Math.sin(angle + Math.PI / 2) * j * TurretBaseModule.C.STEP
+                        1 + Math.cos(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
+                        -4 + Math.sin(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP
                     ),
-                    angle + Math.PI,
+                    turretAngle + Math.PI,
                     new Vector3(1, 1, 1).multiply(3.5)
                 );
-                let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, j == 1 ? () => {
-                    this.spawning = false;
-                } : () => {});
+                let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
+                        this.spawning = false;
+                    } : () => {});
                 subBase.baseModules.push(turretModule);
+            }
+            if (this.baseLevel > 1) {
+                let doorStart = new Vector2(-5, 7);
+                let doorEnd = (new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]).add(new Vector2(3, -9))).rotateBy((2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1]).subtract(new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]));
+                let doorDims = doorEnd.subtract(doorStart).divide(DoorBaseModule.C.NUM_DOORS);
+                let doorAngle = doorStart.getAngleTo(doorEnd) + Math.PI / 2;
+                for (let j = 0; j < DoorBaseModule.C.NUM_DOORS; j++) {
+                    let doorPose = new Pose(
+                        new Vector2(
+                            doorStart.x + doorDims.x * (1/2 + j),
+                            doorStart.y + doorDims.y * (1/2 + j)
+                        ),
+                        doorAngle,
+                        new Vector3(1, 1, 1).multiply(doorDims.length())
+                    );
+                    let doorModule = new DoorBaseModule(this, subBase, doorPose, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == DoorBaseModule.C.NUM_DOORS - 1 ? () => {
+                        this.spawning = false;
+                    } : () => {});
+                    subBase.baseModules.push(doorModule);
+                }
             }
             this.baseModules.push(subBase);
             for (let baseModule of subBase.baseModules) {
@@ -2649,13 +2705,14 @@ const BaseModule = class {
 
     static C = {
         TYPES: {
+            SUB: 'sub',
+            CONTAINER: 'container',
             ALIEN: 'alien',
             SPAWN: 'spawn',
             DEPOT: 'depot',
             TURRET: 'turret',
+            DOOR: 'door',
             STATIC: 'static',
-            CONTAINER: 'container',
-            SUB: 'sub'
         },
     };
 
@@ -2732,10 +2789,10 @@ const BaseModule = class {
     }
 
     deactivate() {
-        this.dead = true;
+        this.dead = true;  // NEED TO MODIFY THIS LOGIC IF BASES CAN BE HEALED
         let removedObjs = [];
         let addedObjs = [];
-        for (let obj of this.objs) { // NEED TO MODIFY THIS LOGIC IF BASES CAN BE HEALED
+        for (let obj of this.objs) {
             obj.destroySelf();
             removedObjs.push(obj);
             let deactivatedObj = new Obj(obj.originalObj.id, obj.originalObj.type, obj.originalObj.position, obj.originalObj.rotation, obj.originalObj.scale, true, true, '#4d4d4d');
@@ -2875,7 +2932,7 @@ const SubBaseModule = class extends ContainerBaseModule {
     static C = {
         MAX_HEALTH: [
             1500,
-            3000,
+            30,
             5000,
             6000
         ]
@@ -2941,6 +2998,8 @@ const AlienBaseModule = class extends BaseModule {
 const SpawnBaseModule = class extends BaseModule {
     type = BaseModule.C.TYPES.SPAWN;
 
+    spawnGlow = null;
+
     static C = {
         SPAWN_INITIAL_OFFSET: {
             x: 1,
@@ -2970,12 +3029,24 @@ const SpawnBaseModule = class extends BaseModule {
         let spawnGlowObj = new Obj(spawnGlow.id, spawnGlow.type, spawnGlow.position, spawnGlow.rotation, spawnGlow.scale, true, true, this.base.team.hex);
         spawnGlowObj.setPoseTransformed(this.pose, true);
         this.objs.push(spawnGlowObj.update());
+        this.spawnGlow = spawnGlowObj;
         return this;
+    }
+
+    deactivate() {
+        if (this.spawnGlow) {
+            this.spawnGlow.destroySelf();
+            Helper.deleteFromArray(this.objs, this.spawnGlow);
+            this.spawnGlow = null;
+        }
+        super.deactivate();
     }
 }
 
 const DepotBaseModule = class extends BaseModule {
     type = BaseModule.C.TYPES.DEPOT;
+
+    depotGlow = null;
 
     static C = {
         STEP: 8,
@@ -3086,8 +3157,18 @@ const DepotBaseModule = class extends BaseModule {
         let depotGlow = Helper.deepCopy(Obj.C.OBJS.DEPOT_GLOW);
         let depotGlowObj = new Obj(depotGlow.id, depotGlow.type, depotGlow.position, depotGlow.rotation, depotGlow.scale, true, true, this.base.team.hex);
         depotGlowObj.setPoseTransformed(this.pose, true);
+        this.depotGlow = depotGlowObj;
         this.objs.push(depotGlowObj.update());
         return this;
+    }
+
+    deactivate() {
+        if (this.depotGlow) {
+            this.depotGlow.destroySelf();
+            Helper.deleteFromArray(this.objs, this.depotGlow);
+            this.depotGlow = null;
+        }
+        super.deactivate();
     }
 }
 
@@ -3268,6 +3349,15 @@ const TurretBaseModule = class extends BaseModule {
         }
     }
 
+    deactivate() {
+        if (this.turretRange) {
+            this.turretRange.destroySelf();
+            Helper.deleteFromArray(this.objs, this.turretRange);
+            this.turretRange = null;
+        }
+        super.deactivate();
+    }
+
     destroySelf() {
         super.destroySelf();
         for (let laser of this.lasers) {
@@ -3275,6 +3365,114 @@ const TurretBaseModule = class extends BaseModule {
         }
         this.lasers = [];
         return this;
+    }
+}
+
+const DoorBaseModule = class extends BaseModule {
+    type = BaseModule.C.TYPES.DOOR;
+    doorFrame = null;
+    door = null;
+
+    currentStepAmount = 0;
+    doorOpened = false;
+    lastOpenedTime = -1;
+
+    static C = {
+        NUM_DOORS: 3,
+        DOOR_CYCLE_TIMES: 6,
+        DOOR_HEIGHT: 1,
+        OPENED_DURATION: 3600 * 4,
+        CLOSED_DURATION: 3600 * 2,
+        REPULSE_RECTANGLE: {
+            CENTER: {
+                x: 0,
+                y: 0
+            },
+            SIZE: {
+                x: 1.5,
+                y: 0.5
+            }
+        },
+        REPULSE_FINAL_OFFSET: {
+            x: -0.5,
+            y: 0
+        }
+    }
+
+    constructor(base, subBase, pose, spawnCallback = null) {
+        super(base, subBase, BaseModule.C.TYPES.DOOR, pose, spawnCallback);
+
+        this.base.doorBaseModules.push(this);
+    }
+
+    createObjs() {
+        super.createObjs();
+        this.createDoorFrame();
+        this.createDoor();
+    }
+
+    createDoorFrame() {
+        let doorFrame = Helper.deepCopy(Obj.C.OBJS.DOOR_FRAME);
+        let doorFrameObj = new Obj(doorFrame.id, doorFrame.type, doorFrame.position, doorFrame.rotation, doorFrame.scale, true, true, this.base.team.hex);
+        doorFrameObj.setPoseTransformed(this.pose, true);
+        this.objs.push(doorFrameObj.update());
+        this.doorFrame = doorFrameObj;
+        return this;
+    }
+
+    createDoor() {
+        let door = Helper.deepCopy(Obj.C.OBJS.DOOR);
+        let doorObj = new Obj(door.id, door.type, door.position, door.rotation, door.scale, true, true, this.base.team.hex);
+        doorObj.setPoseTransformed(this.pose, true);
+        this.objs.push(doorObj.update());
+        this.door = doorObj;
+        this.lastOpenedTime = game.step - DoorBaseModule.C.OPENED_DURATION - DoorBaseModule.C.CLOSED_DURATION;
+        return this;
+    }
+
+    updateObjs() {
+        super.updateObjs([this.door]);
+    }
+
+    tick() {
+        super.tick();
+        if (this.base && !this.base.dead && this.ready && !this.dead) {
+            if (this.lastOpenedTime == -1 || game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION + DoorBaseModule.C.CLOSED_DURATION) {
+                this.doorOpened = true;
+                this.lastOpenedTime = game.step;
+            } else if (game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION) {
+                this.doorOpened = false;
+            }
+        }
+        if (this.door) {
+            let doorHeight = DoorBaseModule.C.DOOR_HEIGHT * this.pose.scale.y;
+            let doorZPos = -this.currentStepAmount / DoorBaseModule.C.DOOR_CYCLE_TIMES * doorHeight;
+            if (this.doorOpened) {
+                if (this.currentStepAmount < DoorBaseModule.C.DOOR_CYCLE_TIMES) {
+                    this.currentStepAmount++;
+                }
+            } else {
+                if (this.currentStepAmount > 0) {
+                    this.currentStepAmount--;
+                }
+            }
+            this.door.setPoseTransformed(this.pose, true);
+            this.door.obj.position.z = Obj.C.OBJS.DOOR.position.z + doorZPos;   
+            this.door.update();
+        }
+        return this;
+    }
+
+    deactivate() {
+        super.deactivate();
+        for (let obj of this.objs) {
+            if (obj.obj.id.includes(Obj.C.OBJS.DOOR.id)) {
+                this.door = obj;
+                this.doorOpened = true;
+            } else if (obj.obj.id.includes(Obj.C.OBJS.DOOR_FRAME.id)) {
+                this.doorFrame = obj;
+            }
+        }
     }
 }
 
@@ -4085,6 +4283,64 @@ const Obj = class {
                     // physics: {
                     //     mass: 500,
                     //     shape: [1.553,1.556,0.816,0.517,0.479,0.378,0.32,0.296,0.285,0.279,0.28,0.313,0.999,1.008,1.031,1.075,1.14,1.166,1.106,0.949,0.844,0.665,0.85,0.846,0.842,0.85,0.842,0.846,0.85,0.665,0.534,0.3,0.296,0.285,0.279,0.28,0.287,0.299,0.3,0.287,0.28,0.279,0.285,0.296,0.32,0.378,0.479,0.517,0.816,1.556]
+                    // }
+                }
+            },
+            DOOR_FRAME: {
+                id: 'door_frame',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 4
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 0.25,
+                    y: 0.25,
+                    z: 4
+                },
+                type: {
+                    id: 'door_frame',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/door_frame.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    transparent: false,
+                    // physics: {
+                    //     mass: 500,
+                    //     shape: [0.527,0.533,0.549,0.576,0.612,0.679,0.759,0.878,1.074,1.427,2.02,2.013,1.965,1.965,2.013,2.02,1.427,1.074,0.878,0.759,0.679,0.612,0.576,0.549,0.533,0.527,0.533,0.549,0.576,0.612,0.679,0.759,0.878,1.074,1.427,2.02,2.013,1.965,1.965,2.013,2.02,1.427,1.074,0.878,0.759,0.679,0.612,0.576,0.549,0.533]
+                    // }
+                },
+            },
+            DOOR: {
+                id: 'door',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: 4
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 0.25,
+                    y: 0.25,
+                    z: 4
+                },
+                type: {
+                    id: 'door',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/teams-2.0/door.obj',
+                    diffuse: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/diffuse.png',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/emissive.png',
+                    transparent: false,
+                    // physics: {
+                    //     mass: 500,
+                    //     shape: [0.071,0,0,0.078,0.063,0,0.097,0.085,0.122,0.181,0.275,0.536,1.663,1.663,0.536,0.275,0.181,0.122,0.085,0.097,0,0.063,0.078,0,0,0.071,0,0,0.078,0.063,0,0.097,0.085,0.122,0.181,0.275,0.536,1.663,1.663,0.536,0.275,0.181,0.122,0.085,0.097,0,0.063,0.078,0,0]
                     // }
                 }
             },
