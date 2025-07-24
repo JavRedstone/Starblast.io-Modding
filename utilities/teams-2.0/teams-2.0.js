@@ -251,6 +251,13 @@ const Game = class {
 
     manageQueues() {
         this.shipResetQueue.tick();
+        for (let team of this.teams) {
+            if (team.base) {
+                for (let subBaseModule of team.base.subBaseModules) {
+                    subBaseModule.manageQueues();
+                }
+            }
+        }
     }
 
     reset() {
@@ -794,11 +801,13 @@ const Game = class {
             let orbitCenter = new Vector2(scoreboard.components[1].position[0] + scoreboard.components[1].position[2] / 2, scoreboard.components[1].position[1] + scoreboard.components[1].position[3] / 2);
             let orbitRadius = scoreboard.components[1].position[2] / 2 - scoreboard.components[1].width / 2;
             scoreboard.components[2].value = 'L' + team.base.baseLevel;
-            scoreboard.components[3].value = team.name;
-            scoreboard.components[4].value = ship.team ? ((team.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ') : '' + team.ships.length + '♟';
-            scoreboard.components[5].value = team.base.crystals + '/' + Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] + '💎';
-            scoreboard.components[7].fill = ship.team ? (team.team == ship.team.team ? '#00ff00BF' : '#ff0000BF') : '#ffffffBF';
-            scoreboard.components[7].position[2] = team.base.crystals / Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] * scoreboard.components[6].position[2];
+            scoreboard.components[2].color += (team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '80' : '');
+            scoreboard.components[3].value = team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '🔒' : '';
+            scoreboard.components[4].value = team.name;
+            scoreboard.components[5].value = ship.team ? ((team.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ') : '' + team.ships.length + '♟';
+            scoreboard.components[6].value = team.base.crystals + '/' + Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] + '💎';
+            scoreboard.components[8].fill = ship.team ? (team.team == ship.team.team ? '#00ff00BF' : '#ff0000BF') : '#ffffffBF';
+            scoreboard.components[8].position[2] = team.base.crystals / Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] * scoreboard.components[7].position[2];
             for (let subBaseModule of team.base.subBaseModules) {
                 let angleToBase = subBaseModule.pose.position.getAngleTo(team.base.pose.position);
                 let baseW = 5;
@@ -937,7 +946,13 @@ const Game = class {
                             type: 'text',
                             position: Helper.getRadarSpotPosition(team.base.pose.position, new Vector2(1, 1).multiply(Base.C.RADII[team.base.baseLevel - 1])),
                             value: 'L' + team.base.baseLevel,
-                            color: team.hex,
+                            color: team.hex + (team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '80' : ''),
+                        },
+                        {
+                            type: 'text',
+                            position: Helper.getRadarSpotPosition(team.base.pose.position, new Vector2(1, 1).multiply(Base.C.RADII[team.base.baseLevel - 1])),
+                            value: team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '🔒' : '',
+                            color: team.hex + '80',
                         }
                     );
 
@@ -1047,24 +1062,26 @@ const Game = class {
             let depotFinalPose = depotModule.pose.clone();
             depotFinalPose.position = depotFinalPose.position.add(new Vector2(DepotBaseModule.C.DEPOT_FINAL_OFFSET.x, DepotBaseModule.C.DEPOT_FINAL_OFFSET.y).multiplyComponents(new Vector2(depotModule.pose.scale.x, depotModule.pose.scale.y)).rotateBy(depotModule.pose.rotation));
             depotFinalPose.rotation += Math.PI;
-            ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_DEPOT.NAME, depotFinalPose, ShipLerp.C.TYPES.EXIT_DEPOT.BLEND_FACTOR, depotModule, true);
-            ship.inDepot = null;
-            ship.isDonating = false;
-            ship.conditions.push(new ConditionCreator(() => {
-                return !ship.lerp
-            }, () => {
-                ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                if (ship.lastDonatedAmount > 0) {
-                    this.sendNotifications("Ship Donated", `${ship.ship.name} has donated ${ship.lastDonatedAmount} crystals to your team!`, ship.team, ship.team);
-                }
-                for (let item of ship.selectedItems) {
-                    let shipPosition = ship.getPosition();
-                    if (item && shipPosition) {
-                        new Collectible(shipPosition, item.CODE);
+            ship.inDepot.subBase.depotExitQueue.add(() => {
+                ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.EXIT_DEPOT.NAME, depotFinalPose, ShipLerp.C.TYPES.EXIT_DEPOT.BLEND_FACTOR, depotModule, true);
+                ship.inDepot = null;
+                ship.isDonating = false;
+                ship.conditions.push(new ConditionCreator(() => {
+                    return !ship.lerp
+                }, () => {
+                    ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                    if (ship.lastDonatedAmount > 0) {
+                        this.sendNotifications("Ship Donated", `${ship.ship.name} has donated ${ship.lastDonatedAmount} crystals to your team!`, ship.team, ship.team);
                     }
-                }
-                ship.selectedItems = [];
-            }).start());
+                    for (let item of ship.selectedItems) {
+                        let shipPosition = ship.getPosition();
+                        if (item && shipPosition) {
+                            new Collectible(shipPosition, item.CODE);
+                        }
+                    }
+                    ship.selectedItems = [];
+                }).start());
+            })
         }
     }
 
@@ -1220,7 +1237,7 @@ const Game = class {
 
     handleShipDoorUse(ship) {
         if (ship && ship.team && ship.team.base) {
-            let doorModules = ship.team.base.doorBaseModules;
+            let doorModules = [...ship.team.base.doorBaseModules, ...this.getOppTeam(ship.team).base.doorBaseModules]
             for (let doorModule of doorModules) {
                 if (!doorModule.doorOpened) {
                     let rectangle = DoorBaseModule.C.REPULSE_RECTANGLE;
@@ -2929,13 +2946,16 @@ const SubBaseModule = class extends ContainerBaseModule {
     type = BaseModule.C.TYPES.SUB;
     health = 0;
 
+    depotExitQueue = null;
+
     static C = {
         MAX_HEALTH: [
             1500,
             30,
             5000,
             6000
-        ]
+        ],
+        DEPOT_EXIT_QUEUE_TIME: 15
     }
 
     constructor(base, relativePose, spawnCallback = null) {
@@ -2943,7 +2963,13 @@ const SubBaseModule = class extends ContainerBaseModule {
         this.health = SubBaseModule.C.MAX_HEALTH[base.baseLevel - 1];
         this.type = BaseModule.C.TYPES.SUB;
 
+        this.depotExitQueue = new StaggeredQueueCreator(SubBaseModule.C.DEPOT_EXIT_QUEUE_TIME);
+
         this.base.subBaseModules.push(this);
+    }
+
+    manageQueues() {
+        this.depotExitQueue.tick();
     }
 }
 
@@ -4766,6 +4792,11 @@ const UIComponent = class {
                         type: 'text',
                         position: [10, 10, 10, 10],
                         color: '#ffffff',
+                    },
+                    {
+                        type: 'text',
+                        position: [10, 10, 10, 10],
+                        color: '#ffffff80',
                     },
                     {
                         type: 'text',
