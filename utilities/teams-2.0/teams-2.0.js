@@ -523,63 +523,68 @@ const Game = class {
     manageShips() {
         if (!this.isResetting && game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
             for (let ship of this.ships) {
-                if (!ship.done) {
-                    let bothBasesSpawning = true;
-                    for (let team of this.teams) {
-                        if (team.base && !team.base.spawning) {
-                            bothBasesSpawning = false;
-                            break;
+                if (ship) {
+                    if (!ship.done) {
+                        let bothBasesSpawning = true;
+                        for (let team of this.teams) {
+                            if (team.base && !team.base.spawning) {
+                                bothBasesSpawning = false;
+                                break;
+                            }
+                        }
+                        if (!bothBasesSpawning) {
+                            this.shipResetQueue.add(() => {
+                                this.resetShip(ship);
+                            });
                         }
                     }
-                    if (!bothBasesSpawning) {
-                        this.shipResetQueue.add(() => {
-                            this.resetShip(ship);
-                        });
-                    }
-                }
 
-                if (ship && !ship.isResetting) {
-                    if (ship.selectingTeam) {
-                        ship.setType(102);
-                        ship.setCrystals(0);
-                        ship.setPosition(new Vector2());
-                        ship.setIdle(true);
-                        ship.setCollider(false);
-                    }
+                    if (!ship.isResetting) {
+                        if (ship.selectingTeam) {
+                            ship.setType(102);
+                            ship.setCrystals(0);
+                            ship.setPosition(new Vector2());
+                            ship.setIdle(true);
+                            ship.setCollider(false);
+                        }
 
-                    this.handleShipDepotEnterLerp(ship);
+                        this.handleShipDepotEnterLerp(ship);
 
-                    this.handleWeaponsStore(ship);
+                        this.handleWeaponsStore(ship);
 
-                    if (ship.team && ship.inDepot) {
-                        if (ship.team.base.spawning) {
-                            let nearestDepot = null;
-                            let nearestDistance = Infinity;
-                            for (let depot of ship.team.base.depotBaseModules) {
-                                if (depot.ready) {
-                                    let distance = depot.pose.position.getDistanceTo(ship.getPose().position);
-                                    if (distance < nearestDistance) {
-                                        nearestDistance = distance;
-                                        nearestDepot = depot;
+                        if (ship.team && ship.inDepot) {
+                            if (ship.team.base.spawning) {
+                                let nearestDepot = null;
+                                let nearestDistance = Infinity;
+                                for (let depot of ship.team.base.depotBaseModules) {
+                                    if (depot.ready) {
+                                        let distance = depot.pose.position.getDistanceTo(ship.getPose().position);
+                                        if (distance < nearestDistance) {
+                                            nearestDistance = distance;
+                                            nearestDepot = depot;
+                                        }
                                     }
                                 }
+                                if (nearestDepot) {
+                                    ship.inDepot = nearestDepot;
+                                    ship.lerp = null;
+                                    ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.ENTER_DEPOT.NAME, nearestDepot.pose, ShipLerp.C.TYPES.ENTER_DEPOT.BLEND_FACTOR, nearestDepot, false);
+                                }
+                            } else if (ship.inDepot.dead) {
+                                this.handleShipDepotExitLerp(ship);
                             }
-                            if (nearestDepot) {
-                                ship.inDepot = nearestDepot;
-                                ship.lerp = null;
-                                ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.ENTER_DEPOT.NAME, nearestDepot.pose, ShipLerp.C.TYPES.ENTER_DEPOT.BLEND_FACTOR, nearestDepot, false);
-                            }
-                        } else if (ship.inDepot.dead) {
-                            this.handleShipDepotExitLerp(ship);
                         }
-                    }
 
-                    if (ship && !ship.upgradeCodes.includes(ship.ship.type)) {
-                        ship.upgradeCodes.push(ship.ship.type);
+                        if (ship.upgradeHistory.length == 0 || ship.upgradeHistory[ship.upgradeHistory.length - 1].code != ship.ship.type) {
+                            ship.upgradeHistory.push({code: ship.ship.type, stats: 0, tick: game.step});
+                        }
+                        if (ship.upgradeHistory.length > 0) {
+                            ship.upgradeHistory[ship.upgradeHistory.length - 1].stats = ship.ship.stats;
+                        }
+                        
+                        this.handleShipScoreboardTeamSelection(ship);
+                        this.handleShipRadar(ship);
                     }
-                    
-                    this.handleShipScoreboardTeamSelection(ship);
-                    this.handleShipRadar(ship);
                 }
             }
         }
@@ -636,7 +641,7 @@ const Game = class {
         if (game.step % Game.C.TICKS.BASE_MANAGER_MEDIUM == 0) {
             let prevResettingAliens = this.resettingAliens;
             for (let team of this.teams) {
-                if (team.base) {
+                if (team.base && !team.base.spawning) {
                     for (let safeAlien of team.base.safeAliens) {
                         safeAlien.tick();
                     }
@@ -703,9 +708,11 @@ const Game = class {
             let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
             if (supportingTeam && supportingTeam.team == ship.team.team) {
                 notification.components[0].stroke = '#00ff00';
+                notification.components[0].fill = '#00ff0040';
             }
             else {
                 notification.components[0].stroke = '#ff0000';
+                notification.components[0].fill = '#ff000040';
             }
             notification.components[1].value = title;
             notification.components[2].value = message;
@@ -751,41 +758,41 @@ const Game = class {
 
     handleShipUpgradeBlockers(ship) {
         if (ship && ship.team && ship.team.base) {
-            let allowedTiers = ship.team.base.crystals >= Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1] ? [7] : Base.C.ALLOWED_TIERS[ship.team.base.baseLevel - 1];
-            let technicallyAllowedTiers = allowedTiers[0] == 6 ? ship.team.base.reachedMaxLevel ? [6, 7] : allowedTiers : allowedTiers;
             if (ship.getLevel() >= 7) {
                 if (ship.inDepot) {
                     this.handleShipDepotExitLerp(ship);
                 }
             }
-            if (ship.getLevel() >= allowedTiers[allowedTiers.length - 1]) {
-                // ship.sendUI(UIComponent.C.UIS.LEFT_LEVELUP_BLOCKER);
-                // ship.sendUI(UIComponent.C.UIS.RIGHT_LEVELUP_BLOCKER);
-
-                if (ship.getLevel() > technicallyAllowedTiers[technicallyAllowedTiers.length - 1]) {
-                    ship.upgradeCodes.sort((a, b) => b - a);
-                    let removedUpgradeCodes = [];
-                    let successfullySet = false;
-                    for (let upgradeCode of ship.upgradeCodes) {
-                        if (Math.floor(upgradeCode / 100) <= technicallyAllowedTiers[technicallyAllowedTiers.length - 1]) {
-                            ship.setType(upgradeCode);
-                            successfullySet = true;
-                            break;
-                        } else {
-                            removedUpgradeCodes.push(upgradeCode);
-                        }
+            let allowedTiers = Base.C.ALLOWED_TIERS[ship.team.base.baseLevel - 1];
+            let maxAllowed = allowedTiers[allowedTiers.length - 1];
+            let lastUpgradeShip = ship.upgradeHistory[ship.upgradeHistory.length - 1];
+            if (ship.team.base.baseLevel == 4 && ship.team.base.reachedMaxLevel && ship.team.base.maxRecords.length > 0) {
+                let lastMaxRecord = ship.team.base.maxRecords[ship.team.base.maxRecords.length - 1];
+                if (lastMaxRecord.type == 'lost') {
+                    if (lastMaxRecord.tick <= lastUpgradeShip.tick) {
+                        maxAllowed = 6;
+                    } else {
+                        maxAllowed = 7;
                     }
-                    for (let removedUpgradeCode of removedUpgradeCodes) {
-                        Helper.deleteFromArray(ship.upgradeCodes, removedUpgradeCode);
-                    }
-                    if (!successfullySet) {
-                        ship.setType(101);
-                    }
-                    ship.setCrystals(ship.getMaxCrystals() / 2);
+                } else {
+                    maxAllowed = 7;
                 }
-            } else {
-                // ship.hideUI(UIComponent.C.UIS.LEFT_LEVELUP_BLOCKER);
-                // ship.hideUI(UIComponent.C.UIS.RIGHT_LEVELUP_BLOCKER);
+            }
+            if (ship.getLevel() > maxAllowed) {
+                let successfullySet = false;
+                for (let i = ship.upgradeHistory.length - 1; i >= 0; i--) {
+                    let upgradeCode = ship.upgradeHistory[i];
+                    if (Math.floor(upgradeCode.code / 100) <= maxAllowed) {
+                        ship.setType(upgradeCode.code);
+                        ship.setStats(upgradeCode.stats)
+                        successfullySet = true;
+                        break;
+                    }
+                }
+                if (!successfullySet) {
+                    ship.setType(101);
+                }
+                ship.setCrystals(ship.getMaxCrystals() / 2);
             }
         }
     }
@@ -801,10 +808,10 @@ const Game = class {
             let orbitCenter = new Vector2(scoreboard.components[1].position[0] + scoreboard.components[1].position[2] / 2, scoreboard.components[1].position[1] + scoreboard.components[1].position[3] / 2);
             let orbitRadius = scoreboard.components[1].position[2] / 2 - scoreboard.components[1].width / 2;
             scoreboard.components[2].value = 'L' + team.base.baseLevel;
-            scoreboard.components[2].color += (team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '80' : '');
-            scoreboard.components[3].value = team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '🔒' : '';
+            scoreboard.components[2].color += team.base.doorsOpened ? '' : '80';
+            scoreboard.components[3].value = team.base.doorsOpened ? '' : '🔒';
             scoreboard.components[4].value = team.name;
-            scoreboard.components[5].value = ship.team ? ((team.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ') : '' + team.ships.length + '♟';
+            scoreboard.components[5].value = (ship.team ? ((team.team == ship.team.team ? 'ALLIES' : 'ENEMIES') + ' | ') : '') + team.ships.length + '♟';
             scoreboard.components[6].value = team.base.crystals + '/' + Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] + '💎';
             scoreboard.components[8].fill = ship.team ? (team.team == ship.team.team ? '#00ff00BF' : '#ff0000BF') : '#ffffffBF';
             scoreboard.components[8].position[2] = team.base.crystals / Base.C.MAX_CRYSTALS[team.base.baseLevel - 1] * scoreboard.components[7].position[2];
@@ -818,11 +825,19 @@ const Game = class {
                     baseW,
                     baseH
                 ];
-                scoreboard.components.push({
-                    type: 'round',
-                    position: basePosition,
-                    fill: subBaseModule.dead ? '#00000080' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1]),
-                });
+                scoreboard.components.push(
+                    {
+                        type: 'round',
+                        position: basePosition,
+                        fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1])
+                    },
+                    {
+                        type: 'text',
+                        position: [basePosition[0] + 0.5, basePosition[1] + 0.5, basePosition[2] - 1, basePosition[3] - 1],
+                        value: subBaseModule.dead ? '⨯' : Math.round(subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1] * 100),
+                        color: subBaseModule.dead ? '#ff000080' : '#000000'
+                    }
+                );
             }
 
             let teamShips = [...team.ships];
@@ -850,7 +865,7 @@ const Game = class {
                     },
                     {
                         type: 'player',
-                        position: [pos[0] + 22.5, pos[1] + 0.5, pos[2] - 60, pos[3] - 1],
+                        position: [pos[0] + 22.5, pos[1] + 0.5, pos[2] - 22.5 * 2, pos[3] - 1],
                         id: player.ship.id,
                         color: Helper.interpolateColor('#ff3636', '#ffffff', (player.ship.shield + player.ship.crystals) / (player.getMaxShield() + player.getMaxCrystals())),
                         align: 'left'
@@ -878,16 +893,193 @@ const Game = class {
         let selectedScoreboard = null;
         if (ship.scoreboardTeam) {
             selectedScoreboard = scoreboards[ship.scoreboardTeam.team];
-        } else {
+        } else if (ship.team) {
             selectedScoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
             selectedScoreboard.components = [
                 {
+                    type: 'box',
+                    position: [0, 0, 100, 100],
+                    fill: ship.team.hex + '20'
+                },
+                {
                     type: 'text',
-                    position: [5, 5, 90, 10],
-                    value: 'Scoreboard hidden. Press [TAB] to switch.',
-                    color: '#ffffff80',
+                    position: [5, 2.5, 15, 5],
+                    value: 'TIER',
+                    color: '#ffffff',
+                },
+                {
+                    type: 'box',
+                    position: [5, 9, 15, 15],
+                    fill: ship.team.hex + '40',
+                    stroke: ship.team.hex + '80',
+                    width: 1,
+                },
+                {
+                    type: 'text',
+                    position: [7.5, 11.5, 10, 10],
+                    value: ship.getLevel(),
+                    color: Helper.interpolateColor('#ffffff', '#ffff00', ship.getLevel() / 7),
+                },
+                {
+                    type: 'text',
+                    position: [25, 2.5, 60, 6.5],
+                    value: '',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'player',
+                    position: [25, 2.5, 60, 6.5],
+                    id: ship.ship.id,
+                    color: Helper.interpolateColor('#ff3636', '#ffffff', (ship.ship.shield + ship.ship.crystals) / (ship.getMaxShield() + ship.getMaxCrystals())),
+                    align: 'left'
+                },
+                {
+                    type: 'text',
+                    position: [25, 10, 60, 9],
+                    value: ship.getShipName().toUpperCase(),
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'text',
+                    position: [25, 20, 60, 5],
+                    value: ship.highScore ? 'HIGH SCORE: ' + Helper.getCounterValue(ship.highScore) : 'HIGH SCORE: 0',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'box',
+                    position: [5, 27.5, 90, 0],
+                    stroke: '#ffffff80',
+                    width: 1
+                },
+                {
+                    type: 'text',
+                    position: [5, 30, 90, 5],
+                    value: ship.kills + ' KILLS',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'text',
+                    position: [5, 35, 90, 5],
+                    value: ship.deaths + ' DEATHS',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                ...UIComponent.transformUIComponents(Helper.deepCopy(UIComponent.C.UIS.TWO_TO_ONE).components, new Vector2(30, 32.5), new Vector2(1, 0.75)),
+                {
+                    type: 'text',
+                    position: [55, 32.5, 52.5, 5],
+                    value: Math.floor(ship.kills / (ship.deaths || 1) * 100) / 100 + ' K/D',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'box',
+                    position: [5, 42.5, 90, 0],
+                    stroke: '#ffffff80',
+                    width: 1
+                },
+                {
+                    type: 'text',
+                    position: [5, 45, 90, 5],
+                    value: Helper.getCounterValue(ship.credits) + ' CREDITS',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'text',
+                    position: [5, 50, 90, 5],
+                    value: Helper.getCounterValue(ship.totalContributed) + ' TOTAL CONTRIBUTED',
+                    color: '#ffffff',
+                    align: 'left'
+                },
+                {
+                    type: 'box',
+                    position: [5, 57.5, 90, 0],
+                    stroke: '#ffffff80',
+                    width: 1
                 }
             ];
+            
+            let shipInfo = ship.getShipInfo();
+            if (shipInfo) {
+                let shipTierComponents = [
+                    {
+                        type: 'text',
+                        position: [0, 0, 20, 5],
+                        color: '#ffffff',
+                    }
+                ];
+                let shipNameComponents = [
+                    {
+                        type: 'box',
+                        position: [0, 0, 20, 5],
+                        fill: ship.team.hex + '40',
+                        stroke: ship.team.hex + '80',
+                        width: 1,
+                    },
+                    {
+                        type: 'text',
+                        position: [2.5, 0.5, 15, 4],
+                        color: '#ffffff',
+                        align: 'center'
+                    }
+                ];
+                let upgradeCodes = ShipGroup.getUpgrades(ship.ship.type);
+                shipTierComponents[0].value = 'TIER ' + ship.getLevel();
+                shipNameComponents[1].value = shipInfo.ABBREVIATION;
+                shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', ship.getLevel() / 7);
+                selectedScoreboard.components.push(
+                    ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(5, 60)),
+                    ...UIComponent.transformUIComponents(Helper.deepCopy(shipNameComponents), new Vector2(5, 78.75))
+                );
+                if (upgradeCodes && upgradeCodes.length > 0) {
+                    let tier = Math.floor(upgradeCodes[0] / 100);
+                    shipTierComponents[0].value = 'TIER ' + tier;
+                    shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', tier / 7);
+                    selectedScoreboard.components.push(
+                        ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(40, 60))
+                    );
+                    selectedScoreboard.components.push(
+                        ...UIComponent.transformUIComponents(Helper.deepCopy(UIComponent.C.UIS.ONE_TO_TWO).components, new Vector2(27.5, 73.75), new Vector2(0.5, 2))
+                    );
+                    let shownThirdTier = false;
+                    for (let i = 0; i < upgradeCodes.length; i++) {
+                        let upgradeCode = upgradeCodes[i];
+                        let upgradeShipInfo = ShipGroup.getShipInfo(upgradeCode);
+                        shipNameComponents[1].value = upgradeShipInfo ? upgradeShipInfo.ABBREVIATION : '';
+                        selectedScoreboard.components.push(
+                            ...UIComponent.transformUIComponents(Helper.deepCopy(shipNameComponents), new Vector2(40, 71.25 + i * 15)),
+                        );
+                        let nextUpgradeCodes = ShipGroup.getUpgrades(upgradeCode);
+                        if (nextUpgradeCodes && nextUpgradeCodes.length > 0) {
+                            if (!shownThirdTier) {
+                                shownThirdTier = true;
+                                let tier = Math.floor(nextUpgradeCodes[0] / 100);
+                                shipTierComponents[0].value = 'TIER ' + tier;
+                                shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', tier / 7);
+                                selectedScoreboard.components.push(
+                                    ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(75, 60))
+                                );
+                            }
+                            selectedScoreboard.components.push(
+                                ...UIComponent.transformUIComponents(Helper.deepCopy(UIComponent.C.UIS.ONE_TO_TWO).components, new Vector2(62.5, 70 + i * 15), new Vector2(0.5, 1)),
+                            );
+                            for (let j = 0; j < nextUpgradeCodes.length; j++) {
+                                let nextUpgradeCode = nextUpgradeCodes[j];
+                                let nextUpgradeShipInfo = ShipGroup.getShipInfo(nextUpgradeCode);
+                                shipNameComponents[1].value = nextUpgradeShipInfo ? nextUpgradeShipInfo.ABBREVIATION : '';
+                                selectedScoreboard.components.push(
+                                    ...UIComponent.transformUIComponents(Helper.deepCopy(shipNameComponents), new Vector2(75, 67.5 + (i * 2 + j) * 7.5)),
+                                );
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         
@@ -946,12 +1138,12 @@ const Game = class {
                             type: 'text',
                             position: Helper.getRadarSpotPosition(team.base.pose.position, new Vector2(1, 1).multiply(Base.C.RADII[team.base.baseLevel - 1])),
                             value: 'L' + team.base.baseLevel,
-                            color: team.hex + (team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '80' : ''),
+                            color: team.hex + (team.base.doorsOpened ? '' : '80'),
                         },
                         {
                             type: 'text',
                             position: Helper.getRadarSpotPosition(team.base.pose.position, new Vector2(1, 1).multiply(Base.C.RADII[team.base.baseLevel - 1])),
-                            value: team.base.doorBaseModules.length > 0 && !team.base.doorBaseModules[0].doorOpened ? '🔒' : '',
+                            value: team.base.doorsOpened ? '' : '🔒',
                             color: team.hex + '80',
                         }
                     );
@@ -1008,7 +1200,7 @@ const Game = class {
                             radarBackground.components.push({
                                 type: 'round',
                                 position: Helper.getRadarSpotPosition(subBaseModule.pose.position, new Vector2(1, 1).multiply(15 * Base.C.SCALES[team.base.baseLevel - 1])),
-                                fill: subBaseModule.dead ? '#000000' : Helper.interpolateColor('#ff0000BF', '#ffffffBF', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1]),
+                                fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / SubBaseModule.C.MAX_HEALTH[team.base.baseLevel - 1])
                             });
                         }
                     }
@@ -1044,7 +1236,7 @@ const Game = class {
                     let shipPosition = ship.getPosition();
                     if (shipPosition && suckRectangle.containsPoint(shipPosition) && !ship.lerp && Helper.angleWithinThreshold(ship.getPose().rotation, depotModule.pose.rotation, DepotBaseModule.C.ANGLE_THRESHOLD)) {
                         ship.lerp = new ShipLerp(ship, ShipLerp.C.TYPES.ENTER_DEPOT.NAME, depotModule.pose, ShipLerp.C.TYPES.ENTER_DEPOT.BLEND_FACTOR, depotModule, false);
-                        ship.lastDonatedAmount = 0;
+                        ship.lastContributedAmount = 0;
                         ship.conditions.push(new ConditionCreator(() => {
                             return (!ship.lerp || (ship.lerp && ship.lerp.isAcceptable))
                         }, () => {
@@ -1070,8 +1262,8 @@ const Game = class {
                     return !ship.lerp
                 }, () => {
                     ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                    if (ship.lastDonatedAmount > 0) {
-                        this.sendNotifications("Ship Donated", `${ship.ship.name} has donated ${ship.lastDonatedAmount} crystals to your team!`, ship.team, ship.team);
+                    if (ship.lastContributedAmount > 0) {
+                        this.sendNotifications("Ship Contributed", `${ship.ship.name} has contributed ${ship.lastContributedAmount} crystals to your team!`, ship.team, ship.team);
                     }
                     for (let item of ship.selectedItems) {
                         let shipPosition = ship.getPosition();
@@ -1114,8 +1306,9 @@ const Game = class {
                 let realDonateAmount = Math.min(donateAmount, ship.ship.crystals);
                 ship.setCrystals(Math.max(0, ship.ship.crystals - realDonateAmount));
                 ship.credits += realDonateAmount;
+                ship.totalContributed += realDonateAmount;
                 ship.setScore(ship.ship.score + realDonateAmount);
-                ship.lastDonatedAmount += realDonateAmount;
+                ship.lastContributedAmount += realDonateAmount;
                 if (ship.team) {
                     if (!ship.team.base.dead) {
                         ship.team.base.crystals += realDonateAmount;
@@ -1127,8 +1320,9 @@ const Game = class {
                                 this.sendNotifications("Base Upgrade", ship.team.name + " has upgraded their base to level " + ship.team.base.baseLevel + "!", null, ship.team);
                             } else {
                                 ship.team.base.crystals = Base.C.MAX_CRYSTALS[ship.team.base.baseLevel - 1];
-                                if (!ship.team.base.reachedMaxLevel) {
+                                if (!ship.team.base.reachedMaxLevel || ship.team.base.maxRecords[ship.team.base.maxRecords.length - 1].type == 'lost') {
                                     ship.team.base.reachedMaxLevel = true;
+                                    ship.team.base.maxRecords.push({ type: 'maxed', tick: game.step });
                                     this.sendNotifications("Base Maxed Out", ship.team.name + " has maxed out their base at level " + ship.team.base.baseLevel + "!", null, ship.team);
                                 }
                             }
@@ -1239,7 +1433,7 @@ const Game = class {
         if (ship && ship.team && ship.team.base) {
             let doorModules = [...ship.team.base.doorBaseModules, ...this.getOppTeam(ship.team).base.doorBaseModules]
             for (let doorModule of doorModules) {
-                if (!doorModule.doorOpened) {
+                if (!doorModule.base.doorsOpened && doorModule.ready && !doorModule.dead) {
                     let rectangle = DoorBaseModule.C.REPULSE_RECTANGLE;
                     let repulseRectangle = new Rectangle(new Vector2(rectangle.CENTER.x, rectangle.CENTER.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)).rotateBy(doorModule.container.pose.rotation).add(doorModule.pose.position), new Vector2(rectangle.SIZE.x, rectangle.SIZE.y).multiplyComponents(new Vector2(doorModule.pose.scale.x, doorModule.pose.scale.y)), doorModule.container.pose.rotation);
                     let shipPosition = ship.getPosition();
@@ -1251,7 +1445,7 @@ const Game = class {
                         
                         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                         bottomMessage.components[0].fill = '#ff000080';
-                        bottomMessage.components[1].value = 'Base gates are currently closed! Attack enemies while waiting for it to open.';
+                        bottomMessage.components[1].value = 'Base gates are currently closed!';
                         ship.sendTimedUI(bottomMessage);
                     }
                 }
@@ -1547,11 +1741,11 @@ const ShipGroup = class {
     normalShips = [];
     idleShips = [];
 
-static C = {
+    static C = {
         SHIPS: {
             '1': {
-                '101': {
-                    SHIP: '{"name":"Fly","level":1,"model":1,"size":1.05,"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-65,-60,-50,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,10,30,25,30,18,15,0],"height":[0,6,8,12,20,20,18,15,0],"propeller":true,"texture":[4,63,10,1,1,1,12,17]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":0,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-15,0,20,30,60],"z":[0,0,0,0,0]},"width":[0,13,17,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":[7,9,9,4,4]},"cannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,30],"z":[0,0,0,0,0,20]},"width":[0,5,8,11,7,0],"height":[0,5,8,11,10,0],"angle":0,"laser":{"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"error":2.5},"propeller":false,"texture":[3,3,10,3]}},"wings":{"main":{"length":[60,20],"width":[100,50,40],"angle":[-10,10],"position":[0,20,10],"doubleside":true,"offset":{"x":0,"y":10,"z":5},"bump":{"position":30,"size":20},"texture":[11,63]}},"typespec":{"name":"Fly","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"shape":[1.368,1.368,1.093,0.965,0.883,0.827,0.791,0.767,0.758,0.777,0.847,0.951,1.092,1.667,1.707,1.776,1.856,1.827,1.744,1.687,1.525,1.415,1.335,1.606,1.603,1.578,1.603,1.606,1.335,1.415,1.525,1.687,1.744,1.827,1.856,1.776,1.707,1.667,1.654,0.951,0.847,0.777,0.758,0.767,0.791,0.827,0.883,0.965,1.093,1.368],"lasers":[{"x":0,"y":-1.365,"z":-0.21,"angle":0,"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"spread":0,"error":2.5,"recoil":0}],"radius":1.856}}',
+                '101': { // When adding fly, add the `next: [201, 202] fields`
+                    SHIP: '{"name":"Fly","level":1,"model":1,"size":1.05,"next":[201,202],"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-65,-60,-50,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,10,30,25,30,18,15,0],"height":[0,6,8,12,20,20,18,15,0],"propeller":true,"texture":[4,63,10,1,1,1,12,17]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":0,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-15,0,20,30,60],"z":[0,0,0,0,0]},"width":[0,13,17,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":[7,9,9,4,4]},"cannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,30],"z":[0,0,0,0,0,20]},"width":[0,5,8,11,7,0],"height":[0,5,8,11,10,0],"angle":0,"laser":{"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"error":2.5},"propeller":false,"texture":[3,3,10,3]}},"wings":{"main":{"length":[60,20],"width":[100,50,40],"angle":[-10,10],"position":[0,20,10],"doubleside":true,"offset":{"x":0,"y":10,"z":5},"bump":{"position":30,"size":20},"texture":[11,63]}},"typespec":{"name":"Fly","level":1,"model":1,"code":101,"next":[201,202],"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"shape":[1.368,1.368,1.093,0.965,0.883,0.827,0.791,0.767,0.758,0.777,0.847,0.951,1.092,1.667,1.707,1.776,1.856,1.827,1.744,1.687,1.525,1.415,1.335,1.606,1.603,1.578,1.603,1.606,1.335,1.415,1.525,1.687,1.744,1.827,1.856,1.776,1.707,1.667,1.654,0.951,0.847,0.777,0.758,0.767,0.791,0.827,0.883,0.965,1.093,1.368],"lasers":[{"x":0,"y":-1.365,"z":-0.21,"angle":0,"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"spread":0,"error":2.5,"recoil":0}],"radius":1.856}}',
                     HITBOX: { CENTER: { x: 0, y: 0 }, SIZE: { x: 3, y: 3 } },
                     ABBREVIATION: 'FLY'
                 },
@@ -1847,6 +2041,36 @@ static C = {
         this.ships.push(...Helper.deepCopy(this.normalShips));
         this.ships.push(...Helper.deepCopy(this.idleShips));
     }
+
+    static getShipInfo(type) {
+        let level = Math.floor(type / 100);
+        return ShipGroup.C.SHIPS[`${level}`][`${type}`];
+    }
+
+    static getShipName(type) {
+        let shipInfo = ShipGroup.getShipInfo(type);
+        if (shipInfo && shipInfo.SHIP) {
+            let jShip = JSON.parse(shipInfo.SHIP);
+            return jShip.typespec.name;
+        }
+        return '';
+    }
+
+    static getUpgrades(type) {
+        let level = Math.floor(type / 100);
+        let currentShip = ShipGroup.C.SHIPS[`${level}`][`${type}`];
+        if (!currentShip) {
+            return [];
+        }
+        else {
+            let jShip = JSON.parse(currentShip.SHIP);
+            let nextShips = jShip.next;
+            if (!nextShips || nextShips.length === 0) {
+                return [];
+            }
+            return nextShips;
+        }
+    }
 }
 
 const ShipLerp = class {
@@ -2000,14 +2224,16 @@ const Ship = class {
     inDepot = null;
     weaponsStoreTime = -1;
     isDonating = false;
-    lastDonatedAmount = 0;
+    lastContributedAmount = 0;
     credits = 0;
+    totalContributed = 0;
     selectedItems = [];
+    highScore = 0;
 
     selectingTeam = false;
     scoreboardTeam = null;
 
-    upgradeCodes = [];
+    upgradeHistory = [];
 
     left = false;
     done = false;
@@ -2034,8 +2260,9 @@ const Ship = class {
         this.weaponsStoreTime = -1;
         this.isDonating = false;
         this.credits = 0;
-        this.lastDonatedAmount = 0;
+        this.lastContributedAmount = 0;
         this.selectedItems = [];
+        this.highScore = 0;
 
         this.ship.emptyWeapons();
     }
@@ -2150,6 +2377,7 @@ const Ship = class {
         this.tickConditions();
         this.tickLerp();
         this.tickTimedUIs();
+        this.checkHighScore();
     }
 
     tickTimeouts() {
@@ -2203,6 +2431,12 @@ const Ship = class {
         }
     }
 
+    checkHighScore() {
+        if (this.ship && this.ship.score > this.highScore) {
+            this.highScore = this.ship.score;
+        }
+    }
+
     getLevel() {
         return Math.trunc(this.ship.type / 100);
     }
@@ -2212,9 +2446,11 @@ const Ship = class {
     }
 
     getShipInfo() {
-        let level = this.getLevel();
-        let type = this.ship.type;
-        return ShipGroup.C.SHIPS[`${level}`][`${type}`];
+        return ShipGroup.getShipInfo(this.ship.type);
+    }
+
+    getShipName() {
+        return ShipGroup.getShipName(this.ship.type);
     }
 
     getMaxCrystals() {
@@ -2486,12 +2722,15 @@ const Base = class {
 
     safeAliens = [];
 
-    crystals = 0;
-    baseLevel = 1;
+    crystals = 5759;
+    baseLevel = 4;
     dead = false;
     reachedMaxLevel = false;
+    maxRecords = [];
     
     spawning = false;
+
+    doorsOpened = true;
 
     static C = {
         SCALES: [
@@ -2503,8 +2742,8 @@ const Base = class {
         NUM_SIDES: [
             2,
             3,
-            3,
-            4
+            4,
+            5
         ],
         MAX_CRYSTALS: [
             720,
@@ -2600,7 +2839,8 @@ const Base = class {
             subBase.baseModules.push(
                 new StaticBaseModule(this, subBase, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(5))),
                 new SpawnBaseModule(this, subBase, new Pose(new Vector2(0.5, 10.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(5))),
-                new AlienBaseModule(this, subBase, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10)))
+                new AlienBaseModule(this, subBase, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10))),
+                new TurretBaseModule(this, subBase, new Pose(new Vector2(0, 1), Math.PI, new Vector3(1, 1, 1).multiply(6)))
             );
             let depotAngle = Math.PI * 1 / 8;
             for (let j = 0; j < 2; j++) {
@@ -2612,24 +2852,26 @@ const Base = class {
                     depotAngle,
                     new Vector3(1, 1, 1).multiply(5)
                 );
-                let depotModule = new DepotBaseModule(this, subBase, depotPose);
+                let depotModule = new DepotBaseModule(this, subBase, depotPose, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
+                    this.spawning = false;
+                } : () => {});
                 subBase.baseModules.push(depotModule);
             }
-            let turretAngle = Math.PI * 1 / 12;
-            for (let j = 0; j < 2; j++) {
-                let turretPose = new Pose(
-                    new Vector2(
-                        1 + Math.cos(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
-                        -4 + Math.sin(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP
-                    ),
-                    turretAngle + Math.PI,
-                    new Vector3(1, 1, 1).multiply(3.5)
-                );
-                let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
-                        this.spawning = false;
-                    } : () => {});
-                subBase.baseModules.push(turretModule);
-            }
+            // let turretAngle = Math.PI * 1 / 12;
+            // for (let j = 0; j < 2; j++) {
+            //     let turretPose = new Pose(
+            //         new Vector2(
+            //             1 + Math.cos(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
+            //             -4 + Math.sin(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP
+            //         ),
+            //         turretAngle + Math.PI,
+            //         new Vector3(1, 1, 1).multiply(3.5)
+            //     );
+            //     let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
+            //             this.spawning = false;
+            //         } : () => {});
+            //     subBase.baseModules.push(turretModule);
+            // }
             if (this.baseLevel > 1) {
                 let doorStart = new Vector2(-5, 7);
                 let doorEnd = (new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]).add(new Vector2(3, -9))).rotateBy((2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1]).subtract(new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]));
@@ -2673,7 +2915,23 @@ const Base = class {
         for (let baseModule of this.baseModules) {
             baseModule.tick();
         }
+        this.checkDoorConditions();
         return this;
+    }
+
+    checkDoorConditions() {
+        let oppTeam = g.getOppTeam(this.team);
+        if (this.baseLevel > 1) {
+            let diffCrystals = this.getTotalCrystals() - oppTeam.base.getTotalCrystals();
+            if (!this.doorsOpened && (diffCrystals <= Base.C.MAX_CRYSTALS[oppTeam.base.baseLevel - 1] * DoorBaseModule.C.OPENING_DIFF || (this.reachedMaxLevel || oppTeam.base.reachedMaxLevel))) {
+                g.sendNotifications('Base gates opening!', 'The doors of your base are opening due to crystals being more equalized.', this.team, this.team);
+                this.doorsOpened = true;
+            }
+            if (this.doorsOpened && diffCrystals >= Base.C.MAX_CRYSTALS[oppTeam.base.baseLevel - 1] * DoorBaseModule.C.CLOSING_DIFF) {
+                g.sendNotifications('Base gates closing!', 'The doors of your base are closing due to the enemy team having far less crystals than you.', this.team, this.team);
+                this.doorsOpened = false;
+            }
+        }
     }
 
     getModulesByType(type) {
@@ -2689,6 +2947,14 @@ const Base = class {
             }
         }
         return baseModules;
+    }
+
+    getTotalCrystals() {
+        let totalCrystals = 0;
+        for (let i = 0; i < baseLevel - 1; i++) {
+            totalCrystals += Base.C.MAX_CRYSTALS[i];
+        }
+        return totalCrystals + this.crystals;
     }
 
     refreshSelf() {
@@ -3131,7 +3397,7 @@ const DepotBaseModule = class extends BaseModule {
                 NAME: 'Defense Pod',
                 ICON: '🛡️',
                 BASE_COST: 120,
-                FREQUENCY: 2,
+                FREQUENCY: 1,
                 CODE: 42
             },
             {
@@ -3253,24 +3519,24 @@ const TurretBaseModule = class extends BaseModule {
         },
         LASERS: [
             {
-                DAMAGE: 2.5,
+                DAMAGE: 15,
                 RANGE: 45,
-                SHOOT_DELAY: 20
+                SHOOT_DELAY: 40
             },
             {
-                DAMAGE: 5,
+                DAMAGE: 25,
                 RANGE: 50,
-                SHOOT_DELAY: 20
+                SHOOT_DELAY: 40
             },
             {
-                DAMAGE: 7.5,
+                DAMAGE: 35,
                 RANGE: 55,
-                SHOOT_DELAY: 20
+                SHOOT_DELAY: 40
             },
             {
-                DAMAGE: 10,
+                DAMAGE: 45,
                 RANGE: 60,
-                SHOOT_DELAY: 20
+                SHOOT_DELAY: 40
             }
         ],
         MIN_SHIP_VELOCITY: 0.6,
@@ -3410,10 +3676,10 @@ const DoorBaseModule = class extends BaseModule {
 
     static C = {
         NUM_DOORS: 3,
-        DOOR_CYCLE_TIMES: 6,
-        DOOR_HEIGHT: 1,
-        OPENED_DURATION: 3600 * 4,
-        CLOSED_DURATION: 3600 * 2,
+        DOOR_HEIGHT: 0.75,
+        DOOR_CYCLE_STEPS: 25,
+        CLOSING_DIFF: 0.25,
+        OPENING_DIFF: 0.1,
         REPULSE_RECTANGLE: {
             CENTER: {
                 x: 0,
@@ -3457,7 +3723,6 @@ const DoorBaseModule = class extends BaseModule {
         doorObj.setPoseTransformed(this.pose, true);
         this.objs.push(doorObj.update());
         this.door = doorObj;
-        this.lastOpenedTime = game.step - DoorBaseModule.C.OPENED_DURATION - DoorBaseModule.C.CLOSED_DURATION;
         return this;
     }
 
@@ -3467,22 +3732,11 @@ const DoorBaseModule = class extends BaseModule {
 
     tick() {
         super.tick();
-        if (this.base && !this.base.dead && this.ready && !this.dead) {
-            if (this.lastOpenedTime == -1 || game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION + DoorBaseModule.C.CLOSED_DURATION) {
-                this.doorOpened = true;
-                this.lastOpenedTime = game.step;
-
-                g.sendNotifications('Base Gates Opened', `Your base gates are now open! You can now enter the base.`, this.base.team, this.base.team);
-            } else if (game.step - this.lastOpenedTime >= DoorBaseModule.C.OPENED_DURATION) {
-                this.doorOpened = false;
-                g.sendNotifications('Base Gates Closed', `Your base gates are now closed! Attack your enemies while waiting for it to open.`, this.base.team, this.base.team);
-            }
-        }
         if (this.door) {
             let doorHeight = DoorBaseModule.C.DOOR_HEIGHT * this.pose.scale.y;
-            let doorZPos = -this.currentStepAmount / DoorBaseModule.C.DOOR_CYCLE_TIMES * doorHeight;
-            if (this.doorOpened) {
-                if (this.currentStepAmount < DoorBaseModule.C.DOOR_CYCLE_TIMES) {
+            let doorZPos = -this.currentStepAmount / DoorBaseModule.C.DOOR_CYCLE_STEPS * doorHeight;
+            if (this.base.doorsOpened) {
+                if (this.currentStepAmount < DoorBaseModule.C.DOOR_CYCLE_STEPS) {
                     this.currentStepAmount++;
                 }
             } else {
@@ -3703,7 +3957,7 @@ const SafeAlien = class {
                 NAME: 'Chicken',
                 SHIELD: 50,
                 SCORE: 25,
-                CRYSTALS_BASE_REMOVED: 5,
+                CRYSTALS_BASE_REMOVED: 10,
                 CODE: 10,
                 LEVEL: 2
             },
@@ -3712,7 +3966,7 @@ const SafeAlien = class {
                 NAME: 'Saucer',
                 SHIELD: 75,
                 SCORE: 32,
-                CRYSTALS_BASE_REMOVED: 10,
+                CRYSTALS_BASE_REMOVED: 20,
                 CODE: 19,
                 LEVEL: 0
             },
@@ -3721,7 +3975,7 @@ const SafeAlien = class {
                 NAME: 'Saucer',
                 SHIELD: 100,
                 SCORE: 50,
-                CRYSTALS_BASE_REMOVED: 20,
+                CRYSTALS_BASE_REMOVED: 30,
                 CODE: 19,
                 LEVEL: 1
             },
@@ -3734,7 +3988,6 @@ const SafeAlien = class {
                 CODE: 19,
                 LEVEL: 1
             }
-            
         ]
     }
 
@@ -3813,6 +4066,9 @@ const SafeAlien = class {
                             ship.setScore(ship.ship.score + this.baseLevelFields.SCORE);
                             this.baseModule.subBase.health -= this.baseLevelFields.SHIELD;
                             this.baseModule.base.crystals -= this.baseLevelFields.CRYSTALS_BASE_REMOVED;
+                            if (this.baseModule.base.maxRecords[this.baseModule.base.maxRecords.length - 1].type == 'maxed') {
+                                this.baseModule.base.maxRecords.push({ type: 'lost', tick: game.step });
+                            }
                             if (this.baseModule.base.crystals < 0) {
                                 this.baseModule.base.crystals = 0;
                             }
@@ -4035,7 +4291,7 @@ const Collectible = class {
                 CODE: 41
             },
             {
-                NAME: 'Defence pod',
+                NAME: 'Defense pod',
                 CODE: 42
             },
             {
@@ -4865,6 +5121,66 @@ const UIComponent = class {
                     }
                 ]
             },
+            ONE_TO_TWO: {
+                id: 'one_to_two',
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 3.75, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 0, 7.5],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 7.5, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                ]
+            },
+            TWO_TO_ONE: {
+                id: 'two_to_one',
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 7.5, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 0, 7.5],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 3.75, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                ]
+            },
             LIVES_BLOCKER: {
                 id: "lives_blocker",
                 visible: true,
@@ -4925,23 +5241,23 @@ const UIComponent = class {
             },
             NOTIFICATION: {
                 id: "notification",
-                position: [5, 75, 60, 10],
+                position: [2.5, 40, 20, 10],
                 visible: true,
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 0, 100],
-                        width: 10
+                        position: [0, 0, 100, 100],
+                        width: 2
                     },
                     {
                         type: "text",
-                        position: [2.5, 5, 90, 50],
+                        position: [2.5, 5, 95, 50],
                         align: "left",
                         color: '#ffffff'
                     },
                     {
                         type: "text",
-                        position: [2.5, 52.5, 60, 42.5],
+                        position: [2.5, 52.5, 95, 42.5],
                         align: "left",
                         color: '#ffffffaa'
                     }
@@ -5185,6 +5501,18 @@ const UIComponent = class {
         }
         ui.components.unshift(...textShadowComponents);
         return ui;
+    }
+
+    static transformUIComponents(uiComponents, translate = new Vector2(0, 0), scale = new Vector2(1, 1)) {
+        for (let ui of uiComponents) {
+            ui.position[0] *= scale.x;
+            ui.position[1] *= scale.y;
+            ui.position[0] += translate.x;
+            ui.position[1] += translate.y;
+            ui.position[2] *= scale.x;
+            ui.position[3] *= scale.y;
+        }
+        return uiComponents;
     }
 
     destroySelf() {
