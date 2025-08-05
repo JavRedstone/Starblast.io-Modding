@@ -12,7 +12,7 @@
     Ship trees picked from Vanilla Revamp (V3), MCST, and CTF v1.5 (Robonuko)
     Ships: Prototype M1, Prototype M2 contributed by ASC-095, Edmontonia contributed by Nerd69420
 
-    Maps: JavRedstone, Gummie, Liberal, Healer, Robonuko, Kirito, EDEN, Gematriia
+    Maps: JavRedstone, Gummie, Liberal, Healer, Robonuko, Kirito, EDEN, Gematriia, ASC-095
 */
 
 // IF YOU DON'T USE CLASS EXPRESSION IT IS NOT MODDING SPACE COMPATIBLE!!!
