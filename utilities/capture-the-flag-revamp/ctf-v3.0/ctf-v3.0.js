@@ -308,6 +308,7 @@ const Game = class {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
+        newMap = GameMap.C.MAPS[0]
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
@@ -872,8 +873,10 @@ const Game = class {
             }
             for (let ship of this.ships) {
                 if (ship) {
-                    if (!ship.done) {
+                    if (!ship.done && !ship.isResetting) {
                         this.shipResetQueue.add(() => {
+                            ship.isResetting = true;
+
                             this.resetShip(ship);
 
                             ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
@@ -995,7 +998,7 @@ const Game = class {
                                     }
                                 }
 
-                                if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
+                                if (!ship.left && ship.team && ship.ship.alive && ship.ship.type != 101) {
                                     if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
                                         ship.team.flagHolder = ship;
                                         oppTeam.flag.hide();
@@ -1631,7 +1634,7 @@ const Game = class {
         if (ship != null) {
             ship.ship.alive = false;
 
-            if (ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
+            if (ship.team && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) {
                 let oppTeam = this.getOppTeam(ship.team);
                 oppTeam.flag.setPosition(new Vector2(ship.ship.x, ship.ship.y));
                 oppTeam.flag.show();
@@ -4181,7 +4184,7 @@ const GameMap = class {
             flags: [],
             portals: [],
             spawns: [],
-            tiers: [6, 7],
+            tiers: [1, 2, 6, 7],
             asteroids: []
         },
         TEST_MAPS: [
@@ -4359,6 +4362,96 @@ const GameMap = class {
         ],
         MAPS: [
             {
+                name: "Space Invaders",
+                author: "ASC-095",
+                map: "      999999998999999999999999999999999999999899999999      \n"+
+                    "       9999999899999999999999999999999999999989999999       \n"+
+                    "           99989999999999999999999999999999998999           \n"+
+                    "            989999999999999 9999 999999999999989            \n"+
+                    "             9999999999999   99   9999999999999             \n"+
+                    "              999  9  999          999  9  999              \n"+
+                    "9              9       9            9       9              9\n"+
+                    "99                                                        99\n"+
+                    "99                9 9                  9 9                99\n"+
+                    "99               99999       99       99999               99\n"+
+                    "99                999      999999      999                99\n"+
+                    "999                9       9    9       9                999\n"+
+                    "9999                                                    9999\n"+
+                    "99989                                                  98999\n"+
+                    "888999             9                    9             999888\n"+
+                    "9999999            9                    9            9999999\n"+
+                    "99999999                                            99999999\n"+
+                    "999999999                                          999999999\n"+
+                    "9999999999                                        9999999999\n"+
+                    "99999999999999999                          99999999999999999\n"+
+                    "9999999999      9                          9      9999999999\n"+
+                    "999999999       9                          9       999999999\n"+
+                    "99999999       999                        999       99999999\n"+
+                    "9999999        9 9                        9 9        9999999\n"+
+                    "999999                                                999999\n"+
+                    "99999                                                  99999\n"+
+                    "999999999                 9     9                  999999999\n"+
+                    "999999                     9   9                      999999\n"+
+                    "9999                      9999999                       9999\n"+
+                    "99                       99 999 99                        99\n"+
+                    "99                      99999999999                       99\n"+
+                    "9999                    9 9999999 9                     9999\n"+
+                    "999999                  9 9     9 9                   999999\n"+
+                    "999999999                  99 99                   999999999\n"+
+                    "99999                                                  99999\n"+
+                    "999999                                                999999\n"+
+                    "9999999        9 9                        9 9        9999999\n"+
+                    "99999999       999                        999       99999999\n"+
+                    "999999999       9                          9       999999999\n"+
+                    "9999999999      9                          9      9999999999\n"+
+                    "99999999999999999                          99999999999999999\n"+
+                    "9999999999                                        9999999999\n"+
+                    "999999999                                          999999999\n"+
+                    "99999999                                            99999999\n"+
+                    "9999999            9                    9            9999999\n"+
+                    "888999             9                    9             999888\n"+
+                    "99989                                                  98999\n"+
+                    "9999                                                    9999\n"+
+                    "999                9       9    9       9                999\n"+
+                    "99                999      999999      999                99\n"+
+                    "99               99999       99       99999               99\n"+
+                    "99                9 9                  9 9                99\n"+
+                    "99                                                        99\n"+
+                    "9              9       9            9       9              9\n"+
+                    "              999  9  999          999  9  999              \n"+
+                    "             9999999999999   99   9999999999999             \n"+
+                    "            989999999999999 9999 999999999999989            \n"+
+                    "           99989999999999999999999999999999998999           \n"+
+                    "       9999999899999999999999999999999999999989999999       \n"+
+                    "      999999998999999999999999999999999999999899999999      ",
+                flags: [{
+                    x: 0,
+                    y: 155
+                }, {
+                    x: 0,
+                    y: -155
+                }],
+                portals: [
+                    {
+                        x: -235,
+                        y: 0
+                    },
+                    {
+                        x: 235,
+                        y: 0
+                    }
+                ],
+                spawns: [{
+                    x: -165,
+                    y: 165
+                }, {
+                    x: 165,
+                    y: -165
+                }],
+                tiers: [],
+                asteroids: []
+            },
+            {
                 name: "Helix",
                 author: "Gematriia",
                 map: "999999999999999999999999999999999999999999999999999999999999\n"+
@@ -4458,9 +4551,9 @@ const GameMap = class {
                     "99                                                        99\n"+
                     "99                                                        99\n"+
                     "99                                                        99\n"+
-                    "99                       9        9                       99\n"+
-                    "99      9       9        9999999999        9       9      99\n"+
-                    "99               9       9        9       9               99\n"+
+                    "99                                                        99\n"+
+                    "99      9       9                          9       9      99\n"+
+                    "99               9                        9               99\n"+
                     "99                                                        99\n"+
                     "99                                                        99\n"+
                     "99 9                                                    9 99\n"+
@@ -4476,16 +4569,16 @@ const GameMap = class {
                     "99           9        99            99        9           99\n"+
                     "99                    99            99                    99\n"+
                     "99                                                        99\n"+
-                    "99     999        99                    99        999     99\n"+
-                    "99      9         99      99    99      99         9      99\n"+
-                    "99      9                 9      9                 9      99\n"+
-                    "99      9                                          9      99\n"+
-                    "99      9                    99                    9      99\n"+
-                    "99      9                    99                    9      99\n"+
-                    "99      9                                          9      99\n"+
-                    "99      9                 9      9                 9      99\n"+
-                    "99      9         99      99    99      99         9      99\n"+
-                    "99     999        99                    99        999     99\n"+
+                    "99                99     9        9     99                99\n"+
+                    "99                99      99    99      99                99\n"+
+                    "99                        99    99                        99\n"+
+                    "99                                                        99\n"+
+                    "99                           99                           99\n"+
+                    "99                           99                           99\n"+
+                    "99                                                        99\n"+
+                    "99                        99    99                        99\n"+
+                    "99                99      99    99      99                99\n"+
+                    "99                99     9        9     99                99\n"+
                     "99                                                        99\n"+
                     "99                    99            99                    99\n"+
                     "99           9        99            99        9           99\n"+
@@ -4501,9 +4594,9 @@ const GameMap = class {
                     "99 9                                                    9 99\n"+
                     "99                                                        99\n"+
                     "99                                                        99\n"+
-                    "99               9       9        9       9               99\n"+
-                    "99      9       9        9999999999        9       9      99\n"+
-                    "99                       9        9                       99\n"+
+                    "99               9                        9               99\n"+
+                    "99      9       9                          9       9      99\n"+
+                    "99                                                        99\n"+
                     "99                                                        99\n"+
                     "99                                                        99\n"+
                     "99                                                        99\n"+
@@ -4551,7 +4644,7 @@ const GameMap = class {
                     x: -165,
                     y: 0
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -5307,7 +5400,7 @@ const GameMap = class {
                     x: 210,
                     y: -210
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -5863,7 +5956,7 @@ const GameMap = class {
                     x: 0,
                     y: 260
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -6136,7 +6229,7 @@ const GameMap = class {
                     x: 170,
                     y: -115
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -6410,7 +6503,7 @@ const GameMap = class {
                     x: -225,
                     y: 5
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -6771,7 +6864,7 @@ const GameMap = class {
                     x: 255,
                     y: 0
                 }],
-                tiers: [3, 4, 5, 6],
+                TIERS: [1, 2, 3, 4, 5, 6],
                 asteroids: []
             },
             {
@@ -7043,7 +7136,7 @@ const ShipGroup = class {
                 vertical: true
             }
         },
-        ALLOWED_TIERS: [1, 2], // [1,2,3,4,5,6,7]
+        ALLOWED_TIERS: [1,2,3,4,5,6,7],
         GROUPS: [
             {
                 TIER: 1,
@@ -7092,7 +7185,7 @@ const ShipGroup = class {
                     {
                         ORIGIN: "ASC-095's Ships",
                         CODES: [
-                            '{"name":"Prototype M-2","level":2,"model":1,"size":2.3,"specs":{"shield":{"capacity":[425,425],"reload":[20,20]},"generator":{"capacity":[300,300],"reload":[70,70]},"ship":{"mass":370,"speed":[95,95],"rotation":[70,70],"acceleration":[130,130]}},"bodies":{"main":{"section_segments":6,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-63,-60,-45,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,15,19,23,23,18,11,0],"height":[0,6,11,16,20,20,18,11,0],"propeller":true,"texture":[3.9,63,10,2,3,4,13,16.9]},"cannon":{"section_segments":6,"offset":{"x":20,"y":-35,"z":0},"position":{"x":[0,0,0,0,1,3,0,-2],"y":[-50,-51,-52,-50,-25,0,20,30],"z":[0,0,0,0,0,0,0,0]},"width":[0,3,4,5,8,11,7,0],"height":[0,3,4,6,12,15,15,12],"angle":0,"laser":{"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"error":2},"propeller":false,"texture":[16.9,4,16.9,63,11,4,17]},"topCannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":20},"position":{"x":[0,0,0,0,0,0,0,0,0],"y":[-50,-51,-52,-50,-22,-20,0,20,30],"z":[0,0,0,0,0,0,-3,-2,0]},"width":[0,3,4,5,6,8,8,7,0],"height":[0,3,4,5,6,8,8,10,0],"angle":0,"laser":{"damage":[90,90],"rate":8,"type":1,"speed":[140,140],"number":1,"recoil":100},"propeller":false,"texture":[16.9,4,16.9,3,16.9,4,7]},"top":{"vertical":true,"section_segments":8,"offset":{"x":9,"y":-30,"z":-42},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-58,-60,-50,-40],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,6,10,0],"height":[0,6,10,0],"angle":160,"texture":[17,13]},"cockpit":{"section_segments":6,"offset":{"x":0,"y":-20,"z":21},"position":{"x":[0,0,0,0,0,0,0],"y":[-40,-10,0,20,40,60],"z":[-8,0,0,0,0,0,0]},"width":[4,6,13,14,10,5],"height":[4,5,10,13,10,5],"propeller":false,"texture":[17,7,9,9,9,7]},"circle1":{"section_segments":8,"offset":{"x":13,"y":5,"z":15},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,63,17,13],"propeller":false},"circle2":{"section_segments":8,"offset":{"x":15,"y":20,"z":16},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,4,17,13],"propeller":false},"circle3":{"section_segments":8,"offset":{"x":13,"y":35,"z":15},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,13,17,13],"propeller":false},"uwing":{"section_segments":[0,60,120,180],"offset":{"x":-20,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-65,-70,40,80,110],"z":[0,0,0,0,0,0]},"width":[0,5,25,25,0],"height":[0,10,25,25,20],"texture":[3.9]}},"wings":{"main":{"length":[25,10],"width":[100,60,40],"angle":[0,50],"position":[0,30,60],"doubleside":true,"offset":{"x":25,"y":0,"z":0},"bump":{"position":30,"size":10},"texture":[11,63]},"main2":{"length":[25],"width":[100,60],"angle":[0],"position":[0,29],"doubleside":true,"offset":{"x":25,"y":-5,"z":-3},"bump":{"position":30,"size":0},"texture":[17]},"main3":{"length":[25],"width":[100,30],"angle":[10],"position":[0,29],"doubleside":true,"offset":{"x":27,"y":20,"z":-5},"bump":{"position":30,"size":0},"texture":[13]},"top":{"length":[0,15],"width":[50,50,20],"angle":[90,90],"position":[0,0,30],"doubleside":true,"offset":{"x":0,"y":35,"z":25},"bump":{"position":30,"size":10},"texture":[11,63]}},"typespec":{"name":"Prototype M-2","level":2,"model":1,"code":201,"specs":{"shield":{"capacity":[425,425],"reload":[20,20]},"generator":{"capacity":[300,300],"reload":[70,70]},"ship":{"mass":370,"speed":[95,95],"rotation":[70,70],"acceleration":[130,130]}},"shape":[3.086,4.074,4.734,3.99,3.24,2.753,2.427,2.26,2.2,2.183,2.225,2.308,2.317,2.366,2.473,2.634,2.875,3.203,3.555,4.065,4.503,3.612,3.583,3.793,3.478,3.457,3.478,3.793,3.583,3.612,4.503,4.065,3.555,3.203,2.875,2.634,2.473,2.366,2.317,2.308,2.225,2.183,2.2,2.26,2.427,2.753,3.24,3.99,4.734,4.074],"lasers":[{"x":0.92,"y":-4.002,"z":0,"angle":0,"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"spread":0,"error":2,"recoil":0},{"x":-0.92,"y":-4.002,"z":0,"angle":0,"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"spread":0,"error":2,"recoil":0},{"x":0,"y":-3.082,"z":0.92,"angle":0,"damage":[90,90],"rate":8,"type":1,"speed":[140,140],"number":1,"spread":0,"error":0,"recoil":100}],"radius":4.734}}'
+                            '{"name":"Prototype M-2","level":2,"model":1,"size":2.3,"specs":{"shield":{"capacity":[425,425],"reload":[20,20]},"generator":{"capacity":[300,300],"reload":[40,40]},"ship":{"mass":370,"speed":[95,95],"rotation":[70,70],"acceleration":[130,130]}},"bodies":{"main":{"section_segments":6,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-63,-60,-45,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,15,19,23,23,18,11,0],"height":[0,6,11,16,20,20,18,11,0],"propeller":true,"texture":[3.9,63,10,2,3,4,13,16.9]},"cannon":{"section_segments":6,"offset":{"x":20,"y":-35,"z":0},"position":{"x":[0,0,0,0,1,3,0,-2],"y":[-50,-51,-52,-50,-25,0,20,30],"z":[0,0,0,0,0,0,0,0]},"width":[0,3,4,5,8,11,7,0],"height":[0,3,4,6,12,15,15,12],"angle":0,"laser":{"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"error":2},"propeller":false,"texture":[16.9,4,16.9,63,11,4,17]},"topCannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":20},"position":{"x":[0,0,0,0,0,0,0,0,0],"y":[-50,-51,-52,-50,-22,-20,0,20,30],"z":[0,0,0,0,0,0,-3,-2,0]},"width":[0,3,4,5,6,8,8,7,0],"height":[0,3,4,5,6,8,8,10,0],"angle":0,"laser":{"damage":[90,90],"rate":8,"type":1,"speed":[140,140],"number":1,"recoil":100},"propeller":false,"texture":[16.9,4,16.9,3,16.9,4,7]},"top":{"vertical":true,"section_segments":8,"offset":{"x":9,"y":-30,"z":-42},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-58,-60,-50,-40],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,6,10,0],"height":[0,6,10,0],"angle":160,"texture":[17,13]},"cockpit":{"section_segments":6,"offset":{"x":0,"y":-20,"z":21},"position":{"x":[0,0,0,0,0,0,0],"y":[-40,-10,0,20,40,60],"z":[-8,0,0,0,0,0,0]},"width":[4,6,13,14,10,5],"height":[4,5,10,13,10,5],"propeller":false,"texture":[17,7,9,9,9,7]},"circle1":{"section_segments":8,"offset":{"x":13,"y":5,"z":15},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,63,17,13],"propeller":false},"circle2":{"section_segments":8,"offset":{"x":15,"y":20,"z":16},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,4,17,13],"propeller":false},"circle3":{"section_segments":8,"offset":{"x":13,"y":35,"z":15},"position":{"x":[0,0,0,0,0,0],"y":[-12,-5,-12,-12,-5,-5],"z":[0,0,0,0,0,0]},"width":[10,10,10,13,13,10],"height":[10,10,10,13,13,10],"texture":[4,17,17,13,17,13],"propeller":false},"uwing":{"section_segments":[0,60,120,180],"offset":{"x":-20,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-65,-70,40,80,110],"z":[0,0,0,0,0,0]},"width":[0,5,25,25,0],"height":[0,10,25,25,20],"texture":[3.9]}},"wings":{"main":{"length":[25,10],"width":[100,60,40],"angle":[0,50],"position":[0,30,60],"doubleside":true,"offset":{"x":25,"y":0,"z":0},"bump":{"position":30,"size":10},"texture":[11,63]},"main2":{"length":[25],"width":[100,60],"angle":[0],"position":[0,29],"doubleside":true,"offset":{"x":25,"y":-5,"z":-3},"bump":{"position":30,"size":0},"texture":[17]},"main3":{"length":[25],"width":[100,30],"angle":[10],"position":[0,29],"doubleside":true,"offset":{"x":27,"y":20,"z":-5},"bump":{"position":30,"size":0},"texture":[13]},"top":{"length":[0,15],"width":[50,50,20],"angle":[90,90],"position":[0,0,30],"doubleside":true,"offset":{"x":0,"y":35,"z":25},"bump":{"position":30,"size":10},"texture":[11,63]}},"typespec":{"name":"Prototype M-2","level":2,"model":1,"code":201,"specs":{"shield":{"capacity":[425,425],"reload":[20,20]},"generator":{"capacity":[300,300],"reload":[40,40]},"ship":{"mass":370,"speed":[95,95],"rotation":[70,70],"acceleration":[130,130]}},"shape":[3.086,4.074,4.734,3.99,3.24,2.753,2.427,2.26,2.2,2.183,2.225,2.308,2.317,2.366,2.473,2.634,2.875,3.203,3.555,4.065,4.503,3.612,3.583,3.793,3.478,3.457,3.478,3.793,3.583,3.612,4.503,4.065,3.555,3.203,2.875,2.634,2.473,2.366,2.317,2.308,2.225,2.183,2.2,2.26,2.427,2.753,3.24,3.99,4.734,4.074],"lasers":[{"x":0.92,"y":-4.002,"z":0,"angle":0,"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"spread":0,"error":2,"recoil":0},{"x":-0.92,"y":-4.002,"z":0,"angle":0,"damage":[20,20],"rate":6,"type":1,"speed":[200,200],"number":1,"spread":0,"error":2,"recoil":0},{"x":0,"y":-3.082,"z":0.92,"angle":0,"damage":[90,90],"rate":8,"type":1,"speed":[140,140],"number":1,"spread":0,"error":0,"recoil":100}],"radius":4.734}}'
                         ]
                     }
                 ]
