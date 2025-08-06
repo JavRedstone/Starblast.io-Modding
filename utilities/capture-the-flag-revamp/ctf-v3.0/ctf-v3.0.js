@@ -308,7 +308,6 @@ const Game = class {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        newMap = GameMap.C.MAPS[0]
         if (Game.C.IS_TESTING) {
             newMap = GameMap.C.TEST_MAPS[1];
         }
@@ -7136,7 +7135,7 @@ const ShipGroup = class {
                 vertical: true
             }
         },
-        ALLOWED_TIERS: [1,2,3,4,5,6,7],
+        ALLOWED_TIERS: [1,2,3,4,5,6,7], // [1,2,3,4,5,6,7]
         GROUPS: [
             {
                 TIER: 1,
