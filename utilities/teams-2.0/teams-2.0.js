@@ -1,5 +1,5 @@
 /*
-    TEAM MODE 2.0
+    Starblast Base Wars (SBW)
 
     @author JavRedstone
     @version 1.0.0
