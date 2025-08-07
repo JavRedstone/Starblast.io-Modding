@@ -6,7 +6,7 @@
 
     Developed in 2025
 
-    Special thanks to ÆTHER for some of the 3D objects used in this mod
+    Special thanks to ÆTHER and Nerd69420 for some of the 3D objects used in this mod
 
     Ships from Vanilla Revamp (V3)
 */
