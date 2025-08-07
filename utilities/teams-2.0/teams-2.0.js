@@ -38,92 +38,112 @@ const Game = class {
         OPTIONS: {
             ROOT_MODE: '',
 
-            MAP_SIZE: 80,
-            MAP: "923         99344 6       23556 8       4 67          5 7           7 9  3      \n"+
-                "6          5 77 9        6 89 2       7  9          9  2          9 34 6        \n"+
-                " 3       8 99244       9 33 56         45 7          5  8          7 99         \n"+
-                "          5578          6799          8 9           9 2           9 4          3\n"+
-                "         9 22         99 3          2 4           4 6           5 7           6 \n"+
-                "       3 56  8       4 7                           9             2          9  3\n"+
-                "        99 3       8  9                                        5  8          77 \n"+
-                "      34466         5                                         9 2           9 4 \n"+
-                "     7799  3       8 9                                      3             55 7  \n"+
-                "   99 44 7       33                                        7 9           8 92 4 \n"+
-                "  5 78899       6 9                                           6        3  5 8   \n"+
-                "   22455      9  3 6                                        9           9922    \n"+
-                " 56888         779                                                     3 6      \n"+
-                "9 233 5       9 4                                                    7 99       \n"+
-                " 66 9       5 77                                                      44 6      \n"+
-                "9933         9                                                       7 9        \n"+
-                "67  9       5 8                                                    9 4          \n"+
-                "9 4       9922                                                      8           \n"+
-                "7        4 6                                                         5          \n"+
-                "       7 99 3                                                                  7\n"+
-                "        4 6                                                                  92 \n"+
-                "      78 9                                      2                           5 78\n"+
-                "     2 4                                                                  8  234\n"+
-                "      8                                        3                           5688 \n"+
-                "    2                             7             9                         9 23  \n"+
-                "   6 8                                                                  4 66  9 \n"+
-                "  9 3                        3 5             7                           99 3   \n"+
-                "    8                                                                     6     \n"+
-                "     5                      3             5                                     \n"+
-                "    9 2                      9                                                  \n"+
-                "  3 6                                  3             4                          \n"+
-                " 7 9                      7             9                                       \n"+
-                " 44 6                                                                           \n"+
-                "7899                   5             7 9           8 9                         2\n"+
-                " 45                                                                             \n"+
-                "89                       8 9      5             6 8                           23\n"+
-                " 5                     3    7      9 4             5                         6 8\n"+
-                "9                       9 9         8                                      9  3 \n"+
-                "                       3 6           5          3                           6  9\n"+
-                "                       9           8 99                                      3  \n"+
-                "                                    5 7      9             3               7    \n"+
-                "                                  89 2        7                                 \n"+
-                "     9                           3 5                    9                       \n"+
-                "    4                                        8                                  \n"+
-                "  7  9                          3             5                                 \n"+
-                "   4567                                                                         \n"+
-                "  8 9                        9             3 5           4                      \n"+
-                "2 45                                                                            \n"+
-                " 89 2                     8             9               4                       \n"+
-                "3356                       5 8             9                                  67\n"+
-                "899                                                                          9 3\n"+
-                "4                       3             5 7             8                       7 \n"+
-                " 9                                                                             4\n"+
-                "4                                    5             6                           9\n"+
-                "        66                            2                                       4 \n"+
-                "       9 3                                      4                           7 99\n"+
-                "     4  7                          9                                         457\n"+
-                "      99 4                                                                  8 99\n"+
-                "     5577                                                                 2 55  \n"+
-                "   8899                                                                    89 2 \n"+
-                "  3 55 8                                                                 33 5   \n"+
-                "6 89922                                                                 6799    \n"+
-                " 3356                                                                 99 34     \n"+
-                "7 99         8                                                       4 77  9    \n"+
-                "34          2 5                                                       92 4      \n"+
-                "  9          8 9                                                    55778       \n"+
-                "4          3 5                                                     8 92  5      \n"+
-                "          6 9                                                    3  56 8       4\n"+
-                "        9  3                                                      99 23         \n"+
-                "         77 9          8                                         3466          5\n"+
-                "        9 4           3 5                                      7799          899\n"+
-                "      5577          6 8                                       9 44          3 56\n"+
-                "     8 92          9 3                                      5  7  9       6 89 2\n"+
-                "   3  56 8       4 67 9          8             9             92 4          3456 \n"+
-                "    99223         9934          3 5           4 6           5 8           7 9   \n"+
-                "   4 66  9       5 78         66 9          7899          9 22          9 34    \n"+
-                " 7 999 3       8 922 5       9 33          2 45 7          6  8          7  9   \n"+
-                "  44 67         56688      4  77 9       5  8 9          99 3          92 4     \n"+
-                "78899         89923         99344         2355          4 66          5 78      \n"+
-                "2455         34566 9       5 778 9       6 89          8 9          89 2        ",
+            MAP_SIZE: 100,
+            MAP: " 36     6         1                                                              1         6     63 \n"+
+                "3  9  3   8     1             99 99 99  2       3  3       2  99 99 99             1     8   3  9  3\n"+
+                "6           99  7    999999   99 99 99    4    9 99 9    4    99 99 99   999999    7  99           6\n"+
+                " 9    4    99             2 8 99 99 99    4              4    99 99 99 8 2             99    4    9 \n"+
+                "        9 99      71 6                   4 6            6 4                   6 17      99 9        \n"+
+                "          99              5   6    1                            1    6   5              99          \n"+
+                " 3 4     4 99         1       21     7    3    9    9    3    7     12       1         99 4     4 3 \n"+
+                "         6  99       9   4    1  9     9        9  9        9     9  1    4   9       99  6         \n"+
+                "6   9        99      99       3            7     99     7            3       99      99        9   6\n"+
+                "      46   7      3   99    1 9         9      36  63      9         9 1    99   3      7   64      \n"+
+                " 8  99        3        99     5    8    6  9    3223    9  6    8    5     99        3        99  8 \n"+
+                "   9999  7    82    6               8   3249   1 99 1   9423   8               6    28    7  9999   \n"+
+                "  99  99         5  26      2 4        14 298  229922  892 41        4 2      62  5         99  99  \n"+
+                "  9    99      221 3    6     52   6  64       8    8       46  6   25     6    3 122      99    9  \n"+
+                "        9 38     8         99   99  9   5                  5   9  99   99         8     83 9        \n"+
+                "           2 2          7 99   992                                299   99 7          2 2           \n"+
+                " 17          2    8     359        3                            3        953     8    2          71 \n"+
+                "            518        1   71  5 7                                7 5  17   1        815            \n"+
+                "1   7    3      8    7   46 63                                        36 64   7    8      3    7   1\n"+
+                "    1        3           6   1                                        1   6           3        1    \n"+
+                "           62         6    2                                            2    6         26           \n"+
+                "  9 6  99   6     7     27                                                72     7     6   99  6 9  \n"+
+                "  9   1 99          6    7                                                7    6          99 1   9  \n"+
+                "  9      99      1                                                                1      99      9  \n"+
+                "  9       9  6 73    2                                                        2    37 6  9       9  \n"+
+                "  9    4        5 46 77                                                      77 64 5        4    9  \n"+
+                "  92 5         99 6                                                              6 99         5 29  \n"+
+                "              99 7  2                                                          2  7 99              \n"+
+                "   8     1  2 9  16                                                              61  9 2  1     8   \n"+
+                "                  31                                                            13                  \n"+
+                " 999 621395 45                                                                        54 593126 999 \n"+
+                " 999  1      2 9 5                            99999999                            5 9 2      1  999 \n"+
+                "              99                           8    9999    8                           99              \n"+
+                " 999   9      92 7                                                                7 29      9   999 \n"+
+                " 999                                         9        9                                         999 \n"+
+                "     1    8  6  3                     9  8       77       8  9                     3  6  8    1     \n"+
+                " 999       8  9                       99    9          9    99                       9  8       999 \n"+
+                " 999  7                                99  9    4  4    9  99                                7  999 \n"+
+                "             6                     99   9999            9999   99                     6             \n"+
+                "       9    14                      99   9       99       9   99                      41    9       \n"+
+                " 2       9634 5                      99       3  99  3       99                      5 4369       2 \n"+
+                "    4      2                       8  99   9 7   99   7 9   99  8                       2      4    \n"+
+                "  44  3    42                         9   99    9999    99   9                         24    3  44  \n"+
+                "    6   7 999                   8    99  99  7 99  99 7  99  99    8                   999 7   6    \n"+
+                "            8                       9         99911999         9                       8            \n"+
+                "                                  9      7 7 99 9  9 99 7 7      9                                  \n"+
+                "                               9        3   99  9  9  99   3        9                               \n"+
+                "  9   9  3 128                 9           99   4994   99           9                 821 3  9   9  \n"+
+                " 3     9 63 2                  99    4    999994 99 499999    4    99                  2 36 9     3 \n"+
+                "  9     9 299                  99  7   9999 1  999999  1 9999   7  99                  992 9     9  \n"+
+                "  9     9 299                  99  7   9999 1  999999  1 9999   7  99                  992 9     9  \n"+
+                " 3     9 63 2                  99    4    999994 99 499999    4    99                  2 36 9     3 \n"+
+                "  9   9  3 128                 9           99   4994   99           9                 821 3  9   9  \n"+
+                "                               9        3   99  9  9  99   3        9                               \n"+
+                "                                  9      7 7 99 9  9 99 7 7      9                                  \n"+
+                "            8                       9         99911999         9                       8            \n"+
+                "    6   7 999                   8    99  99  7 99  99 7  99  99    8                   999 7   6    \n"+
+                "  44  3    42                         9   99    9999    99   9                         24    3  44  \n"+
+                "    4      2                       8  99   9 7   99   7 9   99  8                       2      4    \n"+
+                " 2       9634 5                      99       3  99  3       99                      5 4369       2 \n"+
+                "       9    14                      99   9       99       9   99                      41    9       \n"+
+                "             6                     99   9999            9999   99                     6             \n"+
+                " 999  7                                99  9    4  4    9  99                                7  999 \n"+
+                " 999       8  9                       99    9          9    99                       9  8       999 \n"+
+                "     1    8  6  3                     9  8       77       8  9                     3  6  8    1     \n"+
+                " 999                                         9        9                                         999 \n"+
+                " 999   9      92 7                                                                7 29      9   999 \n"+
+                "              99                           8    9999    8                           99              \n"+
+                " 999  1      2 9 5                            99999999                            5 9 2      1  999 \n"+
+                " 999 621395 45                                                                        54 593126 999 \n"+
+                "                  31                                                            13                  \n"+
+                "   8     1  2 9  16                                                              61  9 2  1     8   \n"+
+                "              99 7  2                                                          2  7 99              \n"+
+                "  92 5         99 6                                                              6 99         5 29  \n"+
+                "  9    4        5 46 77                                                      77 64 5        4    9  \n"+
+                "  9       9  6 73    2                                                        2    37 6  9       9  \n"+
+                "  9      99      1                                                                1      99      9  \n"+
+                "  9   1 99          6    7                                                7    6          99 1   9  \n"+
+                "  9 6  99   6     7     27                                                72     7     6   99  6 9  \n"+
+                "           62         6    2                                            2    6         26           \n"+
+                "    1        3           6   1                                        1   6           3        1    \n"+
+                "1   7    3      8    7   46 63                                        36 64   7    8      3    7   1\n"+
+                "            518        1   71  5 7                                7 5  17   1        815            \n"+
+                " 17          2    8     359        3                            3        953     8    2          71 \n"+
+                "           2 2          7 99   992                                299   99 7          2 2           \n"+
+                "        9 38     8         99   99  9   5                  5   9  99   99         8     83 9        \n"+
+                "  9    99      221 3    6     52   6  64       8    8       46  6   25     6    3 122      99    9  \n"+
+                "  99  99         5  26      2 4        14 298  229922  892 41        4 2      62  5         99  99  \n"+
+                "   9999  7    82    6               8   3249   1 99 1   9423   8               6    28    7  9999   \n"+
+                " 8  99        3        99     5    8    6  9    3223    9  6    8    5     99        3        99  8 \n"+
+                "      46   7      3   99    1 9         9      36  63      9         9 1    99   3      7   64      \n"+
+                "6   9        99      99       3            7     99     7            3       99      99        9   6\n"+
+                "         6  99       9   4    1  9     9        9  9        9     9  1    4   9       99  6         \n"+
+                " 3 4     4 99         1       21     7    3    9    9    3    7     12       1         99 4     4 3 \n"+
+                "          99              5   6    1                            1    6   5              99          \n"+
+                "        9 99      71 6                   4 6            6 4                   6 17      99 9        \n"+
+                " 9    4    99             2 8 99 99 99    4              4    99 99 99 8 2             99    4    9 \n"+
+                "6           99  7    999999   99 99 99    4    9 99 9    4    99 99 99   999999    7  99           6\n"+
+                "3  9  3   8     1             99 99 99  2       3  3       2  99 99 99             1     8   3  9  3\n"+
+                " 36     6         1                                                              1         6     63 ",
 
-            ASTEROIDS_STRENGTH: 0.75,
+            ASTEROIDS_STRENGTH: 1,
             RELEASE_CRYSTAL: true,
             CRYSTAL_DROP: 1,
-            CRYSTAL_VALUE: 3,
+            CRYSTAL_VALUE: 2,
 
             FRIENDLY_COLORS: 2,
 
@@ -144,7 +164,7 @@ const Game = class {
             MAX_LEVEL: 7,
 
             SHIPS: [],
-            MAX_PLAYERS: 20,
+            MAX_PLAYERS: 60,
 
             VOCABULARY: [
                 { text: "You", icon:"\u004e", key:"O" },
@@ -177,9 +197,9 @@ const Game = class {
             SHIP_MANAGER: 30,
             SHIP_MANAGER_FAST: 15,
 
-            BASE_MANAGER_SLOW: 480,
+            BASE_MANAGER_SLOW: 600,
             BASE_MANAGER_MEDIUM: 30,
-            BASE_MANAGER_FAST: 15,
+            BASE_MANAGER_FAST: 10,
 
             RESET_STAGGER: 5,
             BASE_STAGGER: 15,
@@ -708,11 +728,9 @@ const Game = class {
         for (let ship of targetShips) {
             let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
             if (supportingTeam && supportingTeam.team == ship.team.team) {
-                notification.components[0].stroke = '#00ff0080';
                 notification.components[0].fill = '#00ff0020';
             }
             else {
-                notification.components[0].stroke = '#ff000080';
                 notification.components[0].fill = '#ff000020';
             }
             notification.components[1].value = title;
@@ -2806,6 +2824,7 @@ const Base = class {
     baseModules = [];
 
     allBaseModules = [];
+    powerCore = null;
     subBaseModules = [];
     containerBaseModules = [];
     alienBaseModules = [];
@@ -2819,7 +2838,7 @@ const Base = class {
     safeAliens = [];
 
     crystals = 0;
-    baseLevel = 2;
+    baseLevel = 4;
     dead = false;
     reachedMaxLevel = false;
     maxRecords = [];
@@ -2827,6 +2846,7 @@ const Base = class {
     spawning = false;
 
     doorsOpened = true;
+    canHeal = true;
 
     lastAttackTime = -1;
 
@@ -2842,8 +2862,8 @@ const Base = class {
         NUM_SIDES: [
             2,
             3,
-            4,
-            5
+            3,
+            4
         ],
         MAX_CRYSTALS: [
             720,
@@ -2857,7 +2877,7 @@ const Base = class {
             45,
             50,
         ],
-        ORBIT_RADIUS: 270, // 2/3
+        ORBIT_RADIUS: 280, // 2/3
         ALLOWED_TIERS: [
             [1, 2, 3],
             [4],
@@ -2895,6 +2915,7 @@ const Base = class {
         this.baseModules = [];
 
         this.allBaseModules = [];
+        this.powerCore = null;
         this.subBaseModules = [];
         this.containerBaseModules = [];
         this.alienBaseModules = [];
@@ -2928,14 +2949,12 @@ const Base = class {
         // let baseGlowObj = new Obj(baseGlow.id, baseGlow.type, baseGlow.position, baseGlow.rotation, baseGlow.scale, true, true, this.team.hex);
         // baseGlowObj.setPoseTransformed(basePose);
         // this.objs.push(baseGlowObj.update());
-
-        
     }
 
     spawnModules() {
-        if (this.baseLevel > 1) {
-            let powerCore = new PowercoreBaseModule(this, null, new Pose(new Vector2(), 0, new Vector3(1, 1, 1).multiply(10)));
-            this.baseModules.push(powerCore);
+        if (this.baseLevel > 1 && this.canHeal) {
+            this.powerCore = new PowercoreBaseModule(this, null, new Pose(new Vector2(), 0, new Vector3(1, 1, 1).multiply(10)));
+            this.baseModules.push(this.powerCore);
         }
         for (let i = 0; i < Base.C.NUM_SIDES[this.baseLevel - 1]; i++) {
             let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1];
@@ -3210,6 +3229,16 @@ const BaseModule = class {
         }
         return this;
     }
+
+    reactivate() {
+        this.dead = false;
+        for (let obj of this.objs) {
+            obj.destroySelf();
+        }
+        this.objs = [];
+        this.createObjs();
+        return this;
+    }
     
     refreshSelf() {
         if (!this.ready) return;
@@ -3344,10 +3373,10 @@ const SubBaseModule = class extends ContainerBaseModule {
             3000
         ],
         HEALING_RATE: [
-            100, // Prevents trolling
-            75,
-            50,
-            25
+            200, // Prevents trolling
+            100,
+            150,
+            200
         ],
         DEPOT_EXIT_QUEUE_TIME: 15
     }
@@ -3384,11 +3413,21 @@ const PowercoreBaseModule = class extends BaseModule {
     type = BaseModule.C.TYPES.POWERCORE;
     powercoreObj = null;
     safeAlien = null;
+    health = PowercoreBaseModule.C.MAX_HEALTH[0];
+
+    static C = {
+        MAX_HEALTH: [
+            1000,
+            1500,
+            2500,
+            3000
+        ],
+    }
 
     constructor(base, subBase, pose, spawnCallback = null) {
         super(base, subBase, BaseModule.C.TYPES.POWERCORE, pose, spawnCallback);
 
-        this.base.powercoreBaseModules.push(this);
+        this.health = PowercoreBaseModule.C.MAX_HEALTH[base.baseLevel - 1];
     }
 
     createSafeAlien() {
@@ -3433,6 +3472,11 @@ const PowercoreBaseModule = class extends BaseModule {
             this.powercoreObj.setPoseTransformed(nonRotatedPose, false);
             this.powercoreObj.update();
         }
+    }
+
+    deactivate() {
+        super.deactivate();
+        this.base.canHeal = false;
     }
 }
 
@@ -3922,8 +3966,8 @@ const DoorBaseModule = class extends BaseModule {
     lastOpenedTime = -1;
 
     static C = {
-        NUM_DOORS: 1,
-        DOOR_HEIGHT: 0.9,
+        NUM_DOORS: 2,
+        DOOR_HEIGHT: 2.5,
         DOOR_CYCLE_STEPS: 5,
         CLOSING_DIFF: 0.25,
         OPENING_DIFF: 0.1,
@@ -3980,7 +4024,7 @@ const DoorBaseModule = class extends BaseModule {
     tick() {
         super.tick();
         if (this.door) {
-            let doorHeight = DoorBaseModule.C.DOOR_HEIGHT * this.door.obj.scale.y;
+            let doorHeight = DoorBaseModule.C.DOOR_HEIGHT * this.door.obj.scale.z;
             let doorZPos = -this.currentStepAmount / DoorBaseModule.C.DOOR_CYCLE_STEPS * doorHeight;
             if (this.base.doorsOpened) {
                 if (this.currentStepAmount < DoorBaseModule.C.DOOR_CYCLE_STEPS) {
@@ -4363,6 +4407,12 @@ const SafeAlien = class {
                                 }
                                 if (this.baseModule.subBase.health <= 0) {
                                     this.baseModule.subBase.deactivate();
+                                    spawn = false;
+                                }
+                            } else if (this.baseModule.type == BaseModule.C.TYPES.POWERCORE) {
+                                this.baseModule.base.powerCore.health -= this.baseLevelFields.SHIELD;
+                                if (this.baseModule.base.powerCore.health <= 0) {
+                                    this.baseModule.base.powerCore.deactivate();
                                     spawn = false;
                                 }
                             }
@@ -5559,13 +5609,12 @@ const UIComponent = class {
             },
             NOTIFICATION: {
                 id: "notification",
-                position: [20, 5, 60, 15],
+                position: [25, 5, 50, 10],
                 visible: true,
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 100, 100],
-                        width: 2
+                        position: [0, 0, 100, 100]
                     },
                     {
                         type: "text",
