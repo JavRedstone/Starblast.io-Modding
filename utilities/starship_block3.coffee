@@ -1,5 +1,5 @@
 model =
-  name: 'Starship Block 3'
+  name: 'SpaceX Starship V3'
   designer: 'Nerd69420'
   level: 7
   model: 2
