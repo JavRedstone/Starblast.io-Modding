@@ -1,0 +1,13 @@
+Capture The Flag
+Version 3.0
+By: JavRedstone
+
+Capture The Flag Version 3.0
+* Added gravity portals for teleportation
+* New ships from MCST, Vanilla Revamp V3, CTF v1.5, and community contributions
+* Overhaul of custom maps with new open, closed, and moving asteroid maps
+* Opposing flagholders cannot score unless one drops the flag
+* New and modern user interface
+* Improved visuals: glow effects, beacons, and overall aesthetics
+* Ship selection available at spawn
+* Fixed all existing bugs
