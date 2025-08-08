@@ -9,6 +9,6 @@ Capture The Flag Version 3.0
 * Opposing flagholders cannot score unless one drops the flag
 * New and modern user interface
 * Improved visuals: glow effects, beacons, and overall aesthetics
-* Ship selection available at spawn
+* Ship selection (5 random ships from same tier) accessible at spawn points
 * New dedicated team dueling waiting screen and map
 * Fixed all existing bugs
