@@ -9,8 +9,8 @@ model =
       capacity: [600,600]
       reload: [6,6]
     generator:
-      capacity: [400,400]
-      reload: [60,60]
+      capacity: [300,300]
+      reload: [100,100]
     ship:
       mass: 500
       speed: [90,90]
