@@ -14,7 +14,6 @@
 
     Special mention to Nerd69420 for their refactor of the SpaceX Starship Block 3 model (originally by Benbencai)
     This is the first real-world rocket/spaceship inside of the game, and it also happens to be the largest rocket in the world. The ship in game is only the second stage of the rocket!
-    Check out: https://www.spacex.com/vehicles/starship for more information.
 
     Maps: JavRedstone, Gummie, Liberal, Healer, Robonuko, Kirito, EDEN, Gematriia, ASC-095
 */
