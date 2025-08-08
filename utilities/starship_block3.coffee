@@ -6,8 +6,8 @@ model =
   size: 1.5
   specs:
     shield:
-      capacity: [1000,2000]
-      reload: [50,100]
+      capacity: [600,600]
+      reload: [6,6]
     generator:
       capacity: [400,400]
       reload: [60,60]
@@ -56,6 +56,14 @@ model =
       width: [0,6,6,4,4,6,6,0]
       height: [0,5,5,4,4,5,5,0]
       texture: [1,1,2,1,2,1]
+      laser:
+        damage: [10,10]
+        rate: 10
+        type: 1
+        speed: [300,300]
+        number: 1
+        angle: 0
+        error: 0
     main_wing:
       section_segments: 0
       offset:
@@ -69,14 +77,6 @@ model =
       width: [0]
       height: [0]
       texture: [1]
-      laser:
-        damage: [50,50]
-        rate: 2
-        type: 1
-        speed: [120,180]
-        number: 1
-        angle: 0
-        error: 0
     main_wingwhite:
       section_segments: [40,50,130,140,220,230,310,320,400]
       offset:
