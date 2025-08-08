@@ -13,7 +13,7 @@
     Ships: Prototype M1, Prototype M2 contributed by ASC-095, Edmontonia contributed by Nerd69420
 
     Special mention to Nerd69420 for their refactor of the SpaceX Starship Block 3 model (originally by Benbencai)
-    This is the first real-world rocket/spaceship inside of the game, and it also happens to be the largest rocket in the world. The ship in game is only the second stage of the rocket!
+    I am a big fan of this rocket. This is the first real-world rocket/spaceship inside of the game, and it also happens to be the largest rocket in the world. The ship in game is only the second stage of the rocket!
 
     Maps: JavRedstone, Gummie, Liberal, Healer, Robonuko, Kirito, EDEN, Gematriia, ASC-095
 */
@@ -7958,17 +7958,17 @@ this.tick = function () {
             g.tick();
         })();
 
-        game.custom.kick = function (shipID) {
-            game.findShip(shipID).gameover ({ "": "" });
-        };
+        // game.custom.kick = function (shipID) {
+        //     game.findShip(shipID).gameover ({ "": "" });
+        // };
 
-        game.custom.showIDs = function () {
-            let list = `Player List ${game.ships.length}:\n`
-            for (let ship of game.ships) {
-                list += `${ship.id}: ${ship.name}\n`;
-            }
-            return list;
-        }
+        // game.custom.showIDs = function () {
+        //     let list = `Player List ${game.ships.length}:\n`
+        //     for (let ship of game.ships) {
+        //         list += `${ship.id}: ${ship.name}\n`;
+        //     }
+        //     return list;
+        // }
     }
 };
 
@@ -7978,11 +7978,11 @@ this.event = function (event) {
         switch (event.name) {
             case 'ship_spawned':
                 g.onShipSpawned(gameShip);
-                echo(game.custom.showIDs());
+                // echo(game.custom.showIDs());
                 break;
             case 'ship_destroyed':
                 g.onShipDestroyed(gameShip);
-                echo(game.custom.showIDs());
+                // echo(game.custom.showIDs());
                 break;
             case 'ui_component_clicked':
                 g.onUIComponentClicked(gameShip, event.id);
