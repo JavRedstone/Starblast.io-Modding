@@ -12,10 +12,10 @@ model =
       capacity: [300,300]
       reload: [100,100]
     ship:
-      mass: 500
-      speed: [90,90]
+      mass: 350
+      speed: [150,150]
       rotation: [100,100]
-      acceleration: [100,100]
+      acceleration: [30,30]
   bodies:
     blackmain:
       section_segments: 16
