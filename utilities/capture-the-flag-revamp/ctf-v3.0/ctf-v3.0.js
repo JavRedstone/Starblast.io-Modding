@@ -1958,7 +1958,7 @@ const Ship = class {
     hideUI(ui) {
         let cUI = Helper.deepCopy(ui);
 
-        cUI.position = [0, 0, 0, 0];
+        cUI.position = [-1, 0, 0, 0];
         cUI.visible = false;
         cUI.clickable = false;
         cUI.components = [];
@@ -3542,7 +3542,7 @@ const UIComponent = class {
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 0, 0]
+                        position: [-1, 0, 0, 0]
                     }
                 ]
             },
