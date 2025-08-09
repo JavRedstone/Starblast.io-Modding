@@ -2,7 +2,8 @@ return model =
   name: 'Flag'
   level: 1
   model: 1
-  size: 1
+  size: 1,
+  next: []
   specs:
     shield:
       capacity: [1,1]
