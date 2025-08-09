@@ -139,7 +139,10 @@ const Game = class {
 
     static setShipGroups() {
         Game.shipGroups = [];
-        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
+        Game.C.OPTIONS.SHIPS = [
+            '{"name":"Flag","level":1,"model":1,"size":1,"next":[],"specs":{"shield":{"capacity":[1,1],"reload":[1,1]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":1,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"flag":{"section_segments":[44,45,46,135,225,310,315,320],"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,1.6,1.6,1.6,-1.6,-1.6,-1.6,1.6,1.6,1.6,-1.6,-1.6,-1.6,0],"y":[0,0,14.4,16,17.6,30.4,32,33.6,46.4,48,49.6,62.4,64,65.6,65.6],"z":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"width":[0,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,2.4,0],"height":[0,32,32,32,32,32,32,32,32,32,32,32,32,32,0],"texture":63,"vertical":true,"angle":90},"flagpole":{"section_segments":10,"offset":{"x":0,"y":-25,"z":0},"position":{"x":[0,0,0,0],"y":[0,0,80,80],"z":[0,0,0,0]},"width":[0,3.2,3.2,0],"height":[0,3.2,3.2,0],"texture":2}},"typespec":{"name":"Flag","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[1,1],"reload":[1,1]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":1,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0.501,0.504,0.515,0.542,0.581,0.635,0.715,0.834,1.016,1.331,1.401,1.354,1.322,1.322,1.354,1.388,1.227,0.939,0.77,0.66,0.586,0.535,0.499,0.476,0.958,1.102,0.958,0.322,0.182,0.138,0.11,0.085,0.069,0.075,0.067,0.047,0.062,0,0.061,0.026,0.064,0.049,0.071,0.08,0.091,0.104,0.131,0.19,0.314,0.504],"lasers":[],"radius":1.401,"next":[]}}',
+            '{"name":"Invisible","level":1,"model":2,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":2,"code":102,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'
+        ];
         for (let group of ShipGroup.C.GROUPS) {
             if (ShipGroup.C.ALLOWED_TIERS.includes(group.TIER)) {
                 let shipGroup = new ShipGroup(group.TIER, group.SHIPS);
@@ -550,7 +553,7 @@ const Game = class {
                         if (Math.abs(diff) >= Game.C.TEAM_PLAYER_DEFICIT) {
                             let t = diff > 0 ? 0 : 1;
                             let minScore = this.teams[t].getMinScore(true);
-                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
+                            let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 102 && !(ship.team && ship.team.flag && ship.team.flagHolder && ship.team.flagHolder.ship.id == ship.ship.id) && ship.score == minScore));
                             if (randShip && !this.changeTeamShip) {
                                 this.changeTeamShip = randShip;
                                 randShip.changeTeamTime = game.step;
@@ -558,7 +561,7 @@ const Game = class {
                         }
                         
                         if (this.changeTeamShip) {
-                            if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || (this.changeTeamShip.team && this.changeTeamShip.team.flag && this.changeTeamShip.team.flagHolder && this.changeTeamShip.team.flagHolder.ship.id == this.changeTeamShip.ship.id) || Math.abs(diff) < Game.C.TEAM_PLAYER_DEFICIT) {
+                            if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || this.changeTeamShip.ship.type == 102 || (this.changeTeamShip.team && this.changeTeamShip.team.flag && this.changeTeamShip.team.flagHolder && this.changeTeamShip.team.flagHolder.ship.id == this.changeTeamShip.ship.id) || Math.abs(diff) < Game.C.TEAM_PLAYER_DEFICIT) {
                                 this.changeTeamShip.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                 this.changeTeamShip.changeTeamTime = -1;
                                 this.changeTeamShip = null;
@@ -691,7 +694,7 @@ const Game = class {
                             let closestDistance = -1;
 
                             for (let ship of oppTeam.ships) {
-                                if (!ship.left && ship.ship.alive && ship.ship.type != 101) {
+                                if (!ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 102) {
                                     if (closestShip == null) {
                                         closestShip = ship;
                                         closestDistance = new Vector2(closestShip.ship.x, closestShip.ship.y).getDistanceTo(new Vector2(corners[j].x, corners[j].y));
@@ -919,8 +922,8 @@ const Game = class {
                                 ship.setPosition(this.map.spawns[ship.team.team]);
                             }
                             ship.setVelocity(new Vector2(0, 0));
-                            if (ship.ship.type != 101) {
-                                ship.setType(101);
+                            if (ship.ship.type != 102) {
+                                ship.setType(102);
                             }
                             ship.setCrystals(0);
                             ship.setCollider(false);
@@ -1000,7 +1003,7 @@ const Game = class {
                                     }
                                 }
 
-                                if (!ship.left && ship.team && ship.ship.alive && ship.ship.type != 101) {
+                                if (!ship.left && ship.team && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 102) {
                                     if (ship.team.flag && !ship.team.flagHolder && !oppTeam.flag.flagHidden && oppTeam.flag.flagPos.getDistanceTo(new Vector2(ship.ship.x, ship.ship.y)) < Obj.C.OBJS.FLAG.DISTANCE) {
                                         ship.team.flagHolder = ship;
                                         oppTeam.flag.hide();
@@ -1373,7 +1376,7 @@ const Game = class {
                             if (this.map && this.map.spawns.length == 2 && ship.team) {
                                 ship.setPosition(this.map.spawns[ship.team.team]);
                             }
-                            ship.setType(101);
+                            ship.setType(102);
                             ship.setCrystals(0);
                             ship.setMaxStats();
                             ship.setCollider(false);
@@ -1416,7 +1419,7 @@ const Game = class {
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
-                if (!this.isResetting && !this.isWaiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101) {
+                if (!this.isResetting && !this.isWaiting && this.betweenTime == -1 && !ship.left && ship.ship.alive && ship.ship.type != 101 && ship.ship.type != 102) {
                     for (let portal of this.portals) {
                         this.suckPortalShip(ship, portal.portal, portal.gravityWell);
                     }
@@ -7368,7 +7371,7 @@ const ShipGroup = class {
                 let jship = JSON.parse(ship);
 
                 jship.level = this.tier;
-                jship.model = prevLength + (this.tier == 1 ? j + 1 : j) + 1;
+                jship.model = prevLength + (this.tier == 1 ? j + 2 : j) + 1;
                 jship.typespec.level = jship.level;
                 jship.typespec.model = jship.model;
                 jship.typespec.code = jship.level * 100 + jship.model;
