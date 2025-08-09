@@ -1936,7 +1936,7 @@ const Ship = class {
                     removedUIs.push(u);
                 }
             }
-            if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
+            if (!(removedUIs.length >= 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
                 this.ship.setUIComponent(cUI);
 
                 if (hideMode) {
@@ -1946,10 +1946,10 @@ const Ship = class {
                 }
             }
 
+            for (let u of removedUIs) {
+                Helper.deleteFromArray(this.allUIs, u);
+            }
             if (!hideMode) {
-                for (let u of removedUIs) {
-                    Helper.deleteFromArray(this.allUIs, u);
-                }
                 this.allUIs.push(cUI);
             }
         }
@@ -1963,19 +1963,7 @@ const Ship = class {
         cUI.clickable = false;
         cUI.components = [];
 
-        let removedUIs = [];
-        for (let u of this.allUIs) {
-            if (u.id == cUI.id) {
-                removedUIs.push(u);
-            }
-        }
-        for (let u of removedUIs) {
-            Helper.deleteFromArray(this.allUIs, u);
-        }
-
-        if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
-            this.sendUI(cUI, true);
-        }
+        this.sendUI(cUI, true);
     }
 
     hideUIsIncludingID(ui) {
@@ -3237,7 +3225,7 @@ const Obj = class {
                     transparent: false
                 },
                 EXISTENCE_TIME: 300,
-                SPAWN_RATE: 30,
+                SPAWN_RATE: 60,
                 SPAWN_AMOUNT: 1,
                 DISTANCE_FROM_CENTER: 60
             },
