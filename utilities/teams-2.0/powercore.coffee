@@ -131,3 +131,18 @@ return model =
       texture: [6]
       propeller: false
       angle:90
+    beacon:
+      section_segments: 6
+      offset:
+        x: 0
+        y: 0
+        z: 0
+      position:
+        x: [0,0]
+        y: [4000,-1500]
+        z: [0,0]
+      width: [7,7]
+      height: [7,7]
+      texture: [17]
+      propeller: false
+      angle:0
