@@ -2389,9 +2389,9 @@ const Ship = class {
                     removedUIs.push(u);
                 }
             }
-            if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
+            if (!(removedUIs.length >= 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
                 this.ship.setUIComponent(cUI);
-                
+
                 if (hideMode) {
                     this.hiddenUIIDs.add(cUI.id);
                 } else {
@@ -2399,10 +2399,10 @@ const Ship = class {
                 }
             }
 
+            for (let u of removedUIs) {
+                Helper.deleteFromArray(this.allUIs, u);
+            }
             if (!hideMode) {
-                for (let u of removedUIs) {
-                    Helper.deleteFromArray(this.allUIs, u);
-                }
                 this.allUIs.push(cUI);
             }
         }
@@ -2416,19 +2416,7 @@ const Ship = class {
         cUI.clickable = false;
         cUI.components = [];
 
-        let removedUIs = [];
-        for (let u of this.allUIs) {
-            if (u.id == cUI.id) {
-                removedUIs.push(u);
-            }
-        }
-        for (let u of removedUIs) {
-            Helper.deleteFromArray(this.allUIs, u);
-        }
-
-        if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
-            this.sendUI(cUI, true);
-        }
+        this.sendUI(cUI, true);
     }
 
     hideUIsIncludingID(ui) {
@@ -2838,7 +2826,7 @@ const Base = class {
     safeAliens = [];
 
     crystals = 0;
-    baseLevel = 4;
+    baseLevel = 1;
     dead = false;
     reachedMaxLevel = false;
     maxRecords = [];
