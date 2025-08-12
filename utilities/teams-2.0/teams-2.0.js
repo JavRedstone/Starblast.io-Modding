@@ -2961,7 +2961,7 @@ const Base = class {
                 new StaticBaseModule(this, subBase, new Pose(new Vector2(), Math.PI * 9/8, new Vector3(1, 1, 1).multiply(5))),
                 new SpawnBaseModule(this, subBase, new Pose(new Vector2(0.5, 10.5), Math.PI * -1.9 / 3, new Vector3(1, 1, 1).multiply(5))),
                 new AlienBaseModule(this, subBase, new Pose(new Vector2(9, -2.5), Math.PI, new Vector3(1, 1, 1).multiply(10))),
-                // new TurretBaseModule(this, subBase, new Pose(new Vector2(0, 1), Math.PI, new Vector3(1, 1, 1).multiply(4)))
+                new TurretBaseModule(this, subBase, new Pose(new Vector2(0, 1), Math.PI, new Vector3(1, 1, 1).multiply(4)))
             );
             let depotAngle = Math.PI * 1 / 8;
             for (let j = 0; j < 2; j++) {
@@ -2978,21 +2978,21 @@ const Base = class {
                 } : () => {});
                 subBase.baseModules.push(depotModule);
             }
-            let turretAngle = Math.PI * 1 / 12;
-            for (let j = 0; j < 2; j++) {
-                let turretPose = new Pose(
-                    new Vector2(
-                        1 + Math.cos(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
-                        -4 + Math.sin(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP
-                    ),
-                    turretAngle + Math.PI,
-                    new Vector3(1, 1, 1).multiply(3.5)
-                );
-                let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
-                        this.spawning = false;
-                    } : () => {});
-                subBase.baseModules.push(turretModule);
-            }
+            // let turretAngle = Math.PI * 1 / 12;
+            // for (let j = 0; j < 2; j++) {
+            //     let turretPose = new Pose(
+            //         new Vector2(
+            //             1 + Math.cos(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP,
+            //             -4 + Math.sin(turretAngle + Math.PI / 2) * j * TurretBaseModule.C.STEP
+            //         ),
+            //         turretAngle + Math.PI,
+            //         new Vector3(1, 1, 1).multiply(3.5)
+            //     );
+            //     let turretModule = new TurretBaseModule(this, subBase, turretPose, j == 0, i == Base.C.NUM_SIDES[this.baseLevel - 1] - 1 && j == 1 && this.baseLevel == 1 ? () => {
+            //             this.spawning = false;
+            //         } : () => {});
+            //     subBase.baseModules.push(turretModule);
+            // }
             if (this.baseLevel > 1) {
                 let doorStart = new Vector2(-5, 7);
                 let doorEnd = (new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]).add(new Vector2(3, -9))).rotateBy((2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1]).subtract(new Vector2(Base.C.RADII[this.baseLevel - 1], 0).divide(Base.C.SCALES[this.baseLevel - 1]));
