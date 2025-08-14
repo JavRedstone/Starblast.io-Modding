@@ -1,51 +1,71 @@
-// Template for creating a new game mode
-
 /*
+    Starblast Base Wars (SBW)
+
     @author JavRedstone
-    @version 2.0.0
+    @version 1.0.0
+
+    Developed in 2025
+
+    Special thanks to ÆTHER and Nerd69420 for some of the 3D objects used in this mod
+
+    Ships from Vanilla Revamp (V3)
 */
 
-class Game {
+const Game = class {
+    static shipGroups = [];
+
     timeouts = [];
     conditions = [];
+    
+    shipResetQueue = null;
 
     ships = [];
     leftShips = [];
     teams = [];
 
     aliens = [];
+
+    timedObjs = [];
+
     asteroids = [];
     timedAsteroids = [];
-
-    spawns = [];
     
     isGameOver = false;
+
+    resettingAliens = false;
 
     static C = {
         OPTIONS: {
             ROOT_MODE: '',
-            MAP_SIZE: 60,
-            MAP: null,
-            ASTEROIDS_STRENGTH: 1e6,
-            RELEASE_CRYSTAL: false,
-            CRYSTAL_DROP: 0.25,
-            CRYSTAL_VALUE: 0,
+
+            MAP_SIZE: 100,
+            MAP: "",
+
+            ASTEROIDS_STRENGTH: 0.75,
+            RELEASE_CRYSTAL: true,
+            CRYSTAL_DROP: 2,
+            CRYSTAL_VALUE: 2,
 
             FRIENDLY_COLORS: 2,
 
-            RADAR_ZOOM: 1,
+            RADAR_ZOOM: 2,
 
-            SPEED_MOD: 1.5,
+            SPEED_MOD: 1.2,
             FRICTION_RATIO: 1,
 
             WEAPONS_STORE: false,
             PROJECTILE_SPEED: 1,
 
-            STARTING_SHIP: 800,
-            RESET_TREE: false,
+            STARTING_SHIP: 102,
+            RESET_TREE: true,
             CHOOSE_SHIP: null,
+
+            LIVES: 4,
+            MAX_TIER_LIVES: 0,
+            MAX_LEVEL: 7,
+
             SHIPS: [],
-            MAX_PLAYERS: 20,
+            MAX_PLAYERS: 60,
 
             VOCABULARY: [
                 { text: "Yes", icon: "\u004c", key: "Y" },
@@ -62,41 +82,55 @@ class Game {
                 { text: "Hmmm?", icon: "\u004b", key: "Q" },
                 { text: "GoodGame", icon: "\u00a3", key: "G" },
                 { text: "Wait", icon: "\u0048", key: "T" },
+                { text: 'Time', icon: "⌛", key: "J" },
                 { text: "Follow", icon: "\u0050", key: "F" },
                 { text: "Love", icon: "\u0024", key: "L" },
                 { text: "Base", icon: "\u0034", key: "B" },
+                { text: "Flag", icon: "⚑", key: "I" },
                 { text: "Bruh", icon: "˙ ͜ʟ˙", key: "M" },
                 { text: "WTF", icon: "ಠ_ಠ", key: "W" }
-            ],
+            ]
         },
         TICKS: {
             TICKS_PER_SECOND: 60,
             MILLISECONDS_PER_TICK: 1000 / 60,
 
             ENTITY_MANAGER: 60,
-            SHIP_MANAGER: 20,
-            SHIP_MANAGER_FAST: 5,
+            SHIP_MANAGER: 30,
+            SHIP_MANAGER_FAST: 15,
+
+            RESET_STAGGER: 5,
 
             GAME_MANAGER: 30
         },
         IS_DEBUGGING: false,
     }
 
+    static setShipGroups(shipGroups) {
+        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":2,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":2,"code":102,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
+        for (let [tier, shipMap] of Object.entries(shipGroups)) {
+            let shipGroup = new ShipGroup(parseInt(tier), shipMap);
+            Game.shipGroups.push(shipGroup);
+            Game.C.OPTIONS.SHIPS.push(...shipGroup.ships);
+        }
+    }
+
     constructor() {
-        // this.reset();
+        this.shipResetQueue = new StaggeredQueueCreator(Game.C.TICKS.RESET_STAGGER);
+        this.reset();
     }
 
     tick() {
         this.manageTimeouts();
         this.manageConditions();
+        this.manageQueues();
+        this.manageEntities();
 
         this.manageGameState();
 
         this.manageShips();
 
         this.tickTimedEntities();
-        
-        this.manageEntities();
     }
 
     manageTimeouts() {
@@ -129,17 +163,30 @@ class Game {
         }
     }
 
+    manageQueues() {
+        this.shipResetQueue.tick();
+        for (let team of this.teams) {
+            if (team.base) {
+                for (let subBaseModule of team.base.subBaseModules) {
+                    subBaseModule.manageQueues();
+                }
+            }
+        }
+    }
+
     reset() {
         this.deleteEverything();
         this.resetContainers();
-        this.setMap();
-        this.resetShips(resetUIs);
+        this.timeouts.push(new TimeoutCreator(() => {
+            this.selectRandomTeams();
+            this.resetShips();
+        }, Game.C.TICKS.RESET_STAGGER).start());
+    }
+
+    resetContainers() {
     }
 
     deleteEverything() {
-        if (this.map) {
-            this.map.destroySelf();
-        }
         for (let alien of game.aliens) {
             alien.set({ kill: true });
         }
@@ -156,92 +203,70 @@ class Game {
     }
 
     deleteObjs() {
-
+        for (let team of this.teams) {
+            team.base.destroySelf();
+        }
     }
 
-    resetContainers() {
-
-    }
-
-    setMap() {
-        let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.flags, newMap.portals, newMap.spawns, newMap.tiers, newMap.asteroids).spawn();
-    }
-
-    spawnSpawns() {
-        this.deleteSpawns();
-        if (this.map && this.teams.length == 2) {
-            for (let i = 0; i < this.map.spawns.length; i++) {
-                let spawnPos = this.map.spawns[i];
-                let spawn = new Obj(
-                    Obj.C.OBJS.SPAWN.id,
-                    Obj.C.OBJS.SPAWN.type,
-                    new Vector3(spawnPos.x, spawnPos.y, Obj.C.OBJS.SPAWN.position.z),
-                    new Vector3(Obj.C.OBJS.SPAWN.rotation.x, Obj.C.OBJS.SPAWN.rotation.y, Obj.C.OBJS.SPAWN.rotation.z),
-                    new Vector3(Obj.C.OBJS.SPAWN.scale.x, Obj.C.OBJS.SPAWN.scale.y, Obj.C.OBJS.SPAWN.scale.z),
-                    true,
-                    true,
-                    this.teams[i].hex
-                ).update();
-                this.spawns.push(spawn);
+    selectRandomTeams() {
+        this.teams = [];
+        let availableTeamOptions = Helper.deepCopy(Team.C.TEAMS);
+        for (let i = 0; i < Game.C.OPTIONS.FRIENDLY_COLORS / 2; i++) {
+            let randIndex = Helper.getRandomInt(0, availableTeamOptions.length - 1);
+            let randTeamOption = availableTeamOptions[randIndex];
+            availableTeamOptions.splice(randIndex, 1);
+            for (let teamOption of randTeamOption) {
+            if (this.teams.length < Game.C.OPTIONS.FRIENDLY_COLORS) {
+                this.teams.push(
+                    new Team(
+                        this.teams.length,
+                        teamOption.COLOR,
+                        teamOption.HEX,
+                        teamOption.NAME,
+                        teamOption.HUE,
+                        teamOption.FLAGGED
+                    )
+                );
+            }
             }
         }
     }
 
-    resetShips(newRound = false, resetUIs = false) {
+    spawnBases() {
+        for (let team of this.teams) {
+            team.spawnBase();
+        }
+    }
+
+    resetShips() {
         this.ships = Helper.shuffleArray(this.ships);
         for (let i = 0; i < this.ships.length; i++) {
             let ship = this.ships[i];
-            ship.timeouts.push(new TimeoutCreator(() => {
-                this.resetShip(ship, false, newRound, resetUIs);                
-            }, Game.C.TICKS.RESET_STAGGER * i).start())
+            this.shipResetQueue.add(() => {
+                this.resetShip(ship);
+            });
         }
         this.timeouts.push(new TimeoutCreator(() => {
             this.isResetting = false;
         }, Game.C.TICKS.RESET_STAGGER * (this.ships.length + 1)).start());
     }
 
-    resetShip(ship, resetUIs = false) {
+    resetShip(ship) {
         ship.isResetting = true;
 
         ship.reset();
-        
-        ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
 
-        this.resetShipNext(ship, resetUIs);
-    }
-    
-    resetShipNext(ship, newRound = false, resetUIs = false) {
-        if (this.teams.length == 2) {
-            if (this.teams[0].ships.length < this.teams[1].ships.length) {
-                this.teams[1].removeShip(ship);
-                ship.setTeam(this.teams[0]);
-            }
-            else if (this.teams[1].ships.length < this.teams[0].ships.length) {
-                this.teams[0].removeShip(ship);
-                ship.setTeam(this.teams[1]);
-            } else {
-                if (this.teams[0].score < this.teams[1].score) {
-                    this.teams[1].removeShip(ship);
-                    ship.setTeam(this.teams[0]);
-                } else if (this.teams[1].score < this.teams[0].score) {
-                    this.teams[0].removeShip(ship);
-                    ship.setTeam(this.teams[1]);
-                } else {
-                    let randTeam = this.teams[Helper.getRandomInt(0, 1)];
-                    this.teams[(randTeam.team + 1) % 2].removeShip(ship);
-                    ship.setTeam(randTeam);
-                }
-            }
-        }
-        if (this.map && this.map.spawns.length == 2 && ship.team) {
-            ship.setPosition(this.map.spawns[ship.team.team])
-        }
-        if (resetUIs) {
-            ship.hideAllUIs();
-        }
+        ship.setType(102);
+        ship.setPosition(new Vector2());
 
+        ship.hideAllUIs();
+
+        ship.sendUI(UIComponent.C.UIS.SCOREBOARD_SWITCH);
+
+        ship.done = true;
         ship.isResetting = false;
+
+        ship.selectingTeam = true;
     }
 
     gameOver() {
@@ -249,16 +274,6 @@ class Game {
         for (let ship of this.ships) {
             ship.gameOver();
         }
-    }
-
-    getMinScore(team) {
-        let minScore = Infinity;
-        for (let ship of team.ships) {
-            if (ship.score < minScore) {
-                minScore = ship.score;
-            }
-        }
-        return minScore;
     }
 
     getWinningTeam() {
@@ -280,15 +295,23 @@ class Game {
             this.gameOver();
         }
         if (this.isResetting) return;
-        if (this.map) {
-            this.map.tick();
-        }
         if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
             
         }
     }
 
     tickTimedEntities() {
+        let removedTimedObjs = [];
+        for (let timedObj of this.timedObjs) {
+            timedObj.tick();
+            if (!timedObj.running) {
+                removedTimedObjs.push(timedObj);
+            }
+        }
+        for (let timedObj of removedTimedObjs) {
+            Helper.deleteFromArray(this.timedObjs, timedObj);
+        }
+
         let removedTimedAsteroids = [];
         let removedAsteroids = [];
         for (let timedAsteroid of this.timedAsteroids) {
@@ -310,7 +333,7 @@ class Game {
             for (let asteroid of this.asteroids) {
                 let found = false;
                 for (let gameAsteroid of game.asteroids) {
-                    if (asteroid.asteroid == gameAsteroid) {
+                    if (asteroid.asteroid.id == gameAsteroid.id) {
                         found = true;
                         break;
                     }
@@ -327,7 +350,7 @@ class Game {
             for (let alien of this.aliens) {
                 let found = false;
                 for (let gameAlien of game.aliens) {
-                    if (alien.alien == gameAlien) {
+                    if (alien.alien.id == gameAlien.id) {
                         found = true;
                         break;
                     }
@@ -340,7 +363,7 @@ class Game {
                 Helper.deleteFromArray(this.aliens, alien);
             }
 
-            let notFoundShips = [];
+            let notFoundShips = new Set([]);
             for (let ship of this.ships) {
                 let found = false;
                 for (let gameShip of game.ships) {
@@ -350,12 +373,26 @@ class Game {
                     }
                 }
                 if (!found) {
-                    notFoundShips.push(ship);
+                    notFoundShips.add(ship);
                 }
             }
-            for (let ship of notFoundShips) {
+            for (let team of this.teams) {
+                for (let ship of team.ships) {
+                    let found = false;
+                    for (let gameShip of game.ships) {
+                        if (ship.ship.id == gameShip.id) {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found && !notFoundShips.has(ship)) {
+                        notFoundShips.add(ship);
+                    }
+                }
+            }
+            for (let ship of notFoundShips.values()) {
                 if (ship.team) {
-                    Helper.deleteFromArray(ship.team.ships, ship);
+                    ship.team.removeShip(ship);
                 }
                 Helper.deleteFromArray(this.ships, ship);
                 let hasLeftShip = false;
@@ -389,37 +426,26 @@ class Game {
 
     manageShips() {
         if (!this.isResetting && game.step % Game.C.TICKS.SHIP_MANAGER === 0) {
-            if (!this.isWaiting && this.betweenTime == -1) {
-                for (let team of this.teams) {
-                    team.setDisabledIdxs(this.shipGroup);
-                }
-            }
             for (let ship of this.ships) {
-                if (!ship.done) {
-                    this.resetShip(ship);
-                    ship.done = true;
-                }
+                if (ship) {
+                    if (!ship.done && !ship.isResetting) {
+                        this.shipResetQueue.add(() => {
+                            ship.isResetting = true;
+                            this.resetShip(ship);
+                        });
+                    }
 
-                if (this.map && !ship.isResetting) {
-                    if (ship.chosenType == 0) {
-                        if (this.map.spawns.length == 2 && ship.team) {
-                            ship.setPosition(this.map.spawns[ship.team.team]);
-                        }
-                        ship.setVelocity(new Vector2(0, 0));
-                        if (ship.ship.type != 101) {
-                            ship.setType(101);
-                        }
-                        ship.setCrystals(0);
-                        ship.setCollider(false);
-                    } else {
-                        ship.setCollider(true);
-                        let oppTeam = this.getOppTeam(ship.team);
+                    if (!ship.isResetting) {
+
                     }
                 }
             }
         }
         if (game.step % Game.C.TICKS.SHIP_MANAGER_FAST === 0) {
             for (let ship of this.ships) {
+                if (!ship.resetting) {
+                }
+
                 ship.tick();
             }
         }
@@ -433,14 +459,20 @@ class Game {
         }
     }
 
-    sendNotifications(title, message, supportingTeam) {
-        for (let ship of this.ships) {
+    sendNotifications(title, message, team = null, supportingTeam = null) {
+        let targetShips = [];
+        if (team) {
+            targetShips = team.ships;
+        } else {
+            targetShips = this.ships;
+        }
+        for (let ship of targetShips) {
             let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
-            if (supportingTeam.team == ship.team.team) {
-                notification.components[0].stroke = '#00ff00';
+            if (supportingTeam && supportingTeam.team == ship.team.team) {
+                notification.components[0].fill = '#00ff0020';
             }
             else {
-                notification.components[0].stroke = '#ff0000';
+                notification.components[0].fill = '#ff000020';
             }
             notification.components[1].value = title;
             notification.components[2].value = message;
@@ -468,6 +500,7 @@ class Game {
                 return alien;
             }
         }
+        return null;
     }
 
     onShipSpawned(gameShip) {
@@ -478,48 +511,50 @@ class Game {
         }
         else { // on respawn
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
-            if (this.map && this.map.spawns.length == 2 && ship.team) {
-                ship.setPosition(this.map.spawns[ship.team.team]);
-            }
             ship.setVelocity(new Vector2(0, 0));
             ship.fillUp();
         }
     }
 
-    onShipDestroyed(gameShip) {
+    onShipDestroyed(gameShip, gameShipKiller) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
             ship.ship.alive = false;
+            ship.deaths++;
+            ship.setScore(ship.ship.score / 2);
+            if (gameShipKiller) {
+                let shipKiller = this.findShip(gameShipKiller);
+                if (shipKiller != null) {
+                    shipKiller.kills++;
+                }
+            }
         }
     }
 
     onUIComponentClicked(gameShip, id) {
         let ship = this.findShip(gameShip);
         if (ship != null) {
-            
+            if (ship.hiddenUIIDs.has(id)) {
+                return;
+            }
         }
     }
 
     onAlienDestroyed(gameAlien, gameShip) {
-
+        let safeAlien = this.findSafeAlien(gameAlien);
+        if (safeAlien != null) {
+            safeAlien.handleAlienDestroyed(gameAlien, gameShip);
+        }
     }
 }
 
-class Team {
+const Team = class {
     team = 0;
     color = '';
     hex = 0;
     hue = 0;
-    flagged = 0;
-
-    score = 0;
 
     ships = [];
-
-    disabledIdxs = [];
-
-    flag = null;
-    flagHolder = null;
 
     static C = {
         TEAMS: [
@@ -574,15 +609,22 @@ class Team {
         ]
     }
 
-    constructor(team, color, hex, hue) {
+    constructor(team, color, hex, name, hue) {
         this.team = team;
         this.color = color;
         this.hex = hex;
+        this.name = name;
         this.hue = hue;
     }
 
-    setScore(score) {
-        this.score = score;
+    spawnBase() {
+        this.base = new Base(this).spawnBase();
+    }
+
+    tick() {
+        if (this.base) {
+            this.base.tick();
+        }
     }
 
     hasShip(ship) {
@@ -612,27 +654,143 @@ class Team {
             Helper.deleteFromArray(this.ships, s);
         }
     }
+
+    getMinScore() {
+        let minScore = Infinity;
+        for (let ship of this.ships) {
+            if (ship.ship.score < minScore) {
+                minScore = ship.ship.score;
+            }
+        }
+        return minScore;
+    }
+
+    getMaxScore() {
+        let maxScore = 0;
+        for (let ship of this.ships) {
+            if (ship.ship.score > maxScore) {
+                maxScore = ship.ship.score;
+            }
+        }
+        return maxScore;
+    }
+
+    getKills() {
+        let kills = 0;
+        for (let ship of this.ships) {
+            kills += ship.kills;
+        }
+        return kills;
+    }
+
+    getDeaths() {
+        let deaths = 0;
+        for (let ship of this.ships) {
+            deaths += ship.deaths;
+        }
+        return deaths;
+    }
+
+    getKD() {
+        let kills = this.getKills();
+        let deaths = this.getDeaths();
+        if (deaths == 0) {
+            return kills;
+        }
+        return kills / deaths;
+    }
+
+    getTotalLevel() {
+        let totalLevel = 0;
+        for (let ship of this.ships) {
+            totalLevel += ship.getLevel();
+        }
+        return totalLevel;
+    }
 }
 
-class Ship {    
+const ShipGroup = class {
+    tier = 0;
+    ships = [];
+
+    static C = {
+        SHIPS: {
+            '1': {
+                '101': { // When adding fly, add the `next: [201, 202] fields`
+                    SHIP: '{"name":"Fly","level":1,"model":1,"size":1.05,"next":[201,202],"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"bodies":{"main":{"section_segments":12,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-65,-60,-50,-20,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,8,10,30,25,30,18,15,0],"height":[0,6,8,12,20,20,18,15,0],"propeller":true,"texture":[4,63,10,1,1,1,12,17]},"cockpit":{"section_segments":12,"offset":{"x":0,"y":0,"z":20},"position":{"x":[0,0,0,0,0,0,0],"y":[-15,0,20,30,60],"z":[0,0,0,0,0]},"width":[0,13,17,10,5],"height":[0,18,25,18,5],"propeller":false,"texture":[7,9,9,4,4]},"cannon":{"section_segments":6,"offset":{"x":0,"y":-15,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-40,-50,-20,0,20,30],"z":[0,0,0,0,0,20]},"width":[0,5,8,11,7,0],"height":[0,5,8,11,10,0],"angle":0,"laser":{"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"error":2.5},"propeller":false,"texture":[3,3,10,3]}},"wings":{"main":{"length":[60,20],"width":[100,50,40],"angle":[-10,10],"position":[0,20,10],"doubleside":true,"offset":{"x":0,"y":10,"z":5},"bump":{"position":30,"size":20},"texture":[11,63]}},"typespec":{"name":"Fly","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[75,100],"reload":[2,3]},"generator":{"capacity":[40,60],"reload":[10,15]},"ship":{"mass":60,"speed":[125,145],"rotation":[110,130],"acceleration":[100,120]}},"shape":[1.368,1.368,1.093,0.965,0.883,0.827,0.791,0.767,0.758,0.777,0.847,0.951,1.092,1.667,1.707,1.776,1.856,1.827,1.744,1.687,1.525,1.415,1.335,1.606,1.603,1.578,1.603,1.606,1.335,1.415,1.525,1.687,1.744,1.827,1.856,1.776,1.707,1.667,1.654,0.951,0.847,0.777,0.758,0.767,0.791,0.827,0.883,0.965,1.093,1.368],"lasers":[{"x":0,"y":-1.365,"z":-0.21,"angle":0,"damage":[5,6],"rate":4,"type":1,"speed":[160,180],"number":1,"spread":0,"error":2.5,"recoil":0}],"radius":1.856,"next":[201,202]}}',
+                    HITBOX: { CENTER: { x: 0, y: 0 }, SIZE: { x: 3, y: 3 } },
+                    ABBREVIATION: 'FLY'
+                },
+            },
+        }
+    }
+
+    constructor(tier, shipMap) {
+        this.tier = tier;
+
+        this.processShips(shipMap);
+    }
+
+    processShips(shipMap) {
+        for (let value of Object.values(shipMap)) {
+            let ship = value.SHIP;
+            this.ships.push(ship);
+        }
+    }
+
+    static getShipInfo(type) {
+        let level = Math.floor(type / 100);
+        return ShipGroup.C.SHIPS[`${level}`][`${type}`];
+    }
+
+    static getShipName(type) {
+        let shipInfo = ShipGroup.getShipInfo(type);
+        if (shipInfo && shipInfo.SHIP) {
+            let jShip = JSON.parse(shipInfo.SHIP);
+            return jShip.typespec.name;
+        }
+        return '';
+    }
+}
+
+const Ship = class {
     team = null;
     ship = null;
 
+    kills = 0;
+    deaths = 0;
+
     timeouts = [];
     conditions = [];
+    lerp = null;
 
     allUIs = [];
     timedUIs = [];
+    hiddenUIIDs = new Set();
+
+    inDepot = null;
+    weaponsStoreTime = -1;
+    isDonating = false;
+    lastContributedAmount = 0;
+    credits = 0;
+    totalContributed = 0;
+    selectedItems = [];
+    selectedTab = 0;
+    highScore = 0;
+
+    selectingTeam = false;
+    scoreboardTeam = null;
+
+    upgradeHistory = [];
 
     left = false;
     done = false;
 
-    score = 0;
-
     isResetting = false;
 
     static C = {
-        INVULNERABLE_TIME: 180
+        INVULNERABLE_TIME: 360,
+        LERP_INVULNERABLE_TIME: 540,
     }
 
     constructor(ship) {
@@ -646,43 +804,41 @@ class Ship {
         this.setIdle(false);
         this.setScore(0);
 
-        this.score = 0;
+        this.inDepot = null;
+        this.weaponsStoreTime = -1;
+        this.isDonating = false;
+        this.credits = 0;
+        this.lastContributedAmount = 0;
+        this.selectedItems = [];
+        this.selectedTab = 0;
+        this.highScore = 0;
 
         this.ship.emptyWeapons();
     }
 
-    convertUIHexToHsla(ui) {
-        for (let c of ui.components) {
-            if (c.fill) {
-                c.fill = Helper.hexToHsla(c.fill);
-            }
-            if (c.stroke) {
-                c.stroke = Helper.hexToHsla(c.stroke);
-            }
-            if (c.color) {
-                c.color = Helper.hexToHsla(c.color);
-            }
-        }
-        return ui;
-    }
-
     sendUI(ui, hideMode = false) {
         if (this.ship != null) {
-            let cUI = this.convertUIHexToHsla(Helper.deepCopy(ui));
+            let cUI = UIComponent.convertUIHexToHsla(Helper.deepCopy(ui));
             let removedUIs = [];
             for (let u of this.allUIs) {
                 if (u.id == cUI.id) {
                     removedUIs.push(u);
                 }
             }
-            if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
+            if (!(removedUIs.length >= 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
                 this.ship.setUIComponent(cUI);
+
+                if (hideMode) {
+                    this.hiddenUIIDs.add(cUI.id);
+                } else {
+                    this.hiddenUIIDs.delete(cUI.id);
+                }
             }
 
+            for (let u of removedUIs) {
+                Helper.deleteFromArray(this.allUIs, u);
+            }
             if (!hideMode) {
-                for (let u of removedUIs) {
-                    Helper.deleteFromArray(this.allUIs, u);
-                }
                 this.allUIs.push(cUI);
             }
         }
@@ -696,19 +852,7 @@ class Ship {
         cUI.clickable = false;
         cUI.components = [];
 
-        let removedUIs = [];
-        for (let u of this.allUIs) {
-            if (u.id == cUI.id) {
-                removedUIs.push(u);
-            }
-        }
-        for (let u of removedUIs) {
-            Helper.deleteFromArray(this.allUIs, u);
-        }
-
-        if (!(removedUIs.length == 1 && Helper.areObjectsEqual(removedUIs[0], cUI))) {
-            this.sendUI(cUI, true);
-        }
+        this.sendUI(cUI, true);
     }
 
     hideUIsIncludingID(ui) {
@@ -750,6 +894,7 @@ class Ship {
         removedUIs = [];
         for (let uiGeneric in UIComponent.C.UIS) {
             this.hideUI(UIComponent.C.UIS[uiGeneric]);
+            this.hideUIsIncludingID(UIComponent.C.UIS[uiGeneric]);
         }
         this.allUIs = [];
         this.timedUIs = [];
@@ -767,7 +912,9 @@ class Ship {
     tick() {
         this.tickTimeouts();
         this.tickConditions();
+        this.tickLerp();
         this.tickTimedUIs();
+        this.checkHighScore();
     }
 
     tickTimeouts() {
@@ -798,6 +945,15 @@ class Ship {
         }
     }
 
+    tickLerp() {
+        if (this.lerp != null) {
+            this.lerp.tick();
+            if (!this.lerp.running) {
+                this.lerp = null;
+            }
+        }
+    }
+
     tickTimedUIs() {
         let removeTimedUIs = [];
         for (let timedUI of this.timedUIs) {
@@ -810,8 +966,12 @@ class Ship {
         for (let timedUI of removeTimedUIs) {
             Helper.deleteFromArray(this.timedUIs, timedUI);
         }
+    }
 
-        this.ship.set({ score: this.score });
+    checkHighScore() {
+        if (this.ship && this.ship.score > this.highScore) {
+            this.highScore = this.ship.score;
+        }
     }
 
     getLevel() {
@@ -820,6 +980,14 @@ class Ship {
 
     getModel() {
         return this.ship.type % 100;
+    }
+
+    getShipInfo() {
+        return ShipGroup.getShipInfo(this.ship.type);
+    }
+
+    getShipName() {
+        return ShipGroup.getShipName(this.ship.type);
     }
 
     getMaxCrystals() {
@@ -843,6 +1011,24 @@ class Ship {
         }
     }
 
+    getMaxShield() {
+        let shipInfo = this.getShipInfo();
+        if (shipInfo && shipInfo.SHIP) {
+            let jShip = JSON.parse(shipInfo.SHIP);
+            let stats = this.getStats();
+            let level = this.getLevel();
+            if (stats && jShip.specs && jShip.specs.shield && jShip.specs.shield.capacity) {
+                return jShip.specs.shield.capacity[0] + (jShip.specs.shield.capacity[1] - jShip.specs.shield.capacity[0]) * stats[0] / level;
+            }
+        }
+        return 0;
+    }
+
+    getMaxSecondaries() {
+        let level = this.getLevel();
+        return level < 7 ? level : 6;
+    }
+
     setPosition(position) {
         if (game.ships.includes(this.ship)) {
             this.ship.x = position.x;
@@ -852,6 +1038,13 @@ class Ship {
         return this;
     }
 
+    getPosition() {
+        if (game.ships.includes(this.ship)) {
+            return new Vector2(this.ship.x, this.ship.y);
+        }
+        return null;
+    }
+
     setVelocity(velocity) {
         if (game.ships.includes(this.ship)) {
             this.ship.vx = velocity.x;
@@ -859,6 +1052,31 @@ class Ship {
             this.ship.set({ vx: velocity.x, vy: velocity.y });
         }
         return this;
+    }
+
+    getVelocity() {
+        if (game.ships.includes(this.ship)) {
+            return new Vector2(this.ship.vx, this.ship.vy);
+        }
+        return null;
+    }
+
+    setAngle(angle) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.angle = angle;
+            this.ship.set({ angle: Helper.toDegrees(angle) });
+        }
+        return this;
+    }
+
+    getPose() {
+        if (game.ships.includes(this.ship)) {
+            return new Pose(
+                new Vector2(this.ship.x, this.ship.y),
+                this.ship.r
+            );
+        }
+        return null;
     }
 
     setCrystals(crystals) {
@@ -896,6 +1114,13 @@ class Ship {
         return this;
     }
 
+    getStats() {
+        if (game.ships.includes(this.ship)) {
+            return String(this.ship.stats).split('').map(Number);
+        }
+        return null;
+    }
+
     setInvulnerable(invulnerable) {
         if (game.ships.includes(this.ship)) {
             this.ship.set({ invulnerable: invulnerable });
@@ -924,8 +1149,16 @@ class Ship {
         return this;
     }
 
+    setHealing(healing) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ healing: healing });
+        }
+        return this;
+    }
+
     setTeam(team) {
         this.team = team;
+        this.scoreboardTeam = team;
         this.team.addShip(this);
         if (game.ships.includes(this.ship)) {
             this.ship.team = team.team;
@@ -950,7 +1183,6 @@ class Ship {
     }
 
     setScore(score) {
-        this.score = score;
         if (game.ships.includes(this.ship)) {
             this.ship.score = score;
             this.ship.set({ score: score });
@@ -969,7 +1201,7 @@ class Ship {
     fillUp() {
         if (game.ships.includes(this.ship)) {
             this.setMaxShield();
-            this.setMaxStats();
+            // this.setMaxStats();
             this.setMaxGenerator();
         }
         return this;
@@ -1007,7 +1239,8 @@ class Ship {
     }
 }
 
-class Alien {
+
+const Alien = class {
     name = '';
 
     alien = null;
@@ -1098,6 +1331,12 @@ class Alien {
         });
     }
 
+    setID(id) {
+        if (game.aliens.includes(this.alien)) {
+            this.alien.custom.id = id;
+        }
+    }
+
     setPosition(position) {
         if (game.aliens.includes(this.alien)) {
             this.alien.set({ x: position.x, y: position.y });
@@ -1155,9 +1394,7 @@ class Alien {
     }
 }
 
-class Collectible {
-    name = '';
-
+const Collectible = class {
     static C = {
         TYPES: [
             {
@@ -1189,7 +1426,7 @@ class Collectible {
                 CODE: 41
             },
             {
-                NAME: 'Defence pod',
+                NAME: 'Defense pod',
                 CODE: 42
             },
             {
@@ -1202,13 +1439,12 @@ class Collectible {
             }
         ],
         ALLOWED: [10, 11, 90, 91],
-        MAX_AMOUNT: 10,
-        SPAWN_RATE: 1800
+        MAX_AMOUNT: 0,
+        SPAWN_RATE: 0
     }
 
     constructor(
         position,
-        name,
         code
     ) {
         this.name = name;
@@ -1220,7 +1456,7 @@ class Collectible {
     }
 }
 
-class AsteroidPath {
+const AsteroidPath = class {
     asteroid = null;
     initialPos = null;
     velocity = null;
@@ -1260,7 +1496,7 @@ class AsteroidPath {
     }
 }
 
-class Asteroid {
+const Asteroid = class {
     asteroid = null;
 
     constructor(position, velocity, size) {
@@ -1306,7 +1542,7 @@ class Asteroid {
     }
 }
 
-class TimedAsteroid {
+const TimedAsteroid = class {
     asteroid = null;
     time = 0;
 
@@ -1335,8 +1571,9 @@ class TimedAsteroid {
     }
 }
 
-class Obj {
+const Obj = class {
     originalObj = null;
+    prevObj = null;
     obj = null;
 
     static C = {
@@ -1360,7 +1597,7 @@ class Obj {
                 },
                 type: {
                     id: 'plane',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: '',
                 }
             },
@@ -1383,10 +1620,10 @@ class Obj {
                 },
                 type: {
                     id: 'grid',
-                    obj: 'https://starblast.data.neuronality.com/mods/objects/plane.obj',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
-            }
+            },
         }
     }
 
@@ -1398,9 +1635,15 @@ class Obj {
         randomizeTypeID = false,
         color = "#ffffff",
     ) {
+        let typeCopy = Helper.deepCopy(type);
+        if (typeCopy) {
+            if (color) {
+                typeCopy.emissiveColor = color;
+            }
+        }
         this.obj = {
             id: id,
-            type: this.convertTypeHexToHsla(Helper.deepCopy(type)),
+            type: this.convertTypeHexToHsla(typeCopy),
             position: {
                 x: position.x,
                 y: position.y,
@@ -1418,9 +1661,6 @@ class Obj {
             }
         };
 
-        if (color) {
-            this.obj.type.emissiveColor = color;
-        }
         if (randomizeID) {
             this.obj.id += '-' + Helper.getRandomString(10);
         }
@@ -1430,7 +1670,7 @@ class Obj {
 
         this.originalObj = Helper.deepCopy(this.obj);
     }
-
+    
     convertTypeHexToHsla(type) {
         if (type.diffuseColor) {
             type.diffuseColor = Helper.hexToHsla(type.diffuseColor);
@@ -1442,7 +1682,11 @@ class Obj {
     }
 
     update() {
+        if (JSON.stringify(this.obj) == JSON.stringify(this.prevObj)) {
+            return;
+        }
         game.setObject(this.obj);
+        this.prevObj = Helper.deepCopy(this.obj);
         return this;
     }
 
@@ -1452,18 +1696,62 @@ class Obj {
         return this;
     }
 
+    setPose(pose, disregardZScale = false) {
+        this.obj.position = {
+            x: pose.position.x,
+            y: pose.position.y,
+            z: this.obj.position.z
+        };
+        this.obj.rotation = {
+            x: this.obj.rotation.x,
+            y: this.obj.rotation.y,
+            z: pose.rotation
+        };
+        this.obj.scale = {
+            x: pose.scale.x,
+            y: pose.scale.y,
+            z: disregardZScale ? this.obj.scale.z : pose.scale.z
+        };
+        return this;
+    }
+
+    setPoseTransformed(pose, disregardZScale = false) {
+        this.obj = pose.transformObj(Helper.deepCopy(this.originalObj), disregardZScale);
+        return this;
+    }
+
+    getPose() {
+        return new Pose(
+            new Vector2(this.obj.position.x, this.obj.position.y),
+            this.obj.rotation.z,
+            new Vector3(this.obj.scale.x, this.obj.scale.y, this.obj.scale.z)
+        );
+    }
+
     setPosition(position) {
-        this.obj.position = position;
+        this.obj.position = {
+            x: position.x,
+            y: position.y,
+            z: position.z
+        };
         return this;
     }
 
     setRotation(rotation) {
-        this.obj.rotation = rotation;
+        this.obj.rotation = {
+            x: rotation.x,
+            y: rotation.y,
+            z: rotation.z
+        };
         return this;
     }
 
     setScale(scale) {
-        this.obj.scale = scale;
+        this.obj.scale = {
+            x: scale.x,
+            y: scale.y,
+            z: scale.z
+        };
         return this;
     }
 
@@ -1489,7 +1777,7 @@ class Obj {
     }
 }
 
-class TimedObj {
+const TimedObj = class {
     obj = null;
     time = 0;
 
@@ -1523,7 +1811,7 @@ class TimedObj {
     }
 }
 
-class ObjectType {
+const ObjectType = class {
     objectType = null;
 
     constructor(
@@ -1547,7 +1835,7 @@ class ObjectType {
     }
 }
 
-class ObjectPhysics {
+const ObjectPhysics = class {
     objectPhysics = null;
 
     constructor(
@@ -1561,7 +1849,7 @@ class ObjectPhysics {
     }
 }
 
-class TimedUI {
+const TimedUI = class {
     startTime = 0;
     running = false;
 
@@ -1594,7 +1882,7 @@ class TimedUI {
     }
 }
 
-class UIComponent {
+const UIComponent = class {
     uiComponent = null;
 
     static C = {
@@ -1603,10 +1891,14 @@ class UIComponent {
                 id: 'scoreboard',
                 visible: true,
                 components: [
-
                 ],
-                START: 8,
-                HEIGHT: 6.5
+            },
+            SCOREBOARD_SWITCH: {
+                id: 'scoreboard_switch',
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(9), // TAB
+                position: [0, 0, 0, 0],
             },
             RADAR_BACKGROUND: {
                 id: 'radar_background',
@@ -1618,6 +1910,66 @@ class UIComponent {
                     }
                 ]
             },
+            ONE_TO_TWO: {
+                id: 'one_to_two',
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 3.75, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 0, 7.5],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 7.5, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                ]
+            },
+            TWO_TO_ONE: {
+                id: 'two_to_one',
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [0, 7.5, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 0, 0, 7.5],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                    {
+                        type: 'box',
+                        position: [10, 3.75, 10, 0],
+                        stroke: '#ffffff80',
+                        width: 1
+                    },
+                ]
+            },
             LIVES_BLOCKER: {
                 id: "lives_blocker",
                 visible: true,
@@ -1625,6 +1977,20 @@ class UIComponent {
                 shortcut: String.fromCharCode(187),
                 position: [65, 0, 10, 10],
                 components: []
+            },
+            LEFT_LEVELUP_BLOCKER: {
+                id: "levelup_blocker",
+                visible: true,
+                clickable: true,
+                shortcut: '9',
+                position: [20, 0, 25, 15],
+            },
+            RIGHT_LEVELUP_BLOCKER: {
+                id: "right_levelup_blocker",
+                visible: true,
+                clickable: true,
+                shortcut: '0',
+                position: [45, 0, 25, 15],
             },
             TOP_MESSAGE: {
                 id: "top_message",
@@ -1664,49 +2030,24 @@ class UIComponent {
             },
             NOTIFICATION: {
                 id: "notification",
-                position: [5, 75, 60, 10],
+                position: [25, 5, 50, 10],
                 visible: true,
                 components: [
                     {
                         type: 'box',
-                        position: [0, 0, 0, 100],
-                        width: 10
+                        position: [0, 0, 100, 100]
                     },
                     {
                         type: "text",
-                        position: [2.5, 5, 90, 50],
-                        align: "left",
+                        position: [2.5, 5, 95, 50],
+                        align: "center",
                         color: '#ffffff'
                     },
                     {
                         type: "text",
-                        position: [2.5, 52.5, 60, 42.5],
-                        align: "left",
+                        position: [2.5, 52.5, 95, 42.5],
+                        align: "center",
                         color: '#ffffffaa'
-                    }
-                ]
-            },
-            MIDDLE_MESSAGE: {
-                id: "middle_message",
-                position: [20, 47.5, 40, 5],
-                visible: true,
-                components: [
-                    {
-                        type: 'box',
-                        position: [0, 0, 100, 0],
-                        stroke: '#ffffff',
-                        width: 4
-                    },
-                    {
-                        type: 'box',
-                        position: [0, 100, 100, 0],
-                        stroke: '#ffffff',
-                        width: 4
-                    },
-                    {
-                        type: "text",
-                        position: [10, 10, 80, 80],
-                        color: '#ffffff'
                     }
                 ]
             },
@@ -1768,6 +2109,50 @@ class UIComponent {
         return this;
     }
 
+    static convertUIHexToHsla(ui) {
+        if (ui.components) {
+            for (let c of ui.components) {
+                if (c.fill) {
+                    c.fill = Helper.hexToHsla(c.fill);
+                }
+                if (c.stroke) {
+                    c.stroke = Helper.hexToHsla(c.stroke);
+                }
+                if (c.color) {
+                    c.color = Helper.hexToHsla(c.color);
+                }
+            }
+        }
+        return ui;
+    }
+
+    static addTextShadow(ui, shadowColor = '#2C2C2C', offsetX = 1, offsetY = 1, scaling = true) {
+        let textShadowComponents = [];
+        for (let c of ui.components) {
+            if (c.type == 'text') {
+                let textShadowComponent = Helper.deepCopy(c);
+                textShadowComponent.position[0] += scaling ? offsetX * textShadowComponent.position[2] : offsetX;
+                textShadowComponent.position[1] += scaling ? offsetY * textShadowComponent.position[3] : offsetY;
+                textShadowComponent.color = shadowColor;
+                textShadowComponents.push(textShadowComponent);
+            }
+        }
+        ui.components.unshift(...textShadowComponents);
+        return ui;
+    }
+
+    static transformUIComponents(uiComponents, translate = new Vector2(0, 0), scale = new Vector2(1, 1)) {
+        for (let ui of uiComponents) {
+            ui.position[0] *= scale.x;
+            ui.position[1] *= scale.y;
+            ui.position[0] += translate.x;
+            ui.position[1] += translate.y;
+            ui.position[2] *= scale.x;
+            ui.position[3] *= scale.y;
+        }
+        return uiComponents;
+    }
+
     destroySelf() {
         this.uiComponent.visible = false;
         this.uiComponent.position = [0, 0, 0, 0];
@@ -1775,7 +2160,7 @@ class UIComponent {
     }
 }
 
-class UISubComponent {
+const UISubComponent = class {
     uiSubComponent = null;
 
     constructor(
@@ -1843,120 +2228,164 @@ class UISubComponent {
     }
 }
 
-class GameMap {
+const GameMap = class {
     name = '';
     author = '';
     map = '';
-    spawnArea = [];
-    gridObjs = [];
-    flags = [];
-    portals = [];
-    spawns = [];
-    tiers = [];
-    asteroidPaths = [];
-
-    tier = 0;
+    orbitRadius = 0;
 
     static C = {
-        FILL_IN: false,
-        MAPS: [
-        ]
-    }
+        MAP_GENERATOR: {
 
-    constructor(name, author, map, spawns, asteroids) {
-        this.name = name;
-        this.author = author;
-        this.map = map;
-        if (GameMap.C.FILL_IN) {
-            this.map = this.map.replace(/[1-8]/g, '9');
         }
-        this.getSpawnArea();
-        this.spawns = [];
-        if (spawns) {
-            for (let i = 0; i < spawns.length; i++) {
-                this.spawns.push(new Vector2(spawns[i].x, spawns[i].y));
-            }
-        }
-
-        this.asteroidPaths = [];
-        for (let i = 0; i < asteroids.length; i++) {
-            this.asteroidPaths.push(new AsteroidPath(
-                new Vector2(asteroids[i].x, asteroids[i].y),
-                new Vector2(asteroids[i].vx, asteroids[i].vy),
-                asteroids[i].size
-            ));
-        }
-    }
-
-    getSpawnArea() {
-        let sMap = this.map.split('\n');
-        this.spawnArea = [];
-        for (let i = 0; i < Game.C.OPTIONS.MAP_SIZE; i++) {
-            for (let j = 0; j < Game.C.OPTIONS.MAP_SIZE; j++) {
-                let char = sMap[i].charAt(j);
-                if (char == ' ') {
-                    this.spawnArea.push(new Vector2(
-                        (j - Game.C.OPTIONS.MAP_SIZE / 2 + 0.5) * 10,
-                        (Game.C.OPTIONS.MAP_SIZE / 2 - 0.5 - i) * 10
-                    ));
-                }
-            }
-        }
-
-        if (Game.C.IS_DEBUGGING) {
-            for (let i = 0; i < this.spawnArea.length; i++) {
-                let grid = Helper.deepCopy(Obj.C.OBJS.GRID);
-                this.gridObjs.push(new Obj(
-                    grid.id,
-                    grid.type,
-                    new Vector3(this.spawnArea[i].x * 10, this.spawnArea[i].y * 10, grid.position.z),
-                    new Vector3(grid.rotation.x, grid.rotation.y, grid.rotation.z),
-                    new Vector3(grid.scale.x, grid.scale.y, grid.scale.z),
-                    true,
-                    false
-                ).update());
-            }
-        }
-    }
-
-    spawn() {
-        game.setCustomMap(this.map);
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.spawn();
-        }
-        return this;
-    }
-
-    tick() {
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.tick();
-        }
-        return this;
-    }
-
-    stop() {
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.stop();
-        }
-        return this;
-    }
-
-    destroySelf() {
-        for (let gridObj of this.gridObjs) {
-            gridObj.destroySelf();
-        }
-        for (let asteroidPath of this.asteroidPaths) {
-            asteroidPath.destroySelf();
-        }
-        return this;
     }
 }
 
-class Vector2 {
+const Rectangle = class {
+    center = null;
+    size = null;
+    angle = 0;
+
+    constructor(center = new Vector2(0, 0), size = new Vector2(1, 1), angle = 0) {
+        this.center = center;
+        this.size = size;
+        this.angle = angle;
+    }
+
+    getVertices() {
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        const vertices = [
+            new Vector2(-halfWidth, -halfHeight),
+            new Vector2(halfWidth, -halfHeight),
+            new Vector2(halfWidth, halfHeight),
+            new Vector2(-halfWidth, halfHeight)
+        ];
+
+        return vertices.map(vertex => vertex.rotateBy(this.angle).add(this.center));
+    }
+
+    containsPoint(point) {
+        const localPoint = point.subtract(this.center).rotateBy(-this.angle);
+
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        return (
+            localPoint.x >= -halfWidth && localPoint.x <= halfWidth &&
+            localPoint.y >= -halfHeight && localPoint.y <= halfHeight
+        );
+    }
+
+    mapPointToEdge(point) {
+        const localPoint = point.subtract(this.center).rotateBy(-this.angle);
+
+        const halfWidth = this.size.x / 2;
+        const halfHeight = this.size.y / 2;
+
+        let mappedX = Math.max(-halfWidth, Math.min(halfWidth, localPoint.x));
+        let mappedY = Math.max(-halfHeight, Math.min(halfHeight, localPoint.y));
+
+        return new Vector2(mappedX, mappedY).rotateBy(this.angle).add(this.center);
+    }
+}
+
+const Pose = class {
+    position = null;
+    rotation = null;
+    scale = null;
+
+    constructor(position = new Vector2(0, 0), rotation = 0, scale = new Vector3(1, 1, 1)) {
+        this.position = position;
+        this.rotation = rotation;
+        this.scale = scale;
+    }
+
+    getAbsolutePose(prevPose) {
+        const rotatedPosition = this.position.rotateBy(prevPose.rotation);
+        const scaledPosition = new Vector2(
+            rotatedPosition.x * prevPose.scale.x,
+            rotatedPosition.y * prevPose.scale.y
+        );
+        const absolutePosition = prevPose.position.add(scaledPosition);
+        const absoluteRotation = prevPose.rotation + this.rotation;
+        const absoluteScale = prevPose.scale.multiplyComponents(this.scale);
+        return new Pose(absolutePosition, absoluteRotation, absoluteScale);
+    }
+
+    rotateBy(angle) {
+        const newPosition = this.position.clone().rotateBy(angle);
+        const newRotation = this.rotation + angle;
+        return new Pose(newPosition, newRotation, this.scale.clone());
+    }
+
+    transformObj(obj, disregardZScale = false) {
+        let objPosition = new Vector2(obj.position.x, obj.position.y);
+        let transformedPosition = this.position.add(objPosition.rotateBy(this.rotation).multiplyComponents(this.scale));
+
+        obj.position.x = transformedPosition.x;
+        obj.position.y = transformedPosition.y;
+
+        obj.rotation.z += this.rotation;
+        
+        obj.scale.x *= this.scale.x;
+        obj.scale.y *= this.scale.y;
+        if (!disregardZScale) {
+            obj.scale.z *= this.scale.z;
+        }
+        return obj;
+    }
+
+    add(pose) {
+        const newPosition = this.position.add(pose.position);
+        const newRotation = this.rotation + pose.rotation;
+        const newScale = this.scale.multiplyComponents(pose.scale);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
+    subtract(pose) {
+        const newPosition = this.position.subtract(pose.position);
+        const newRotation = this.rotation - pose.rotation;
+        const newScale = this.scale.divideComponents(pose.scale);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
+    lerpRotation(rotation, t, maxAngVel = Infinity) {
+        let a = ((this.rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+        let b = ((rotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        let delta = b - a;
+        if (delta > Math.PI) delta -= 2 * Math.PI;
+        if (delta < -Math.PI) delta += 2 * Math.PI;
+
+        let newRotation = a + delta * t;
+        newRotation = ((newRotation % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+
+        return new Pose(this.position.clone(), newRotation, this.scale.clone());
+    }
+
+    lerp(pose, t, maxScaleVel = Infinity) {
+        const newPosition = this.position.lerp(pose.position, t);
+        const newRotation = this.lerpRotation(pose.rotation, t).rotation;
+        const newScale = this.scale.lerp(pose.scale, t, maxScaleVel);
+        return new Pose(newPosition, newRotation, newScale);
+    }
+
+    clone() {
+        return new Pose(
+            this.position.clone(),
+            this.rotation,
+            this.scale.clone()
+        );
+    }
+}
+
+const Vector2 = class {
     x = 0;
     y = 0;
 
-    constructor(x, y) {
+    constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
     }
@@ -1973,8 +2402,16 @@ class Vector2 {
         return new Vector2(this.x * scalar, this.y * scalar);
     }
 
+    multiplyComponents(vector) {
+        return new Vector2(this.x * vector.x, this.y * vector.y);
+    }
+
     divide(scalar) {
         return new Vector2(this.x / scalar, this.y / scalar);
+    }
+
+    divideComponents(vector) {
+        return new Vector2(this.x / vector.x, this.y / vector.y);
     }
 
     addScalar(scalar) {
@@ -2019,6 +2456,28 @@ class Vector2 {
         return Math.atan2(vector.y - this.y, vector.x - this.x);
     }
 
+    rotateBy(angle) {
+        const cos = Math.cos(angle);
+        const sin = Math.sin(angle);
+        return new Vector2(
+            this.x * cos - this.y * sin,
+            this.x * sin + this.y * cos
+        );
+    }
+
+    lerp(vector, t) {
+        let dx = vector.x - this.x;
+        let dy = vector.y - this.y;
+
+        dx *= t;
+        dy *= t;
+
+        return new Vector2(
+            this.x + dx,
+            this.y + dy
+        );
+    }
+
     clone() {
         return new Vector2(this.x, this.y);
     }
@@ -2028,12 +2487,12 @@ class Vector2 {
     }
 }
 
-class Vector3 {
+const Vector3 = class {
     x = 0;
     y = 0;
     z = 0;
 
-    constructor(x, y, z) {
+    constructor(x = 0, y = 0, z = 0) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -2051,8 +2510,16 @@ class Vector3 {
         return new Vector3(this.x * scalar, this.y * scalar, this.z * scalar);
     }
 
+    multiplyComponents(vector) {
+        return new Vector3(this.x * vector.x, this.y * vector.y, this.z * vector.z);
+    }
+
     divide(scalar) {
         return new Vector3(this.x / scalar, this.y / scalar, this.z / scalar);
+    }
+
+    divideComponents(vector) {
+        return new Vector3(this.x / vector.x, this.y / vector.y, this.z / vector.z);
     }
 
     addScalar(scalar) {
@@ -2099,6 +2566,22 @@ class Vector3 {
         return Math.atan2(vector.y - this.y, vector.x - this.x);
     }
 
+    lerp(vector, t) {
+        let dx = vector.x - this.x;
+        let dy = vector.y - this.y;
+        let dz = vector.z - this.z;
+
+        dx *= t;
+        dy *= t;
+        dz *= t;
+
+        return new Vector3(
+            this.x + dx,
+            this.y + dy,
+            this.z + dz
+        );
+    }
+
     clone() {
         return new Vector3(this.x, this.y, this.z);
     }
@@ -2108,7 +2591,7 @@ class Vector3 {
     }
 }
 
-class TimeoutCreator {
+const TimeoutCreator = class {
     startTime = 0;
     duration = 0;
     callback = null;
@@ -2136,7 +2619,7 @@ class TimeoutCreator {
     }
 }
 
-class ConditionCreator {
+const ConditionCreator = class {
     condition = null;
     callback = null;
     running = false;
@@ -2162,7 +2645,45 @@ class ConditionCreator {
     }
 }
 
-class Helper {
+const StaggeredQueueCreator = class {
+    queue = [];
+    stagger = 0;
+    processingCurrent = false;
+
+    constructor(stagger) {
+        this.stagger = stagger;
+    }
+
+    add(callback) {
+        this.queue.push(callback);
+        return this;
+    }
+
+    tick() {
+        if (this.queue.length > 0 && !this.processingCurrent) {
+            const callback = this.queue[0];
+            this.processingCurrent = true;
+            g.timeouts.push(new TimeoutCreator(() => {
+                this.queue.shift();
+                this.processingCurrent = false;
+                callback();
+            }, this.stagger).start());
+        }
+        return this;
+    }
+}
+
+const Helper = class {
+    static getCounterValue(counter) {
+        if (counter < 1000) {
+            return Math.round(counter).toString();
+        } else if (counter < 1000000) {
+            return (counter / 1000).toFixed(1) + 'K';
+        } else {
+            return (counter / 1000000).toFixed(1) + 'M';
+        }
+    }
+
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
             const j = this.getRandomInt(0, i);
@@ -2202,15 +2723,19 @@ class Helper {
         return "#" + Math.floor(Math.random()*16777215).toString(16);
     }
 
-    static getRandomVividHSL(alpha = 100) {
-        let hue = Math.floor(Math.random() * 361);
-        let saturation = 100;
-        let lightness = Math.floor(Math.random() * 21) + 40;
-        
-        return `hsla(${hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+    static getRandomVividHSLA(a = 100, returnObject = false) {
+        let h = Math.floor(Math.random() * 361);
+        let s = 100;
+        let l = Math.floor(Math.random() * 21) + 40;
+
+        if (returnObject) {
+            return { h, s, l, a };
+        }
+
+        return `hsla(${h}, ${s}%, ${l}%, ${a})`;
     }
 
-    static hexToHsla(hex) {
+    static hexToHsla(hex, returnObject = false) {
         hex = hex.replace(/^#/, '');
     
         if (hex.length === 3) {
@@ -2242,7 +2767,11 @@ class Helper {
     
         s = Math.round(s * 100);
         l = Math.round(l * 100);
-    
+
+        if (returnObject) {
+            return { h, s, l, a };
+        }
+
         return `hsla(${h}, ${s}%, ${l}%, ${parseFloat(a.toFixed(2))})`;
     }
 
@@ -2275,6 +2804,100 @@ class Helper {
         }
 
         return hex;
+    }
+
+    static adjustSaturation(hex, percent) {
+        let { h, s, l, a } = Helper.hexToHsla(hex, true);
+        s = Math.min(100, Math.max(0, s + percent * 100));
+        return Helper.hslaToHex(h, s, l, a);
+    }
+
+
+    static adjustBrightness(hex, percent) {
+        hex = hex.replace(/^#/, '');
+
+        let r = parseInt(hex.substring(0, 2), 16);
+        let g = parseInt(hex.substring(2, 4), 16);
+        let b = parseInt(hex.substring(4, 6), 16);
+
+        if (percent > 0) {
+            r += (255 - r) * percent;
+            g += (255 - g) * percent;
+            b += (255 - b) * percent;
+        } else {
+            r *= 1 + percent;
+            g *= 1 + percent;
+            b *= 1 + percent;
+        }
+
+        r = Math.round(Math.min(255, Math.max(0, r)));
+        g = Math.round(Math.min(255, Math.max(0, g)));
+        b = Math.round(Math.min(255, Math.max(0, b)));
+
+        return (
+            '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0')
+        ).toUpperCase();
+    }
+
+    static hexToRgb(hex, returnObject = false) {
+        hex = hex.replace(/^#/, '');
+
+        if (hex.length === 3) {
+            hex = hex.split('').map(ch => ch + ch).join('');
+        }
+
+        if (hex.length === 4) {
+            hex = hex.split('').map(ch => ch + ch).join('');
+        }
+
+        let r, g, b, a = 1;
+
+        if (hex.length === 6) {
+            r = parseInt(hex.slice(0, 2), 16);
+            g = parseInt(hex.slice(2, 4), 16);
+            b = parseInt(hex.slice(4, 6), 16);
+        } else if (hex.length === 8) {
+            r = parseInt(hex.slice(0, 2), 16);
+            g = parseInt(hex.slice(2, 4), 16);
+            b = parseInt(hex.slice(4, 6), 16);
+            a = parseInt(hex.slice(6, 8), 16) / 255;
+            a = parseFloat(a.toFixed(3)); // optional: keep 3 decimal places
+        }
+
+        if (returnObject) {
+            return { r, g, b, a };
+        }
+
+        return `rgba(${r}, ${g}, ${b}, ${a})`;
+    }
+
+    static rgbToHex(r, g, b, a = 1) {
+        r = Math.max(0, Math.min(255, Math.round(r)));
+        g = Math.max(0, Math.min(255, Math.round(g)));
+        b = Math.max(0, Math.min(255, Math.round(b)));
+
+        const hex = (
+            (1 << 24) + (r << 16) + (g << 8) + b
+        ).toString(16).slice(1).toUpperCase();
+
+        a = Math.max(0, Math.min(1, a));
+        const alphaHex = Math.round(a * 255).toString(16).padStart(2, '0').toUpperCase();
+        return `#${hex}${alphaHex}`;
+    }
+
+    static interpolateColor(color1, color2, percent) {
+        const c1 = this.hexToRgb(color1, true);
+        const c2 = this.hexToRgb(color2, true);
+
+        const r = Math.round(c1.r + (c2.r - c1.r) * percent);
+        const g = Math.round(c1.g + (c2.g - c1.g) * percent);
+        const b = Math.round(c1.b + (c2.b - c1.b) * percent);
+        const a = parseFloat((c1.a + (c2.a - c1.a) * percent).toFixed(2));
+
+        return this.rgbToHex(r, g, b, a);
     }
 
     static getRandomRectCoordinate(min, max) {
@@ -2322,6 +2945,19 @@ class Helper {
         return subset;
     }
 
+    static getCubicEaseInOut(t) {
+        if (t < 0.5) {
+            return 4 * t * t * t;
+        } else {
+            return 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+    }
+
+    static angleWithinThreshold(angle, target, threshold) {
+        let diff = Math.abs(angle - target) % (2 * Math.PI);
+        return diff <= threshold || diff >= 2 * Math.PI - threshold;
+    }
+
     static getNGonCorners(n, angleOffset=0) {
         let corners = [];
         for (let i = 0; i < n; i++) {
@@ -2329,6 +2965,16 @@ class Helper {
             corners.push(new Vector2(Math.cos(angle), Math.sin(angle)));
         }
         return corners;
+    }
+    static toDegrees(radians) {
+        let deg = radians * (180 / Math.PI);
+        deg = ((deg % 360) + 360) % 360;
+        return deg;
+    }
+
+    static toRadians(degrees) {
+        degrees = ((degrees % 360) + 360) % 360;
+        return degrees * (Math.PI / 180);
     }
 
     static formatTime(time) {
@@ -2372,12 +3018,28 @@ class Helper {
             h * scaleSize
         ];
     }
+
+    static getGridUIPosition(startX, startY, separationX, separationY, indexX, indexY, numX, numY) {
+        let totalAvailableWidth = (100 - startX * 2) - (numX - 1) * separationX;
+        let totalAvailableHeight = (100 - startY * 2) - (numY - 1) * separationY;
+
+        let width = totalAvailableWidth / numX;
+        let height = totalAvailableHeight / numY;
+
+        let x = startX + indexX * (width + separationX);
+        let y = startY + indexY * (height + separationY);
+
+        return [x, y, width, height];
+    }
 }
 
+Game.setShipGroups(ShipGroup.C.SHIPS);
 this.options = {
     root_mode: Game.C.OPTIONS.ROOT_MODE,
+    
     map_size: Game.C.OPTIONS.MAP_SIZE,
     custom_map: Game.C.OPTIONS.MAP,
+
     asteroids_strength: Game.C.OPTIONS.ASTEROIDS_STRENGTH,
     release_crystal: Game.C.OPTIONS.RELEASE_CRYSTAL,
     crystal_drop: Game.C.OPTIONS.CRYSTAL_DROP,
@@ -2397,6 +3059,11 @@ this.options = {
     reset_tree: Game.C.OPTIONS.RESET_TREE,
     choose_ship: Game.C.OPTIONS.CHOOSE_SHIP,
     ships: Game.C.OPTIONS.SHIPS,
+
+    lives: Game.C.OPTIONS.LIVES,
+    maxtierlives: Game.C.OPTIONS.MAX_TIER_LIVES,
+    max_level: Game.C.OPTIONS.MAX_LEVEL,
+
     max_players: Game.C.OPTIONS.MAX_PLAYERS,
 
     vocabulary: Game.C.OPTIONS.VOCABULARY
@@ -2419,7 +3086,7 @@ this.tick = function () {
         };
 
         game.custom.showIDs = function () {
-            let list = "PLAYER LIST:\n";
+            let list = `Player List ${game.ships.length}:\n`
             for (let ship of game.ships) {
                 list += `${ship.id}: ${ship.name}\n`;
             }
@@ -2437,7 +3104,7 @@ this.event = function (event) {
                 echo(game.custom.showIDs());
                 break;
             case 'ship_destroyed':
-                g.onShipDestroyed(gameShip);
+                g.onShipDestroyed(gameShip, event.killer);
                 echo(game.custom.showIDs());
                 break;
             case 'ui_component_clicked':
