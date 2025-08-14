@@ -1,14 +1,10 @@
 /*
-    Starblast Base Wars (SBW)
+    Starblast Mod Template
 
     @author JavRedstone
-    @version 1.0.0
+    @version 3.0.0
 
     Developed in 2025
-
-    Special thanks to ÆTHER and Nerd69420 for some of the 3D objects used in this mod
-
-    Ships from Vanilla Revamp (V3)
 */
 
 const Game = class {
