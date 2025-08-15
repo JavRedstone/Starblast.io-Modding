@@ -228,12 +228,6 @@ const Game = class {
         }
     }
 
-    spawnBases() {
-        for (let team of this.teams) {
-            team.spawnBase();
-        }
-    }
-
     resetShips() {
         this.ships = Helper.shuffleArray(this.ships);
         for (let i = 0; i < this.ships.length; i++) {
