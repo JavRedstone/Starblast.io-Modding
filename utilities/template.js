@@ -788,14 +788,7 @@ const Ship = class {
         this.setCollider(true);
         this.setIdle(false);
         this.setScore(0);
-
-        this.inDepot = null;
-        this.weaponsStoreTime = -1;
-        this.isDonating = false;
-        this.credits = 0;
-        this.lastContributedAmount = 0;
-        this.selectedItems = [];
-        this.selectedTab = 0;
+        
         this.highScore = 0;
 
         this.ship.emptyWeapons();
