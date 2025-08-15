@@ -761,15 +761,6 @@ const Ship = class {
     allUIs = [];
     timedUIs = [];
     hiddenUIIDs = new Set();
-
-    inDepot = null;
-    weaponsStoreTime = -1;
-    isDonating = false;
-    lastContributedAmount = 0;
-    credits = 0;
-    totalContributed = 0;
-    selectedItems = [];
-    selectedTab = 0;
     highScore = 0;
 
     selectingTeam = false;
