@@ -203,7 +203,6 @@ const Game = class {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        newMap = GameMap.C.MAPS[GameMap.C.MAPS.length - 1];
         this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.spawns).spawn();
     }
 
