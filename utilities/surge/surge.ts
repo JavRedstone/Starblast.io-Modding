@@ -56,7 +56,7 @@ const Game = class {
             WEAPONS_STORE: false,
             PROJECTILE_SPEED: 1,
 
-            STARTING_SHIP: 102,
+            STARTING_SHIP: 800,
             RESET_TREE: true,
             CHOOSE_SHIP: [102],
 
@@ -316,6 +316,8 @@ const Game = class {
         if (this.map && this.map.spawns.length == 2 && ship.team) {
             ship.setPosition(this.map.spawns[ship.team.team].getRandomPointInside());
         }
+
+        ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
         
         ship.chooseShipTime = game.step;
         ship.abilityTime = game.step;
