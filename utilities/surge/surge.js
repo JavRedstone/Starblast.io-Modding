@@ -75,7 +75,7 @@ const Game = class {
                 { text: "Defend", icon: "\u0025", key: "D" },
                 { text: "Kill", icon: "\u007f", key: "K" },
                 { text: "Sorry", icon: "\u00a1", key: "S" },
-                { text: "Thanks", icon: "\u0041", key: "X" },
+                { text: "Thanks", icon: "\u0041", key: "I" },
                 { text: "You", icon: "\u004e", key: "O" },
                 { text: "Me", icon: "\u004f", key: "E" },
                 { text: "No Problem", icon: "\u0047", key: "P" },
@@ -203,6 +203,7 @@ const Game = class {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
+        newMap = GameMap.C.MAPS[GameMap.C.MAPS.length - 1];
         this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.spawns).spawn();
     }
 
@@ -214,8 +215,9 @@ const Game = class {
                 if (spawn && team) {
                     let spawnGlow = Helper.deepCopy(Obj.C.OBJS.SPAWN_GLOW);
                     let spawnGlowPosition = new Vector3(spawn.center.x, spawn.center.y, spawnGlow.position.z);
-                    let spawnGlowScale = new Vector3(spawn.size.x * (i == 0 ? 1 : -1), spawn.size.y, spawnGlow.scale.z);
-                    let spawnGlowObj = new Obj(spawnGlow.id, spawnGlow.type, spawnGlowPosition, spawnGlow.rotation, spawnGlowScale, true, true, team.hex);
+                    let spawnGlowRotation = new Vector3(spawnGlow.rotation.x, spawnGlow.rotation.y, spawnGlow.rotation.z + spawn.angle);
+                    let spawnGlowScale = new Vector3(spawn.size.x, spawn.size.y, spawnGlow.scale.z);
+                    let spawnGlowObj = new Obj(spawnGlow.id, spawnGlow.type, spawnGlowPosition, spawnGlowRotation, spawnGlowScale, true, true, team.hex);
                     this.spawnGlows.push(spawnGlowObj.update());
                 }
             }
@@ -582,10 +584,10 @@ const Game = class {
                             }
 
                             if (ship.abilityTime != -1) {
-                                let abilityActivate = Helper.deepCopy(UIComponent.C.UIS.ABILITY_ACTIVATE);
+                                let abilityActivate = Helper.deepCopy(UIComponent.C.UIS.SURGE_ACTIVATE);
                                 if (game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
                                     abilityActivate.components[0].fill = '#00ff0080';
-                                    abilityActivate.components[1].value = 'Surge [I]';
+                                    abilityActivate.components[1].value = 'Surge [X]';
                                 } else {
                                     abilityActivate.clickable = false;
                                     abilityActivate.components[0].fill = '#00000080';
@@ -593,7 +595,7 @@ const Game = class {
                                 }
                                 ship.sendUI(abilityActivate);
                             } else {
-                                ship.hideUI(UIComponent.C.UIS.ABILITY_ACTIVATE);
+                                ship.hideUI(UIComponent.C.UIS.SURGE_ACTIVATE);
                             }
 
                             let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
@@ -615,6 +617,14 @@ const Game = class {
                                 }
                             }
                             ship.sendUI(radarBackground);
+                        }
+
+                        let mapAuthor = Helper.deepCopy(UIComponent.C.UIS.MAP_AUTHOR);
+                        if (this.map) {
+                            mapAuthor.components[2].value += this.map.name + " by " + this.map.author;
+                            ship.sendUI(mapAuthor);
+                        } else {
+                            ship.hideUI(mapAuthor);
                         }
 
                         let scoreboard = Helper.deepCopy(UIComponent.C.UIS.SCOREBOARD);
@@ -943,7 +953,7 @@ const Game = class {
                     ship.fillUp();
                 }
             }
-            else if (id == UIComponent.C.UIS.ABILITY_ACTIVATE.id) {
+            else if (id == UIComponent.C.UIS.SURGE_ACTIVATE.id) {
                 if (ship.abilityTime != -1 && game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
                     ship.abilityTime = game.step;
                     let shipCrystals = ship.ship.crystals;
@@ -2918,12 +2928,12 @@ const UIComponent = class {
                     }
                 ]
             },
-            ABILITY_ACTIVATE: {
-                id: "ability_activate",
+            SURGE_ACTIVATE: {
+                id: "surge_activate",
                 position: [45, 85, 10, 5],
                 visible: true,
                 clickable: true,
-                shortcut: 'I',
+                shortcut: 'X',
                 components: [
                     {
                         type: 'box',
@@ -2932,7 +2942,7 @@ const UIComponent = class {
                     },
                     {
                         type: 'text',
-                        position: [5, 0, 90, 100],
+                        position: [10, 10, 80, 80],
                         value: '',
                         color: '#ffffff'
                     }
@@ -3130,45 +3140,45 @@ const GameMap = class {
                 name: 'Maze',
                 author: 'JavRedstone',
                 map: "99999999 9                    9 99999999\n"+
-                "99       9                    9       99\n"+
-                "99       9      99999         9       99\n"+
-                "99                      9999          99\n"+
-                "99                                    99\n"+
-                "99                                    99\n"+
-                "99      9999      9          999      99\n"+
-                "99                9                   99\n"+
-                "99                9   9               99\n"+
-                "99                9   9               99\n"+
-                "99          9         9               99\n"+
-                "99          9                9        99\n"+
-                "99                           9        99\n"+
-                "99            999       99   9        99\n"+
-                "99                           9        99\n"+
-                "99                                    99\n"+
-                "99               9                    99\n"+
-                "99               9      999           99\n"+
-                "99                                    99\n"+
-                "99       9                            99\n"+
-                "99       9                            99\n"+
-                "99       9   9999    9        9       99\n"+
-                "99       9           9        9       99\n"+
-                "99                            9       99\n"+
-                "99                            9       99\n"+
-                "99                                    99\n"+
-                "99            999      999            99\n"+
-                "99                                    99\n"+
-                "99        99                          99\n"+
-                "99                                    99\n"+
-                "99                9     9999          99\n"+
-                "99                9                   99\n"+
-                "99                9                   99\n"+
-                "99      9999      9         9999      99\n"+
-                "99                                    99\n"+
-                "99                                    99\n"+
-                "99                                    99\n"+
-                "99           9       9999             99\n"+
-                "99           9                        99\n"+
-                "99999999     9                  99999999",
+                    "99       9                    9       99\n"+
+                    "99       9      99999         9       99\n"+
+                    "99                      9999          99\n"+
+                    "99                                    99\n"+
+                    "99                                    99\n"+
+                    "99      9999      9          999      99\n"+
+                    "99                9                   99\n"+
+                    "99                9   9               99\n"+
+                    "99                9   9               99\n"+
+                    "99          9         9               99\n"+
+                    "99          9                9        99\n"+
+                    "99                           9        99\n"+
+                    "99            999       99   9        99\n"+
+                    "99                           9        99\n"+
+                    "99                                    99\n"+
+                    "99               9                    99\n"+
+                    "99               9      999           99\n"+
+                    "99                                    99\n"+
+                    "99       9                            99\n"+
+                    "99       9                            99\n"+
+                    "99       9   9999    9        9       99\n"+
+                    "99       9           9        9       99\n"+
+                    "99                            9       99\n"+
+                    "99                            9       99\n"+
+                    "99                                    99\n"+
+                    "99            999      999            99\n"+
+                    "99                                    99\n"+
+                    "99        99                          99\n"+
+                    "99                                    99\n"+
+                    "99                9     9999          99\n"+
+                    "99                9                   99\n"+
+                    "99                9                   99\n"+
+                    "99      9999      9         9999      99\n"+
+                    "99                                    99\n"+
+                    "99                                    99\n"+
+                    "99                                    99\n"+
+                    "99           9       9999             99\n"+
+                    "99           9                        99\n"+
+                    "99999999     9                  99999999",
                 spawns: [
                     {
                         center: {
@@ -3192,6 +3202,338 @@ const GameMap = class {
                     }
                 ],
             },
+            {
+                name: 'Diagonal',
+                author: 'JavRedstone',
+                map: "9  9  9                              999\n"+
+                    "                                       9\n"+
+                    "                                       9\n"+
+                    "9  9999          9                      \n"+
+                    "   999                   99999          \n"+
+                    "   99                        9          \n"+
+                    "9  9                                    \n"+
+                    "       99      99                       \n"+
+                    "       9        9                       \n"+
+                    "                                        \n"+
+                    "                                  99    \n"+
+                    "                                   9    \n"+
+                    "                         9         9    \n"+
+                    "                                   9    \n"+
+                    "                           9       9    \n"+
+                    "       9        9      9                \n"+
+                    "       99      99     999               \n"+
+                    "   9                 999                \n"+
+                    "                    999                 \n"+
+                    "                   999                  \n"+
+                    "                  999                   \n"+
+                    "                 999                    \n"+
+                    "                999                 9   \n"+
+                    "                 9     99      99       \n"+
+                    "                       9        9       \n"+
+                    "    9       9                           \n"+
+                    "    9                                   \n"+
+                    "    9         9                         \n"+
+                    "    9                                   \n"+
+                    "    99                                  \n"+
+                    "                                        \n"+
+                    "                       9        9       \n"+
+                    "                       99      99       \n"+
+                    "                                    9  9\n"+
+                    "          9                        99   \n"+
+                    "          99999                   999   \n"+
+                    "                      9          9999  9\n"+
+                    "9                                       \n"+
+                    "9                                       \n"+
+                    "999                              9  9  9",
+                spawns: [
+                    {
+                        center: {
+                            x: -80,
+                            y: 80
+                        },
+                        size: {
+                            x: 80,
+                            y: 80
+                        }
+                    },
+                    {
+                        center: {
+                            x: 80,
+                            y: -80
+                        },
+                        size: {
+                            x: 80,
+                            y: 80
+                        }
+                    }
+                ],
+            },
+            {
+                name: 'Unsquare',
+                author: 'JavRedstone',
+                map: "                                        \n"+
+                    "                                        \n"+
+                    "     999         9    9         999     \n"+
+                    "     999          9  9          999     \n"+
+                    "     999           99           999     \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "  99          9          9          99  \n"+
+                    "  9           9          9           9  \n"+
+                    "              9          9              \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "              9          9              \n"+
+                    "  999        99          99        999  \n"+
+                    "                   99                   \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "     999       9        9       999     \n"+
+                    "     999       9        9       999     \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                   99                   \n"+
+                    "  999        99          99        999  \n"+
+                    "              9          9              \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "              9          9              \n"+
+                    "  9           9          9           9  \n"+
+                    "  99          9          9          99  \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "     999           99           999     \n"+
+                    "     999          9  9          999     \n"+
+                    "     999         9    9         999     \n"+
+                    "                                        \n"+
+                    "                                        ",
+                spawns: [
+                    {
+                        center: {
+                            x: -115,
+                            y: 90
+                        },
+                        size: {
+                            x: 110,
+                            y: 60
+                        }
+                    },
+                    {
+                        center: {
+                            x: 115,
+                            y: -90
+                        },
+                        size: {
+                            x: 110,
+                            y: 60
+                        }
+                    }
+                ],
+            },
+            {
+                name: "X-Ray",
+                author: "JavRedstone",
+                map: "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "99      9                      9      99\n"+
+                    "99      9                      9      99\n"+
+                    "99      9                      9      99\n"+
+                    "99         9      9999      9         99\n"+
+                    "99         99              99         99\n"+
+                    "99          99            99          99\n"+
+                    "99           99          99           99\n"+
+                    "99            9          9            99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99      9          99          9      99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99            9          9            99\n"+
+                    "99           99          99           99\n"+
+                    "99          99            99          99\n"+
+                    "99         99     9  9     99         99\n"+
+                    "99         9      9  9      9         99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99      9                      9      99\n"+
+                    "99      9                      9      99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99         9      9  9      9         99\n"+
+                    "99         99     9  9     99         99\n"+
+                    "99          99            99          99\n"+
+                    "99           99          99           99\n"+
+                    "99            9          9            99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99      9          99          9      99\n"+
+                    "99      9         9  9         9      99\n"+
+                    "99            9          9            99\n"+
+                    "99           99          99           99\n"+
+                    "99          99            99          99\n"+
+                    "99         99              99         99\n"+
+                    "99         9      9999      9         99\n"+
+                    "99      9                      9      99\n"+
+                    "99      9                      9      99\n"+
+                    "99      9                      9      99\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: -150,
+                            y: 0
+                        },
+                        size: {
+                            x: 60,
+                            y: 360
+                        }
+                    },
+                    {
+                        center: {
+                            x: 150,
+                            y: 0
+                        },
+                        size: {
+                            x: 60,
+                            y: 360
+                        }
+                    }
+                ],
+            },
+            {
+                name: 'Stadium',
+                author: 'JavRedstone',
+                map: "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "                                        \n"+
+                    "   9           9        9           9   \n"+
+                    "   9 9 9 9 9      9  9      9 9 9 9 9   \n"+
+                    "   9              9  9              9   \n"+
+                    "9  999999999      9  9      999999999  9\n"+
+                    "                  9  9                  \n"+
+                    "                 99  99                 \n"+
+                    "      9                          9      \n"+
+                    "     999                        999     \n"+
+                    "    99999       9      9       99999    \n"+
+                    "            99999      99999            \n"+
+                    "                                        \n"+
+                    "99                 99                 99\n"+
+                    "99                 99                 99\n"+
+                    "                                        \n"+
+                    "            99999      99999            \n"+
+                    "    99999       9      9       99999    \n"+
+                    "     999                        999     \n"+
+                    "      9                          9      \n"+
+                    "                 99  99                 \n"+
+                    "                  9  9                  \n"+
+                    "9  999999999      9  9      999999999  9\n"+
+                    "   9              9  9              9   \n"+
+                    "   9 9 9 9 9      9  9      9 9 9 9 9   \n"+
+                    "   9           9        9           9   \n"+
+                    "                                        \n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: 0,
+                            y: -155
+                        },
+                        size: {
+                            x: 380,
+                            y: 50
+                        }
+                    },
+                    {
+                        center: {
+                            x: 0,
+                            y: 155
+                        },
+                        size: {
+                            x: 380,
+                            y: 50
+                        }
+                    }
+                ],
+            },
+            {
+                name: 'Arena 45',
+                author: 'JavRedstone',
+                map: "99999999999      999999      99999999999\n"+
+                    "9                 9999                 9\n"+
+                    "9                  99                  9\n"+
+                    "9     99                        99     9\n"+
+                    "9    99                          99    9\n"+
+                    "9   99                            99   9\n"+
+                    "9  99      9                9      99  9\n"+
+                    "9  9      9 9              9 9      9  9\n"+
+                    "9                                      9\n"+
+                    "9                  99                  9\n"+
+                    "9      9           99           9      9\n"+
+                    "      9            99            9      \n"+
+                    "       9           99           9       \n"+
+                    "                         9              \n"+
+                    "                9      9  9             \n"+
+                    "                       99               \n"+
+                    "              9         99              \n"+
+                    "9                                      9\n"+
+                    "99                                    99\n"+
+                    "999      9999              9999      999\n"+
+                    "999      9999              9999      999\n"+
+                    "99                                    99\n"+
+                    "9                                      9\n"+
+                    "              99         9              \n"+
+                    "               99                       \n"+
+                    "             9  9      9                \n"+
+                    "              9                         \n"+
+                    "       9           99           9       \n"+
+                    "      9            99            9      \n"+
+                    "9      9           99           9      9\n"+
+                    "9                  99                  9\n"+
+                    "9                                      9\n"+
+                    "9  9      9 9              9 9      9  9\n"+
+                    "9  99      9                9      99  9\n"+
+                    "9   99                            99   9\n"+
+                    "9    99                          99    9\n"+
+                    "9     99                        99     9\n"+
+                    "9                  99                  9\n"+
+                    "9                 9999                 9\n"+
+                    "99999999999      999999      99999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: -85,
+                            y: -85
+                        },
+                        size: {
+                            x: 55,
+                            y: 55
+                        },
+                        angle: Math.PI / 4
+                    },
+                    {
+                        center: {
+                            x: 85,
+                            y: 85
+                        },
+                        size: {
+                            x: 55,
+                            y: 55
+                        },
+                        angle: Math.PI / 4
+                    }
+                ],
+            }
         ]
     }
 
@@ -3206,7 +3548,7 @@ const GameMap = class {
         this.spawns = [];
         if (spawns) {
             for (let i = 0; i < spawns.length; i++) {
-                this.spawns.push(new Rectangle(new Vector2(spawns[i].center.x, spawns[i].center.y), new Vector2(spawns[i].size.x, spawns[i].size.y)));
+                this.spawns.push(new Rectangle(new Vector2(spawns[i].center.x, spawns[i].center.y), new Vector2(spawns[i].size.x, spawns[i].size.y), spawns[i].angle ? spawns[i].angle : 0));
             }
         }
     }
