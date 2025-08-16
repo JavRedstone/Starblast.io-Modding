@@ -1270,7 +1270,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 21;
+    deaths = 0;
 
     timeouts = [];
     conditions = [];
@@ -2837,7 +2837,7 @@ const UIComponent = class {
                     {
                         type: 'box',
                         position: [0, 0, 100, 100],
-                        width: 2
+                        width: 4
                     },
                     {
                         type: "text",
