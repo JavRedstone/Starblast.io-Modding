@@ -1,8 +1,8 @@
 /*
-    Starblast Mod Template
+    Surge Mod
 
     @author JavRedstone
-    @version 3.0.0
+    @version 1.0.0
 
     Developed in 2025
 */
@@ -21,11 +21,15 @@ const Game = class {
 
     aliens = [];
 
+    spawnGlows = [];
+
     timedObjs = [];
 
     asteroids = [];
     timedAsteroids = [];
     
+    roundTime = -1;
+    waitingForFinish = false;
     isGameOver = false;
 
     resettingAliens = false;
@@ -52,9 +56,9 @@ const Game = class {
             WEAPONS_STORE: false,
             PROJECTILE_SPEED: 1,
 
-            STARTING_SHIP: 101,
+            STARTING_SHIP: 102,
             RESET_TREE: true,
-            CHOOSE_SHIP: [101],
+            CHOOSE_SHIP: [102],
 
             LIVES: 4,
             MAX_TIER_LIVES: 0,
@@ -103,14 +107,16 @@ const Game = class {
 
             RESET_STAGGER: 5,
 
-            GAME_MANAGER: 30
+            GAME_MANAGER: 30,
+            
+            ROUND: 3600 * 15,
+            ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
     }
 
     static setShipGroups(shipGroups) {
-        // Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":2,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":2,"code":102,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
-        Game.C.OPTIONS.SHIPS = [];
+        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
         for (let [tier, shipMap] of Object.entries(shipGroups)) {
             let shipGroup = new ShipGroup(parseInt(tier), shipMap);
             Game.shipGroups.push(shipGroup);
@@ -184,6 +190,7 @@ const Game = class {
         this.timeouts.push(new TimeoutCreator(() => {
             this.selectRandomTeams();
             this.setMap();
+            this.spawnObjs();
             this.resetShips();
         }, Game.C.TICKS.RESET_STAGGER).start());
     }
@@ -194,6 +201,23 @@ const Game = class {
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
         this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.spawns).spawn();
+    }
+
+    spawnObjs() {
+        if (this.map) {
+            for (let i = 0; i < this.map.spawns.length; i++) {
+                let spawn = this.map.spawns[i];
+                let team = this.teams[i];
+                if (spawn && team) {
+                    let spawnGlow = Helper.deepCopy(Obj.C.OBJS.SPAWN_GLOW);
+                    let spawnGlowPosition = new Vector3(spawn.center.x, spawn.center.y, spawnGlow.position.z);
+                    let spawnGlowScale = new Vector3(spawn.size.x * (i == 0 ? 1 : -1), spawn.size.y, spawnGlow.scale.z);
+                    let spawnGlowObj = new Obj(spawnGlow.id, spawnGlow.type, spawnGlowPosition, spawnGlow.rotation, spawnGlowScale, true, true, team.hex);
+                    this.spawnGlows.push(spawnGlowObj.update());
+                }
+            }
+        }
+        return this;
     }
 
     deleteEverything() {
@@ -248,6 +272,8 @@ const Game = class {
             let ship = this.ships[i];
             this.shipResetQueue.add(() => {
                 this.resetShip(ship);
+
+                ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
             });
         }
         this.timeouts.push(new TimeoutCreator(() => {
@@ -290,6 +316,9 @@ const Game = class {
         if (this.map && this.map.spawns.length == 2 && ship.team) {
             ship.setPosition(this.map.spawns[ship.team.team].getRandomPointInside());
         }
+        
+        ship.chooseShipTime = game.step;
+        ship.abilityTime = game.step;
 
         ship.done = true;
         ship.isResetting = false;
@@ -305,10 +334,12 @@ const Game = class {
     getWinningTeam() {
         let team0 = this.teams[0];
         let team1 = this.teams[1];
-        if (team0.score > team1.score) {
+        let totalScore0 = team0.getTotalScore();
+        let totalScore1 = team1.getTotalScore();
+        if (totalScore0 > totalScore1) {
             return team0;
         }
-        else if (team1.score > team0.score) {
+        else if (totalScore1 > totalScore0) {
             return team1;
         }
         else {
@@ -462,14 +493,16 @@ const Game = class {
                     }
 
                     if (!ship.isResetting) {
-                        this.handleChooseShip(ship);
+                        if (ship.team && !this.isGameOver && !this.waitingForFinish) {
+                            this.handleChooseShip(ship);
+                        }
 
-                        if (ship.getLevel() > ship.getAllowedMaxTier()) {
-                            ship.setType(101);
+                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime >= Ship.C.SURGE_TIME && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length + (ship.getLevel() == 1 ? 1 : 0))) {
+                            ship.setType(102);
                             ship.setCrystals(0);
                         }
                         
-                        if (this.map) {
+                        if (this.map && ship.team && !this.isGameOver && !this.waitingForFinish) {
                             if (!ship.outOfSpawn) {
                                 if (!this.map.spawns[ship.team.team].containsPoint(ship.getPosition())) {
                                     ship.outOfSpawn = true;
@@ -493,6 +526,22 @@ const Game = class {
                                 bottomMessage.components[1].value = 'You have entered enemy territory! You will take damage!';
                                 ship.sendTimedUI(bottomMessage);
                             }
+
+                            if (ship.abilityTime != -1) {
+                                let abilityActivate = Helper.deepCopy(UIComponent.C.UIS.ABILITY_ACTIVATE);
+                                if (game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
+                                    abilityActivate.components[0].fill = '#00ff0080';
+                                    abilityActivate.components[1].value = 'Surge [I]';
+                                } else {
+                                    abilityActivate.clickable = false;
+                                    abilityActivate.components[0].fill = '#00000080';
+                                    abilityActivate.components[1].value = 'Surge in ' + Helper.formatTime(Ship.C.SURGE_COOLDOWN - (game.step - ship.abilityTime));
+                                }
+                                ship.sendUI(abilityActivate);
+                            } else {
+                                ship.hideUI(UIComponent.C.UIS.ABILITY_ACTIVATE);
+                            }
+
                             let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
                             for (let i = 0; i < this.map.spawns.length; i++) {
                                 let spawn = this.map.spawns[i];
@@ -575,6 +624,66 @@ const Game = class {
                         }
 
                         ship.sendUI(scoreboard);
+
+                        if (ship.chooseShipTime == -1 && !ship.hasUI(UIComponent.C.UIS.LOGO)) {
+                            let roundScores = Helper.deepCopy(UIComponent.C.UIS.ROUND_SCORES);
+                            let winningTeam = this.getWinningTeam();
+                            if (winningTeam == null) {
+                                roundScores.components[0].value = 'TIE';
+                                roundScores.components[0].color = '#ffffff';
+                            }
+                            else {
+                                roundScores.components[0].value = winningTeam.color.toUpperCase();
+                                roundScores.components[0].color = winningTeam.hex;
+                            }
+                            roundScores.components[1].value = 'K/D: ' + Math.round(this.teams[0].getKD() * 100) / 100;
+                            roundScores.components[1].color = this.teams[0].hex;
+                            roundScores.components[5].value = 'K/D: ' + Math.round(this.teams[1].getKD() * 100) / 100;
+                            roundScores.components[5].color = this.teams[1].hex;
+                            roundScores.components[2].value = Helper.getCounterValue(this.teams[0].getTotalScore());
+                            roundScores.components[2].color = this.teams[0].hex;
+                            roundScores.components[4].value = Helper.getCounterValue(this.teams[1].getTotalScore());
+                            roundScores.components[4].color = this.teams[1].hex;
+                            ship.sendUI(roundScores);
+                        } else {
+                            ship.hideUI(UIComponent.C.UIS.ROUND_SCORES);
+                        }
+                    }
+                    
+                    if (this.roundTime != -1 && Game.C.TICKS.ROUND - (game.step - this.roundTime) >= 0) {
+                        let timer = Helper.deepCopy(UIComponent.C.UIS.TIMER);
+                        let timeLeft = Game.C.TICKS.ROUND - (game.step - this.roundTime);
+                        timer.components[1].value = 'Time left: ' + Helper.formatTime(timeLeft);
+                        if (timeLeft <= UIComponent.C.TICKS.WARNING) {
+                            timer.components[0].fill = '#8B000080';
+                            timer.components[0].stroke = '#FFBBBB';
+                            timer.components[0].width = 2;
+                            timer.components[1].color = '#FFBBBB';
+                        }
+                        ship.sendUI(timer);
+                    } else if (this.roundTime != -1) {
+                        ship.abilityTime = -1;
+
+                        if (!this.waitingForFinish) {
+                            this.timeouts.push(new TimeoutCreator(() => {
+                                this.isGameOver = true;
+                            }, Game.C.TICKS.ROUND_WAIT).start());
+                            this.waitingForFinish = true;
+                        }
+                        ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
+                        ship.setCollider(false);
+
+                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                        let winningTeam = this.getWinningTeam();
+                        bottomMessage.components[1].value = "Time's up! ";
+                        if (winningTeam != null) {
+                            bottomMessage.components[1].value += "The " + winningTeam.color.toUpperCase() + " team won! ";
+                            bottomMessage.components[0].fill = ship.team.team == winningTeam.team ? '#008B0080' : '#8B000080';
+                        } else {
+                            bottomMessage.components[1].value += "It's a tie and no team won. ";
+                        }
+                        bottomMessage.components[1].value += "Good game everyone!"
+                        ship.sendUI(bottomMessage);
                     }
                 }
             }
@@ -645,7 +754,7 @@ const Game = class {
 
     handleChooseShip(ship) {
         if (ship) {
-            if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME) {
+            if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME && !ship.outOfSpawn) {
                 let tiers = Object.keys(ShipGroup.C.SHIPS);
                 for (let tier of tiers) {
                     let shipsInTier = ShipGroup.C.SHIPS[tier];
@@ -660,8 +769,8 @@ const Game = class {
 
                             shipChoice.id += '-' + code;
                             
-                            let xGridPos = Helper.getGridUIPosition(10, 45, 2.5, 0, i, 0, shipsInTierCodes.length, 1);
-                            let yGridPos = Helper.getGridUIPosition(0, 10, 0, 5, 0, tiers.length - tier, 1, tiers.length);
+                            let xGridPos = Helper.getGridUIPosition(15, 0, 2.5, 0, i, 0, shipsInTierCodes.length, 1);
+                            let yGridPos = Helper.getGridUIPosition(0, 20, 0, 2.5, 0, tiers.length - tier, 1, tiers.length);
                             let gridPos = [xGridPos[0], yGridPos[1], xGridPos[2], yGridPos[3]];
                             
                             shipChoice.position = gridPos;
@@ -672,6 +781,7 @@ const Game = class {
                                 shipChoice.components[1].color = Helper.interpolateColor('#ffffffAA', '#ffffff10', tier / tiers.length);
                             } else {
                                 shipChoice.components[0].fill = Helper.interpolateColor('#3A1C71BF', '#FFAF7BBF', tier / tiers.length);
+                                shipChoice.components[0].stroke = '#ffffffBF';
                             }
 
                             shipChoice.components[1].value = shipInfoShip.name;
@@ -687,9 +797,15 @@ const Game = class {
                 bottomMessage.components[0].fill = '#3A1C71BF';
                 bottomMessage.components[1].value = 'Dying lowers your score but will allow you to access higher tiers.';
                 ship.sendUI(bottomMessage);
+
+                let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
+                topMessage.components[0].fill = '#FFAF7BBF';
+                topMessage.components[1].value = `Choose a ship to respawn with. Time remaining to choose: ${Helper.formatTime(Ship.C.CHOOSE_SHIP_TIME - (game.step - ship.chooseShipTime))}.`;
+                ship.sendUI(topMessage);
             } else if (ship.chooseShipTime != -1) {
                 ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE);
                 ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                ship.hideUI(UIComponent.C.UIS.TOP_MESSAGE);
                 ship.chooseShipTime = -1;
             }
         }
@@ -723,6 +839,10 @@ const Game = class {
         if (ship == null) {
             ship = new Ship(gameShip);
             this.ships.push(ship);
+
+            if (this.ships.length == 2 && !this.isGameOver) {
+                this.roundTime = game.step;
+            }
         }
         else { // on respawn
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
@@ -762,9 +882,22 @@ const Game = class {
                     ship.chooseShipTime = -1;
                     ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE);
                     ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                    ship.hideUI(UIComponent.C.UIS.TOP_MESSAGE);
                     let code = parseInt(id.split('-')[1]);
                     ship.setType(code);
                     ship.fillUp();
+                }
+            }
+            else if (id == UIComponent.C.UIS.ABILITY_ACTIVATE.id) {
+                if (ship.abilityTime != -1 && game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
+                    ship.abilityTime = game.step;
+                    let prevType = ship.ship.type;
+                    ship.setType(prevType + Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length);
+                    ship.setMaxStats();
+                    ship.timeouts.push(new TimeoutCreator(() => {
+                        ship.setType(prevType);
+                        ship.setMaxStats();
+                    }, Ship.C.SURGE_TIME).start());
                 }
             }
         }
@@ -937,16 +1070,26 @@ const Team = class {
         }
         return totalLevel;
     }
+
+    getTotalScore() {
+        let totalScore = 0;
+        for (let ship of this.ships) {
+            totalScore += ship.ship.score;
+        }
+        return totalScore;
+    }
 }
 
 const ShipGroup = class {
     tier = 0;
     ships = [];
+    normalShips = [];
+    abilityShips = [];
 
     static C = {
         SHIPS: {
             '1': {
-                '101': {
+                '102': {
                     SHIP: '{"name":"U-Sniper Mk 2","level":1,"model":1,"size":1.8,"specs":{"shield":{"capacity":[250,300],"reload":[4,6]},"generator":{"capacity":[100,160],"reload":[50,60]},"ship":{"mass":200,"speed":[125,145],"rotation":[50,70],"acceleration":[60,110]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[0,-10,40,100,90,100],"z":[0,0,0,0,0,0]},"width":[0,10,25,10,0],"height":[0,5,15,10,0],"texture":[2,1,10,18],"propeller":true},"cockpit":{"section_segments":[40,90,180,270,320],"offset":{"x":0,"y":-25,"z":11},"position":{"x":[0,0,0,0],"y":[25,50,70,85],"z":[-1,0,0,1]},"width":[5,12,10,5],"height":[0,12,15,0],"texture":[8.98,8.98,4]},"uwings":{"section_segments":[0,45,90,135,180],"offset":{"x":-55,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-90,-100,40,80,90,100],"z":[0,0,0,0,0,0]},"width":[0,10,25,20,0],"height":[0,5,25,20,0],"texture":[12,1,63,3]},"cannons_front":{"section_segments":12,"offset":{"x":45,"y":10,"z":0},"position":{"x":[0,0,0,10,10,10,10],"y":[-60,-70,-20,0,40,50],"z":[0,0,0,0,0,-1,-1]},"width":[0,5,6,15,10,0],"height":[0,5,5,25,20,0],"angle":0,"laser":{"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"recoil":200,"number":1,"error":0},"propeller":false,"texture":[17,13,18,63,3]},"side_propulsors":{"section_segments":10,"offset":{"x":20,"y":15,"z":0},"position":{"x":[-10,-10,0,0,0,0,0,0,0,0],"y":[-20,-30,15,35,40,50,55,60,55],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,5,10,10,10,5,5,5,0],"height":[0,5,10,10,10,5,5,5,0],"propeller":true,"texture":[6,10,11,4,63,11,17,12]},"wing_engines":{"section_segments":10,"offset":{"x":58,"y":5,"z":0},"position":{"x":[0,0,0,0],"y":[40,55,60,55],"z":[0,0,0,0]},"width":[10,10,13,0],"height":[10,10,13,0],"propeller":true,"texture":[13,17,18]}},"wings":{"main":{"doubleside":true,"offset":{"x":10,"y":35,"z":0},"length":[50],"width":[60,30],"angle":[0],"position":[10,-15],"texture":[11],"bump":{"position":10,"size":15}},"inner":{"offset":{"x":-57,"y":-65,"z":0},"length":[5],"width":[165,112],"angle":[0],"position":[20,0],"texture":[17,63],"doubleside":true,"bump":{"position":30,"size":4}}},"typespec":{"name":"U-Sniper Mk 2","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[250,300],"reload":[4,6]},"generator":{"capacity":[100,160],"reload":[50,60]},"ship":{"mass":200,"speed":[125,145],"rotation":[50,70],"acceleration":[60,110]}},"shape":[0.902,0.916,0.946,5.172,5.232,4.531,3.93,3.534,3.255,3.054,2.924,2.853,2.837,2.902,2.925,2.995,3.121,3.245,3.449,3.417,3.036,2.398,2.843,2.839,3.081,3.066,3.081,2.839,2.843,2.398,3.036,3.417,3.449,3.245,3.121,2.995,2.925,2.902,2.837,2.853,2.924,3.054,3.255,3.534,3.93,4.531,5.232,5.172,0.946,0.916],"lasers":[{"x":1.62,"y":-2.16,"z":0,"angle":0,"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"number":1,"spread":0,"error":0,"recoil":200},{"x":-1.62,"y":-2.16,"z":0,"angle":0,"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"number":1,"spread":0,"error":0,"recoil":200}],"radius":5.232}}',
                 },
             },
@@ -1052,7 +1195,9 @@ const ShipGroup = class {
                     SHIP: '{"name":"Shadow X-27","level":7,"model":5,"size":3,"specs":{"shield":{"capacity":[600,600],"reload":[10,10]},"generator":{"capacity":[1000,1000],"reload":[200,200]},"ship":{"mass":400,"speed":[90,90],"rotation":[50,50],"acceleration":[110,110]}},"bodies":{"main":{"section_segments":10,"offset":{"x":0,"y":20,"z":-5},"position":{"x":[0,0,0,0,0,0,0,0],"y":[-30,-40,0,40,70,75,80,70],"z":[0,0,0,0,0,0,0,0]},"width":[0,7,20,20,10,10,10,0],"height":[0,10,30,30,20,20,20,0],"texture":[13,1,2,10,13,17,18],"propeller":true},"main_shell":{"section_segments":[0,60,120,180],"offset":{"x":-6,"y":20,"z":-5},"position":{"x":[0,0,0,0,-10,-10],"y":[-50,-60,0,30,70,60],"z":[0,0,0,0,0,0]},"width":[0,5,20,20,5,0],"height":[0,10,35,35,20,0],"texture":[17,4,4,63]},"cockpit":{"section_segments":8,"offset":{"x":0,"y":0,"z":10},"position":{"x":[0,0,0,0],"y":[-20,20,50],"z":[-13,10,10]},"width":[8,8,8],"height":[10,8,8],"texture":[9,9,4]},"cannons":{"section_segments":12,"offset":{"x":50,"y":-40,"z":-10},"position":{"x":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"y":[-15,0,-3,0,3,3,5,5,8,8,10,10,13,13,15,15,18,18,20,20,23,23,25,25,40,80,100,95,105,100],"z":[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},"width":[0,3,7,4,4,5,5,4,4,5,5,4,4,5,5,4,4,5,5,4,4,5,5,4,25,23,20,10,10,0],"height":[0,3,7,4,4,5,5,4,4,5,5,4,4,5,5,4,4,5,5,4,4,5,5,4,15,25,20,15,15,0],"texture":[6,18,17,4,4,17,4,4,4,17,4,4,4,17,4,4,4,17,4,4,4,17,4,4,63,13,11,17,18],"propeller":true,"laser":{"damage":[10,10],"rate":2,"type":2,"speed":[280,280],"recoil":15,"number":45,"error":0}},"cannon_detail1":{"section_segments":[40,45,50,130,135,140,220,225,230,310,315,320],"offset":{"x":50,"y":65,"z":15},"position":{"x":[0,0,0,0,0,0,0,0,0,0,0,0,0],"y":[-110,-110,-90,-90,-80,-60,-60,-30,-20,-20],"z":[0,0,0,2,2,-10,0,0,-3,-3]},"width":[0,3,3,2,3,3,10,10,10,0],"height":[0,5,5,2,2,20,10,10,10,0],"texture":[4,63,2,4,4,4,17.96,4]},"cannon_detail2":{"section_segments":[40,45,50,130,135,140,220,225,230,310,315,320],"offset":{"x":50,"y":65,"z":-35},"position":{"x":[0,0,0,0,0,0,0,0,0,0,0,0,0],"y":[-110,-110,-90,-90,-80,-60,-60,-30,-20,-20],"z":[0,0,0,-2,-2,10,0,0,3,3]},"width":[0,3,3,2,3,3,10,10,10,0],"height":[0,5,5,2,2,20,10,10,10,0],"texture":[4,63,2,4,4,4,17.96,4]},"tip_disc":{"section_segments":6,"offset":{"x":50,"y":-140,"z":-10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,0,0,0,0,2,2,2,0,0],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[13,13,13,15,15,15,10,13,13,13],"height":[8,8,8,10,10,10,10,8,8,8],"texture":[4]},"gun_disc":{"section_segments":6,"offset":{"x":50,"y":-10,"z":-10},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[0,0,0,0,0,2,2,2,0,0],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[13,13,13,15,15,15,10,13,13,13],"height":[13,13,13,15,15,15,10,13,13,13],"texture":[4]},"balla":{"angle":90,"section_segments":16,"offset":{"x":50,"y":-45,"z":16},"position":{"x":[0,0,0,0,0,0,0,0,0],"y":[-5.2,-5,-4.4,-3,0,3,4.4,5,5.2],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,2,3.4000000000000004,4.800000000000001,5.6000000000000005,4.800000000000001,3.4000000000000004,2,0],"height":[0,2,3.4000000000000004,4.800000000000001,5.6000000000000005,4.800000000000001,3.4000000000000004,2,0],"texture":[6]},"ballb":{"angle":90,"section_segments":16,"offset":{"x":50,"y":-45,"z":-36},"position":{"x":[0,0,0,0,0,0,0,0,0],"y":[-5.2,-5,-4.4,-3,0,3,4.4,5,5.2],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,2,3.4000000000000004,4.800000000000001,5.6000000000000005,4.800000000000001,3.4000000000000004,2,0],"height":[0,2,3.4000000000000004,4.800000000000001,5.6000000000000005,4.800000000000001,3.4000000000000004,2,0],"texture":[6]},"uwings1":{"section_segments":[0,60,120,180],"offset":{"x":-60,"y":-50,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-90,-110,60,120,100],"z":[0,0,0,0,0,0]},"width":[0,5,25,15,0],"height":[0,10,25,20,0],"texture":[17,4]},"uwings2":{"section_segments":[0,60,120,180],"offset":{"x":40,"y":-50,"z":-10},"position":{"x":[0,0,0,0,0,0],"y":[-90,-110,60,120,100],"z":[0,0,0,0,0,0]},"width":[0,5,25,15,0],"height":[0,10,25,20,0],"texture":[17,4]},"uwings3":{"section_segments":6,"offset":{"x":50,"y":-50,"z":4},"position":{"x":[0,0,0,0,0,0,0],"y":[40,40,60,60,100,100],"z":[-13,-13,0,0,0,0,0]},"width":[0,10,10,25,15,0],"height":[0,10,15,15,15,0],"texture":[4,13,63]},"uwings4":{"section_segments":6,"offset":{"x":50,"y":-50,"z":-24},"position":{"x":[0,0,0,0,0,0,0],"y":[40,40,60,60,100,100],"z":[13,13,0,0,0,0,0]},"width":[0,10,10,25,15,0],"height":[0,10,15,15,15,0],"texture":[4,13,63]},"wire":{"section_segments":8,"angle":-60,"offset":{"x":15,"y":40,"z":39},"position":{"x":[5,5,5,10,21,23,24,20,10,10,10],"y":[-40,-40,-40,-40,-28,-18,-8,2,12,11],"z":[-30,-30,-30,-29,-16,-10,-7,-10,-20,-20,-20]},"width":[4,4,4,4,4,4,4,4,4,0],"height":[0,3,3,3,3,3,3,3,4,0],"propeller":false,"texture":[13,13,17,4,17,4,17,4,17]},"side_engines":{"section_segments":10,"offset":{"x":30,"y":90,"z":15},"position":{"x":[0,0,0,0,0,0,0],"y":[-55,-60,-50,-20,-15,-10,-20],"z":[0,0,0,0,0,0,0]},"width":[0,6,10,10,5,5,0],"height":[0,9,13,13,10,10,0],"propeller":true,"texture":[13,3,8,13,17,18]},"lights1":{"angle":180,"section_segments":[45,135,225,315],"offset":{"x":40,"y":0,"z":-10},"position":{"x":[-4,0,0,0],"y":[-40,-25,140,160],"z":[-4,0,0,0]},"width":[0,2,2,0],"height":[7,7,7,7],"texture":[13,17,13]},"lights2":{"angle":180,"section_segments":[45,135,225,315],"offset":{"x":60,"y":0,"z":-10},"position":{"x":[-4,0,0,0],"y":[-40,-25,140,160],"z":[4,0,0,0]},"width":[0,2,2,0],"height":[7,7,7,7],"texture":[13,17,13]},"x_disc":{"vertical":true,"section_segments":20,"offset":{"x":0,"y":22,"z":-52},"position":{"x":[0,0,0,0,0,0,0,0],"y":[-10,-5,10,8,8,10,13],"z":[0,0,0,0,0,0,0,0]},"width":[22,22,19,17,17,16,0],"height":[25,25,19,17,17,16,0],"texture":[4,18,17,17,18,4]},"x_1":{"section_segments":[45,135,225,315],"offset":{"x":0,"y":60,"z":30},"position":{"x":[-8,-8,8,8],"y":[-16,-16,0,0],"z":[0,0,0,0]},"width":[0,6.4,6.4,0],"height":[0,10,10,0],"texture":[63]},"x_2":{"section_segments":[45,135,225,315],"offset":{"x":0,"y":60,"z":28},"position":{"x":[0,0,-8,-8],"y":[-8,-8,0,0],"z":[0,0,0,0]},"width":[0,6.4,6.4,0],"height":[0,10,10,0],"texture":[63]},"x_3":{"section_segments":[45,135,225,315],"offset":{"x":0,"y":60,"z":28},"position":{"x":[8,8,5.44,5.920000000000001],"y":[-16,-16,-13.600000000000001,-9.28],"z":[0,0,0,0]},"width":[0,6.4,6.4,0],"height":[0,10,10,10],"texture":[63]},"hub1":{"angle":-80,"section_segments":20,"offset":{"x":-10,"y":42,"z":-10},"position":{"x":[0,0,0,0,0,0,0],"y":[63,70,68,68,72,73],"z":[0,0,0,0,0,0,0]},"width":[12,10,8,7,5,0],"height":[12,10,8,7,5,0],"texture":[18,18,17,17,18]},"hub2":{"angle":-80,"section_segments":20,"offset":{"x":-10,"y":15,"z":-10},"position":{"x":[0,0,0,0,0,0,0],"y":[67,74,72,72,76,77],"z":[0,0,0,0,0,0,0]},"width":[12,10,8,7,5,0],"height":[12,10,8,7,5,0],"texture":[18,18,17,17,18]}},"typespec":{"name":"Shadow X-27","level":7,"model":5,"code":705,"specs":{"shield":{"capacity":[600,600],"reload":[10,10]},"generator":{"capacity":[1000,1000],"reload":[200,200]},"ship":{"mass":400,"speed":[90,90],"rotation":[50,50],"acceleration":[110,110]}},"shape":[1.202,2.443,9.895,10.347,9.275,7.757,6.691,6.024,5.519,5.205,4.976,4.857,4.837,4.936,5.202,5.424,5.523,5.965,6.017,6.068,5.061,4.948,5.233,5.536,6.027,6.012,6.027,5.536,5.233,4.948,5.061,6.068,6.017,5.965,5.523,5.424,5.202,4.936,4.837,4.857,4.976,5.205,5.519,6.024,6.691,7.757,9.275,10.347,9.895,2.443],"lasers":[{"x":3,"y":-3.3,"z":-0.6,"angle":0,"damage":[10,10],"rate":2,"type":2,"speed":[280,280],"number":45,"spread":0,"error":0,"recoil":15},{"x":-3,"y":-3.3,"z":-0.6,"angle":0,"damage":[10,10],"rate":2,"type":2,"speed":[280,280],"number":45,"spread":0,"error":0,"recoil":15}],"radius":10.347}}',
                 }
             }
-        }
+        },
+        GENERATOR_RELOAD_MULTIPLIER: 10,
+        GENERATOR_CAPACITY_MULTIPLIER: 10,
     }
 
     constructor(tier, shipMap) {
@@ -1062,14 +1207,47 @@ const ShipGroup = class {
     }
 
     processShips(shipMap) {
-        for (let value of Object.values(shipMap)) {
+        this.ships = [];
+        this.normalShips = [];
+        this.abilityShips = [];
+        let shipsInTier = Object.values(shipMap);
+        let i = 0;
+        for (let value of shipsInTier) {
             let ship = value.SHIP;
             let jship = JSON.parse(ship);
+            jship.level = this.tier;
+            jship.model = this.tier == 1 ? i + 2 : i + 1;
+            jship.typespec.model = jship.model;
+            jship.typespec.code = jship.level * 100 + jship.model;
             jship.next = [];
             jship.typespec.next = [];
-            let processedShip = JSON.stringify(jship);
-            this.ships.push(processedShip);
+
+            let normalShip = JSON.stringify(jship);
+            this.normalShips.push(normalShip);
+
+            jship.model = jship.model + shipsInTier.length;
+            jship.typespec.model = jship.model;
+            jship.typespec.code = jship.level * 100 + jship.model;
+
+            jship.specs.generator.capacity = [
+                jship.specs.generator.capacity[0] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER,
+                jship.specs.generator.capacity[1] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER
+            ];
+            jship.specs.generator.reload = [
+                jship.specs.generator.reload[0] * ShipGroup.C.GENERATOR_RELOAD_MULTIPLIER,
+                jship.specs.generator.reload[1] * ShipGroup.C.GENERATOR_RELOAD_MULTIPLIER
+            ];
+
+            jship.typespec.specs.generator.capacity = jship.specs.generator.capacity;
+            jship.typespec.specs.generator.reload = jship.specs.generator.reload;
+
+            let abilityShip = JSON.stringify(jship);
+            this.abilityShips.push(abilityShip);
+
+            i++;
         }
+        this.ships.push(...this.normalShips);
+        this.ships.push(...this.abilityShips);
     }
 
     static getShipInfo(type) {
@@ -1092,7 +1270,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 21;
 
     timeouts = [];
     conditions = [];
@@ -1112,13 +1290,16 @@ const Ship = class {
     done = false;
 
     chooseShipTime = -1;
+    abilityTime = -1;
     outOfSpawn = false;
 
     isResetting = false;
 
     static C = {
-        INVULNERABLE_TIME: 360,
-        CHOOSE_SHIP_TIME: 600
+        INVULNERABLE_TIME: 300,
+        CHOOSE_SHIP_TIME: 600,
+        SURGE_COOLDOWN: 3600,
+        SURGE_TIME: 60,
     }
 
     constructor(ship) {
@@ -1135,6 +1316,7 @@ const Ship = class {
         this.highScore = 0;
 
         this.chooseShipTime = -1;
+        this.abilityTime = -1;
         this.outOfSpawn = false;
 
         this.ship.emptyWeapons();
@@ -1307,18 +1489,18 @@ const Ship = class {
     }
 
     getAllowedMaxTier() {
-        if (this.deaths > 1) {
-            return 2;
-        } else if (this.deaths > 3) {
-            return 3;
-        } else if (this.deaths > 6) {
-            return 4;
-        } else if (this.deaths > 9) {
-            return 5;
+        if (this.deaths > 20) {
+            return 7;
         } else if (this.deaths > 12) {
             return 6;
-        } else if (this.deaths > 15) {
-            return 7;
+        } else if (this.deaths > 7) {
+            return 5;
+        } else if (this.deaths > 5) {
+            return 4;
+        } else if (this.deaths > 3) {
+            return 3;
+        } else if (this.deaths > 1) {
+            return 2;
         }
         return 1;
     }
@@ -1463,6 +1645,11 @@ const Ship = class {
         return null;
     }
 
+    getKD() {
+        if (this.deaths == 0) return this.kills;
+        return this.kills / this.deaths;
+    }
+
     setInvulnerable(invulnerable) {
         if (game.ships.includes(this.ship)) {
             this.ship.set({ invulnerable: invulnerable });
@@ -1572,9 +1759,22 @@ const Ship = class {
 
     gameOver() {
         if (game.ships.includes(this.ship)) {
-            this.ship.gameover({
-                "Good game!": "Thanks for playing!",
-            });
+            if (this.team) {
+                let winningTeam = g.getWinningTeam();
+                this.ship.gameover({
+                    "Good game!": "Thanks for playing!",
+                    "Team": this.team.color,
+                    "Winning Team": winningTeam ? winningTeam.color : "None",
+                    "Score": this.ship.score,
+                    "Kills": this.kills,
+                    "Deaths": this.deaths,
+                    "K/D": this.getKD()
+                });
+            } else {
+                this.ship.gameover({
+                    "Good game!": "Thanks for playing!",
+                });
+            }
         }
         return this;
     }
@@ -1973,6 +2173,29 @@ const Obj = class {
                     emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/capture-the-flag-revamp/ctf-v2.0/grid.png'
                 }
             },
+            SPAWN_GLOW: {
+                id: 'spawn_glow',
+                position: {
+                    x: 0,
+                    y: 0,
+                    z: -5
+                },
+                rotation: {
+                    x: 0,
+                    y: 0,
+                    z: 0
+                },
+                scale: {
+                    x: 1,
+                    y: 1,
+                    z: 1
+                },
+                type: {
+                    id: 'spawn_glow',
+                    obj: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/refs/heads/main/utilities/plane.obj',
+                    emissive: 'https://raw.githubusercontent.com/JavRedstone/Starblast.io-Modding/main/utilities/surge/spawn_glow.png'
+                }
+            },
         }
     }
 
@@ -2206,7 +2429,7 @@ const TimedUI = class {
     ui = null;
 
     static C = {
-        DEFAULT_TIME: 300,
+        DEFAULT_TIME: 180,
         LOGO_TIME: 480
     }
 
@@ -2284,6 +2507,18 @@ const UIComponent = class {
                     {
                         type: 'box',
                         position: [0, 0, 0, 0]
+                    }
+                ]
+            },
+            SCREEN_COVER: {
+                id: 'screen_cover',
+                visible: true,
+                position: [0, 0, 100, 100],
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#000000BF'
                     }
                 ]
             },
@@ -2428,6 +2663,171 @@ const UIComponent = class {
                     }
                 ]
             },
+            TIMER: {
+                id: "timer",
+                position: [2, 30, 15, 5],
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                    },
+                    {
+                        type: "text",
+                        position: [5, 0, 90, 100],
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            MAP_AUTHOR: {
+                id: "map_author",
+                position: [80, 45, 20, 5],
+                visible: true,
+                components: [
+                    {
+                        type: "box",
+                        position: [0, 0, 100, 100],
+                        fill: "#00000080",
+                    },
+                    {
+                        type: "box",
+                        position: [0, 0, 0, 100],
+                        stroke: "#ffffff",
+                        width: 5
+                    },
+                    {
+                        type: "text",
+                        position: [5, 0, 90, 100],
+                        value: "Map: ",
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            LOGO: {
+                id: 'logo',
+                position: [0, 5, 100, 20],
+                visible: true,
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: "box",
+                        position: [40.5, 5, 3, 35],
+                        fill: "#FFBBBB"
+                    },
+                    {
+                        type: "box",
+                        position: [44.5, 5, 3, 35],
+                        fill: "#FFFFBB"
+                    },
+                    {
+                        type: "box",
+                        position: [48.5, 5, 3, 35],
+                        fill: "#BBFFBB"
+                    },
+                    {
+                        type: "box",
+                        position: [52.5, 5, 3, 35],
+                        fill: "#BBBBFF"
+                    },
+                    {
+                        type: "box",
+                        position: [56.5, 5, 3, 35],
+                        fill: "#FFBBFF"
+                    },
+                    {
+                        type: "text",
+                        position: [40.5, 5, 3, 35],
+                        value: "S",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [44.5, 5, 3, 35],
+                        value: "U",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [48.5, 5, 3, 35],
+                        value: "R",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [52.5, 5, 3, 35],
+                        value: "G",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [56.5, 5, 3, 35],
+                        value: "E",
+                        color: "#000000"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 42.5, 40, 17.5],
+                        value: "A Fun Ascension Game",
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 62.5, 40, 15],
+                        value: "Version 1.0",
+                        color: "#00aeffff"
+                    },
+                    {
+                        type: "text",
+                        position: [30, 80, 40, 15],
+                        value: "Developed by JavRedstone",
+                        color: "#ffffff"
+                    }
+                ]
+            },
+            ROUND_SCORES: {
+                id: "round_scores",
+                position: [35, 5, 30, 15],
+                visible: true,
+                components: [
+                    {
+                        type: "text",
+                        position: [0, 0, 100, 25],
+                    },
+                    {
+                        type: "text",
+                        position: [0, 75, 40, 25],
+                        value: "",
+                        align: "right"
+                    },
+                    {
+                        type: "text",
+                        position: [0, 0, 40, 75],
+                        align: "right"
+                    },
+                    {
+                        type: "text",
+                        position: [40, 0, 20, 75],
+                        value: "-",
+                        color: "#ffffff"
+                    },
+                    {
+                        type: "text",
+                        position: [60, 0, 40, 75],
+                        align: "left"
+                    },
+                    {
+                        type: "text",
+                        position: [60, 75, 40, 25],
+                        value: "",
+                        align: "left"
+                    }
+                ]
+            },
             SHIP_CHOICE: {
                 id: "ship_choice",
                 position: [0, 0, 5, 5],
@@ -2437,6 +2837,7 @@ const UIComponent = class {
                     {
                         type: 'box',
                         position: [0, 0, 100, 100],
+                        width: 2
                     },
                     {
                         type: "text",
@@ -2444,10 +2845,30 @@ const UIComponent = class {
                         color: '#ffffff'
                     }
                 ]
+            },
+            ABILITY_ACTIVATE: {
+                id: "ability_activate",
+                position: [45, 85, 10, 5],
+                visible: true,
+                clickable: true,
+                shortcut: 'I',
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        width: 2
+                    },
+                    {
+                        type: 'text',
+                        position: [5, 0, 90, 100],
+                        value: '',
+                        color: '#ffffff'
+                    }
+                ]
             }
         },
         TICKS: {
-
+            WARNING: 600,
         }
     }
 
