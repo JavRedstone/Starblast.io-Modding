@@ -109,7 +109,7 @@ const Game = class {
 
             GAME_MANAGER: 30,
             
-            ROUND: 3600 * 15,
+            ROUND: 3600 * 20,
             ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
@@ -617,7 +617,7 @@ const Game = class {
                                     {
                                         type: 'text',
                                         position: [pos[0], pos[1] + 0.5, pos[2] - 1, pos[3] - 1],
-                                        value: Helper.getCounterValue(player.ship.score),
+                                        value: Helper.getCounterValue(player.score),
                                         color: color,
                                         align: 'right'
                                     });
@@ -863,11 +863,12 @@ const Game = class {
         if (ship != null) {
             ship.ship.alive = false;
             ship.deaths++;
-            ship.setScore(ship.ship.score / 2);
+            ship.setScore(ship.score / 2);
             if (gameShipKiller) {
                 let shipKiller = this.findShip(gameShipKiller);
                 if (shipKiller != null) {
                     shipKiller.kills++;
+                    shipKiller.setScore(shipKiller.score + ship.score / 2 + Ship.C.BASE_KILL_SCORE);
                 }
             }
         }
@@ -1023,8 +1024,8 @@ const Team = class {
     getMinScore() {
         let minScore = Infinity;
         for (let ship of this.ships) {
-            if (ship.ship.score < minScore) {
-                minScore = ship.ship.score;
+            if (ship.score < minScore) {
+                minScore = ship.score;
             }
         }
         return minScore;
@@ -1033,8 +1034,8 @@ const Team = class {
     getMaxScore() {
         let maxScore = 0;
         for (let ship of this.ships) {
-            if (ship.ship.score > maxScore) {
-                maxScore = ship.ship.score;
+            if (ship.score > maxScore) {
+                maxScore = ship.score;
             }
         }
         return maxScore;
@@ -1076,7 +1077,7 @@ const Team = class {
     getTotalScore() {
         let totalScore = 0;
         for (let ship of this.ships) {
-            totalScore += ship.ship.score;
+            totalScore += ship.score;
         }
         return totalScore;
     }
@@ -1281,6 +1282,7 @@ const Ship = class {
     timedUIs = [];
     hiddenUIIDs = new Set();
 
+    score = 0;
     highScore = 0;
 
     selectingTeam = false;
@@ -1302,6 +1304,7 @@ const Ship = class {
         CHOOSE_SHIP_TIME: 600,
         SURGE_COOLDOWN: 3600,
         SURGE_TIME: 60,
+        BASE_KILL_SCORE: 500
     }
 
     constructor(ship) {
@@ -1315,6 +1318,7 @@ const Ship = class {
         this.setIdle(false);
         this.setScore(0);
 
+        this.score = 0;
         this.highScore = 0;
 
         this.chooseShipTime = -1;
@@ -1477,8 +1481,8 @@ const Ship = class {
     }
 
     checkHighScore() {
-        if (this.ship && this.ship.score > this.highScore) {
-            this.highScore = this.ship.score;
+        if (this.ship && this.score > this.highScore) {
+            this.highScore = this.score;
         }
     }
 
@@ -1516,25 +1520,24 @@ const Ship = class {
     }
 
     getMaxCrystals() {
-        // switch (this.getLevel()) {
-        //     case 1:
-        //         return 20;
-        //     case 2:
-        //         return 80;
-        //     case 3:
-        //         return 180;
-        //     case 4:
-        //         return 360;
-        //     case 5:
-        //         return 500;
-        //     case 6:
-        //         return 720;
-        //     case 7:
-        //         return 980;
-        //     default:
-        //         return 0;
-        // }
-        return 980;
+        switch (this.getLevel()) {
+            case 1:
+                return 20;
+            case 2:
+                return 80;
+            case 3:
+                return 180;
+            case 4:
+                return 360;
+            case 5:
+                return 500;
+            case 6:
+                return 720;
+            case 7:
+                return 980;
+            default:
+                return 0;
+        }
     }
 
     getMaxShield() {
@@ -1715,6 +1718,7 @@ const Ship = class {
 
     setScore(score) {
         if (game.ships.includes(this.ship)) {
+            this.score = score;
             this.ship.score = score;
             this.ship.set({ score: score });
         }
@@ -1767,10 +1771,10 @@ const Ship = class {
                     "Good game!": "Thanks for playing!",
                     "Team": this.team.color,
                     "Winning Team": winningTeam ? winningTeam.color : "None",
-                    "Score": this.ship.score,
+                    "Score": Math.round(this.score),
                     "Kills": this.kills,
                     "Deaths": this.deaths,
-                    "K/D": this.getKD()
+                    "K/D": Math.round(this.getKD() * 100) / 100
                 });
             } else {
                 this.ship.gameover({
