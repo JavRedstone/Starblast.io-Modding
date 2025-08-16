@@ -19,6 +19,8 @@ const Game = class {
     leftShips = [];
     teams = [];
 
+    changeTeamShip = null;
+
     aliens = [];
 
     spawnGlows = [];
@@ -113,6 +115,7 @@ const Game = class {
             ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
+        TEAM_PLAYER_DEFICIT: 2
     }
 
     static setShipGroups(shipGroups) {
@@ -204,7 +207,7 @@ const Game = class {
     }
 
     spawnObjs() {
-        if (this.map) {
+        if (this.map && this.teams.length == 2) {
             for (let i = 0; i < this.map.spawns.length; i++) {
                 let spawn = this.map.spawns[i];
                 let team = this.teams[i];
@@ -355,7 +358,53 @@ const Game = class {
         }
         if (this.isResetting) return;
         if (game.step % Game.C.TICKS.GAME_MANAGER == 0) {
-            
+            if (this.teams.length == 2) {
+                let diff = this.teams[0].ships.length - this.teams[1].ships.length;
+                if (Math.abs(diff) >= Game.C.TEAM_PLAYER_DEFICIT) {
+                    let t = diff > 0 ? 0 : 1;
+                    let minScore = this.teams[t].getMinScore(true);
+                    let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && ship.score == minScore));
+                    if (randShip && !this.changeTeamShip) {
+                        this.changeTeamShip = randShip;
+                        randShip.changeTeamTime = game.step;
+                    }
+                }
+                
+                if (this.changeTeamShip) {
+                    if (this.changeTeamShip.left || !this.changeTeamShip.ship.alive || this.changeTeamShip.ship.type == 101 || Math.abs(diff) < Game.C.TEAM_PLAYER_DEFICIT) {
+                        this.changeTeamShip.hideUI(UIComponent.C.UIS.NOTIFICATION);
+                        this.changeTeamShip.changeTeamTime = -1;
+                        this.changeTeamShip = null;
+                    }
+                    if (this.changeTeamShip) {
+                        if (this.changeTeamShip.changeTeamTime != -1 && game.step - this.changeTeamShip.changeTeamTime < Ship.C.SWITCH_SHIP_TIME) {
+                            let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
+                            let oppTeam = this.getOppTeam(this.changeTeamShip.team);
+                            notification.components[0].fill = '#ff8c0080';
+                            notification.components[1].value = 'Team Switch Warning';
+                            notification.components[2].value = `You will be switched to the ${oppTeam.color.toUpperCase()} team in ${Helper.formatTime(Ship.C.SWITCH_SHIP_TIME - (game.step - this.changeTeamShip.changeTeamTime))}.`;
+                            this.changeTeamShip.sendUI(notification);
+                        } else {
+                            let team = this.changeTeamShip.team;
+                            let oppTeam = this.getOppTeam(team);
+                            this.shipResetQueue.add(() => {
+                                this.resetShip(this.changeTeamShip, true);
+
+                                this.changeTeamShip.chosenType = 0;
+                                this.changeTeamShip.chooseShipTime = game.step;
+                                let notification = Helper.deepCopy(UIComponent.C.UIS.NOTIFICATION);
+                                notification.components[0].fill = '#00ffae80';
+                                notification.components[1].value = 'Team Switched';
+                                notification.components[2].value = `You have been moved to the ${oppTeam.color.toUpperCase()} team due to team player imbalance.`;
+                                this.changeTeamShip.sendTimedUI(notification);
+
+                                this.changeTeamShip.changeTeamTime = -1;
+                                this.changeTeamShip = null;
+                            });
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -497,9 +546,11 @@ const Game = class {
                     if (!ship.isResetting) {
                         if (ship.team && !this.isGameOver && !this.waitingForFinish) {
                             this.handleChooseShip(ship);
+                        } else {
+                            ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE)
                         }
 
-                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime >= Ship.C.SURGE_TIME && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length + (ship.getLevel() == 1 ? 1 : 0))) {
+                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime > Ship.C.SURGE_TIME + Game.C.TICKS.RESET_STAGGER && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length + (ship.getLevel() == 1 ? 1 : 0))) {
                             ship.setType(102);
                             ship.setCrystals(0);
                         }
@@ -508,6 +559,7 @@ const Game = class {
                             if (!ship.outOfSpawn) {
                                 if (!this.map.spawns[ship.team.team].containsPoint(ship.getPosition())) {
                                     ship.outOfSpawn = true;
+                                    ship.fillUp();
                                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                     bottomMessage.components[0].fill = '#ffa20080';
                                     bottomMessage.components[1].value = 'You have left your spawn area! Fight enemies!';
@@ -554,7 +606,7 @@ const Game = class {
                                 });
                             }
                             for (let enemyShip of this.getOppTeam(ship.team).ships) {
-                                if (enemyShip.outOfSpawn) {
+                                if (enemyShip.ship.alive && enemyShip.outOfSpawn) {
                                     radarBackground.components.push({
                                         type: "round",
                                         position: Helper.getRadarSpotPosition(enemyShip.getPosition(), new Vector2(1, 1).multiply(20)),
@@ -894,13 +946,21 @@ const Game = class {
             else if (id == UIComponent.C.UIS.ABILITY_ACTIVATE.id) {
                 if (ship.abilityTime != -1 && game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
                     ship.abilityTime = game.step;
+                    let shipCrystals = ship.ship.crystals;
                     let prevType = ship.ship.type;
-                    ship.setType(prevType + Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length);
-                    ship.setMaxStats();
                     ship.timeouts.push(new TimeoutCreator(() => {
-                        ship.setType(prevType);
+                        ship.setType(prevType + Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length);
                         ship.setMaxStats();
-                    }, Ship.C.SURGE_TIME).start());
+                        ship.setCrystals(shipCrystals);
+                        ship.timeouts.push(new TimeoutCreator(() => {
+                            let shipCrystals = ship.ship.crystals;
+                            ship.timeouts.push(new TimeoutCreator(() => {
+                                ship.setType(prevType);
+                                ship.setMaxStats();
+                                ship.setCrystals(shipCrystals);
+                            }, 0).start());
+                        }, Ship.C.SURGE_TIME).start());
+                    }, 0).start());
                 }
             }
         }
@@ -1232,6 +1292,11 @@ const ShipGroup = class {
             jship.typespec.model = jship.model;
             jship.typespec.code = jship.level * 100 + jship.model;
 
+            let objsWithTexture = Helper.findObjectsWithKey(jship, 'texture');
+            for (let objWithTexture of objsWithTexture) {
+                objWithTexture.texture = [17];
+            }
+
             jship.specs.generator.capacity = [
                 jship.specs.generator.capacity[0] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER,
                 jship.specs.generator.capacity[1] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER
@@ -1273,7 +1338,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 21;
 
     timeouts = [];
     conditions = [];
@@ -1304,7 +1369,8 @@ const Ship = class {
         CHOOSE_SHIP_TIME: 600,
         SURGE_COOLDOWN: 3600,
         SURGE_TIME: 60,
-        BASE_KILL_SCORE: 500
+        BASE_KILL_SCORE: 500,
+        SWITCH_SHIP_TIME: 180,
     }
 
     constructor(ship) {
@@ -2648,7 +2714,7 @@ const UIComponent = class {
             },
             NOTIFICATION: {
                 id: "notification",
-                position: [25, 5, 50, 10],
+                position: [25, 30, 50, 10],
                 visible: true,
                 components: [
                     {
@@ -2812,7 +2878,7 @@ const UIComponent = class {
                     },
                     {
                         type: "text",
-                        position: [0, 0, 40, 75],
+                        position: [0, 0, 30, 75],
                         align: "right"
                     },
                     {
@@ -2823,7 +2889,7 @@ const UIComponent = class {
                     },
                     {
                         type: "text",
-                        position: [60, 0, 40, 75],
+                        position: [70, 0, 30, 75],
                         align: "left"
                     },
                     {
@@ -3639,6 +3705,49 @@ const Helper = class {
             return (counter / 1000000).toFixed(1) + 'M';
         }
     }
+
+    static getDescendantsByKey(obj, key) { // Lists them, but no reference to original
+        let results = [];
+
+        function recurse(current) {
+            if (typeof current !== 'object' || current === null) return;
+
+            if (key in current) {
+            results.push(current[key]);
+            }
+
+            for (let k in current) {
+            if (typeof current[k] === 'object' && current[k] !== null) {
+                recurse(current[k]);
+            }
+            }
+        }
+
+        recurse(obj);
+        return results;
+    }
+
+    static findObjectsWithKey(obj, key) {
+        let results = [];
+
+        function recurse(current) {
+            if (typeof current !== 'object' || current === null) return;
+
+            if (key in current) {
+            results.push(current);
+            }
+
+            for (let k in current) {
+            if (typeof current[k] === 'object' && current[k] !== null) {
+                recurse(current[k]);
+            }
+            }
+        }
+
+        recurse(obj);
+        return results;
+    }
+
 
     static shuffleArray(array) {
         for (let i = array.length - 1; i > 0; i--) {
