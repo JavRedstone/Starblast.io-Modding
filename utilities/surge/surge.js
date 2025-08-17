@@ -855,11 +855,10 @@ const Game = class {
 
                             if (ship.getAllowedMaxTier() < tier) {
                                 shipChoice.clickable = false;
-                                shipChoice.components[0].fill = Helper.interpolateColor('#3A1C71AA', '#FFAF7B10', tier / tiers.length);
-                                shipChoice.components[1].color = Helper.interpolateColor('#ffffffAA', '#ffffff10', tier / tiers.length);
+                                shipChoice.components[0].fill = Helper.interpolateColor('#3A1C7120', '#FFAF7B20', tier / tiers.length);
+                                shipChoice.components[1].color = '#000000';
                             } else {
                                 shipChoice.components[0].fill = Helper.interpolateColor('#3A1C71BF', '#FFAF7BBF', tier / tiers.length);
-                                
 
                                 if (ship.scrolledShip == code) {
                                     shipChoice.components[0].stroke = '#00ff00BF';
