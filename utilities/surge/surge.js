@@ -60,7 +60,7 @@ const Game = class {
 
             STARTING_SHIP: 800,
             RESET_TREE: true,
-            CHOOSE_SHIP: [102],
+            CHOOSE_SHIP: [101],
 
             LIVES: 4,
             MAX_TIER_LIVES: 0,
@@ -111,7 +111,7 @@ const Game = class {
 
             GAME_MANAGER: 30,
             
-            ROUND: 3600 * 20,
+            ROUND: 3600 * 30,
             ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
@@ -119,7 +119,7 @@ const Game = class {
     }
 
     static setShipGroups(shipGroups) {
-        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":1,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
+        Game.C.OPTIONS.SHIPS = ['{"name":"Invisible","level":1,"model":3,"size":0.1,"zoom":0.1,"next":[],"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"bodies":{"main":{"section_segments":1,"offset":{"x":0,"y":0,"z":0},"position":{"x":[1,0],"y":[0,0],"z":[0,0]},"width":[0,0],"height":[0,0]}},"typespec":{"name":"Invisible","level":1,"model":3,"code":103,"specs":{"shield":{"capacity":[100,100],"reload":[100,100]},"generator":{"capacity":[1,1],"reload":[1,1]},"ship":{"mass":0,"speed":[1,1],"rotation":[1,1],"acceleration":[1,1]}},"shape":[0,0,0,0,0,0,0,0,0,0,0,0,0,0.002,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],"lasers":[],"radius":0.002,"next":[]}}'];
         for (let [tier, shipMap] of Object.entries(shipGroups)) {
             let shipGroup = new ShipGroup(parseInt(tier), shipMap);
             Game.shipGroups.push(shipGroup);
@@ -203,7 +203,7 @@ const Game = class {
 
     setMap() {
         let newMap = Helper.getRandomArrayElement(GameMap.C.MAPS);
-        this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.spawns).spawn();
+        this.map = new GameMap(newMap.name, newMap.author, newMap.map, newMap.spawns, newMap.randAsteroids).spawn();
     }
 
     spawnObjs() {
@@ -549,10 +549,13 @@ const Game = class {
                             this.handleChooseShip(ship);
                         } else {
                             ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE)
+                            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
+                            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
+                            ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
                         }
 
-                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime > Ship.C.SURGE_TIME + Game.C.TICKS.RESET_STAGGER && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length + (ship.getLevel() == 1 ? 1 : 0))) {
-                            ship.setType(102);
+                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime > Ship.C.SURGE_TIME + Game.C.TICKS.RESET_STAGGER && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length)) {
+                            ship.setType(101);
                             ship.setCrystals(0);
                         }
                         
@@ -600,11 +603,20 @@ const Game = class {
                             let radarBackground = Helper.deepCopy(UIComponent.C.UIS.RADAR_BACKGROUND);
                             for (let i = 0; i < this.map.spawns.length; i++) {
                                 let spawn = this.map.spawns[i];
-                                radarBackground.components.push({
-                                    type: "box",
-                                    position: Helper.getRadarSpotPosition(spawn.center, spawn.size),
-                                    fill: this.teams[i].hex.substring(0, 7) + '40'
-                                });
+                                if (spawn.angle == Math.PI / 4) {
+                                    radarBackground.components.push({
+                                        type: "text",
+                                        position: Helper.getRadarSpotPosition(spawn.center, spawn.size.multiply(2)),
+                                        value: '◆',
+                                        color: this.teams[i].hex.substring(0, 7) + '40',
+                                    });
+                                } else {
+                                    radarBackground.components.push({
+                                        type: "box",
+                                        position: Helper.getRadarSpotPosition(spawn.center, spawn.size),
+                                        fill: this.teams[i].hex.substring(0, 7) + '40'
+                                    });
+                                }
                             }
                             for (let enemyShip of this.getOppTeam(ship.team).ships) {
                                 if (enemyShip.ship.alive && enemyShip.outOfSpawn) {
@@ -818,6 +830,9 @@ const Game = class {
     handleChooseShip(ship) {
         if (ship) {
             if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME && !ship.outOfSpawn) {
+                if (ship.scrolledShip == -1) {
+                    ship.scrolledShip = ship.ship.type;
+                }
                 let tiers = Object.keys(ShipGroup.C.SHIPS);
                 for (let tier of tiers) {
                     let shipsInTier = ShipGroup.C.SHIPS[tier];
@@ -844,7 +859,14 @@ const Game = class {
                                 shipChoice.components[1].color = Helper.interpolateColor('#ffffffAA', '#ffffff10', tier / tiers.length);
                             } else {
                                 shipChoice.components[0].fill = Helper.interpolateColor('#3A1C71BF', '#FFAF7BBF', tier / tiers.length);
-                                shipChoice.components[0].stroke = '#ffffffBF';
+                                
+
+                                if (ship.scrolledShip == code) {
+                                    shipChoice.components[0].stroke = '#00ff00BF';
+                                    shipChoice.components[0].width = 8;
+                                } else {
+                                    shipChoice.components[0].stroke = '#ffffffBF';
+                                }
                             }
 
                             shipChoice.components[1].value = shipInfoShip.name;
@@ -855,6 +877,10 @@ const Game = class {
                         }
                     }
                 }
+
+                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS));
+                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS));
+                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SELECT));
 
                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                 bottomMessage.components[0].fill = '#3A1C71BF';
@@ -867,8 +893,18 @@ const Game = class {
                 ship.sendUI(topMessage);
             } else if (ship.chooseShipTime != -1) {
                 ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE);
+                ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
+                ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
+                ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
                 ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                 ship.hideUI(UIComponent.C.UIS.TOP_MESSAGE);
+                let shipCrystals = ship.ship.crystals;
+                ship.timeouts.push(new TimeoutCreator(() => {
+                    ship.setType(ship.scrolledShip);
+                    ship.setMaxStats();
+                    ship.setCrystals(shipCrystals);
+                    ship.scrolledShip = -1;
+                }, 0).start());
                 ship.chooseShipTime = -1;
             }
         }
@@ -911,11 +947,11 @@ const Game = class {
             ship.setInvulnerable(Ship.C.INVULNERABLE_TIME)
             ship.setVelocity(new Vector2(0, 0));
             ship.fillUp();
-            ship.chooseShipTime = game.step;
             ship.outOfSpawn = false;
             if (this.map && this.map.spawns.length == 2 && ship.team) {
                 ship.setPosition(this.map.spawns[ship.team.team].getRandomPointInside());
             }
+            ship.chooseShipTime = game.step;
         }
     }
 
@@ -941,15 +977,49 @@ const Game = class {
             if (ship.hiddenUIIDs.has(id)) {
                 return;
             }
-            if (id.includes(UIComponent.C.UIS.SHIP_CHOICE.id)) {
+            if (id.includes(UIComponent.C.UIS.SHIP_CHOICE.id) || id == UIComponent.C.UIS.SHIP_SELECT.id) {
                 if (ship.chooseShipTime != -1) {
-                    ship.chooseShipTime = -1;
                     ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE);
+                    ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
+                    ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
+                    ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
                     ship.hideUI(UIComponent.C.UIS.BOTTOM_MESSAGE);
                     ship.hideUI(UIComponent.C.UIS.TOP_MESSAGE);
-                    let code = parseInt(id.split('-')[1]);
+                    let code = 0;
+                    if (id == UIComponent.C.UIS.SHIP_SELECT.id) {
+                        code = ship.scrolledShip;
+                    } else {
+                        code = parseInt(id.split('-')[1]);
+                    }
+                    ship.chooseShipTime = -1;
+                    ship.scrolledShip = -1;
                     ship.setType(code);
                     ship.fillUp();
+                }
+            }
+            else if (id == UIComponent.C.UIS.SHIP_SCROLL_FORWARDS.id || id == UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS.id) {
+                if (ship.chooseShipTime != -1) {
+                    let allowedMaxTier = ship.getAllowedMaxTier();
+                    if (id == UIComponent.C.UIS.SHIP_SCROLL_FORWARDS.id) {
+                        ship.scrolledShip++;
+                        let shipLevel = Math.floor(ship.scrolledShip / 100);
+                        if (ship.scrolledShip > shipLevel * 100 + Object.keys(ShipGroup.C.SHIPS[`${shipLevel}`]).length) {
+                            ship.scrolledShip = (shipLevel + 1) * 100 + 1;
+                        }
+                        shipLevel = Math.floor(ship.scrolledShip / 100);
+                        if (shipLevel > allowedMaxTier) {
+                            ship.scrolledShip = 101;
+                        }
+                    } else {
+                        ship.scrolledShip--;
+                        let shipLevel = Math.floor(ship.scrolledShip / 100);
+                        if (ship.scrolledShip < 101) {
+                            ship.scrolledShip = allowedMaxTier * 100 + Object.keys(ShipGroup.C.SHIPS[`${allowedMaxTier}`]).length;
+                        }
+                        if (ship.scrolledShip < shipLevel * 100 + 1) {
+                            ship.scrolledShip = (shipLevel - 1) * 100 + Object.keys(ShipGroup.C.SHIPS[`${shipLevel - 1}`]).length;
+                        }
+                    }
                 }
             }
             else if (id == UIComponent.C.UIS.SURGE_ACTIVATE.id) {
@@ -1156,12 +1226,12 @@ const ShipGroup = class {
     tier = 0;
     ships = [];
     normalShips = [];
-    abilityShips = [];
+    surgeShips = [];
 
     static C = {
         SHIPS: {
             '1': {
-                '102': {
+                '101': {
                     SHIP: '{"name":"U-Sniper Mk 2","level":1,"model":1,"size":1.8,"specs":{"shield":{"capacity":[250,300],"reload":[4,6]},"generator":{"capacity":[100,160],"reload":[50,60]},"ship":{"mass":200,"speed":[125,145],"rotation":[50,70],"acceleration":[60,110]}},"bodies":{"main":{"section_segments":8,"offset":{"x":0,"y":-15,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[0,-10,40,100,90,100],"z":[0,0,0,0,0,0]},"width":[0,10,25,10,0],"height":[0,5,15,10,0],"texture":[2,1,10,18],"propeller":true},"cockpit":{"section_segments":[40,90,180,270,320],"offset":{"x":0,"y":-25,"z":11},"position":{"x":[0,0,0,0],"y":[25,50,70,85],"z":[-1,0,0,1]},"width":[5,12,10,5],"height":[0,12,15,0],"texture":[8.98,8.98,4]},"uwings":{"section_segments":[0,45,90,135,180],"offset":{"x":-55,"y":-30,"z":0},"position":{"x":[0,0,0,0,0,0],"y":[-90,-100,40,80,90,100],"z":[0,0,0,0,0,0]},"width":[0,10,25,20,0],"height":[0,5,25,20,0],"texture":[12,1,63,3]},"cannons_front":{"section_segments":12,"offset":{"x":45,"y":10,"z":0},"position":{"x":[0,0,0,10,10,10,10],"y":[-60,-70,-20,0,40,50],"z":[0,0,0,0,0,-1,-1]},"width":[0,5,6,15,10,0],"height":[0,5,5,25,20,0],"angle":0,"laser":{"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"recoil":200,"number":1,"error":0},"propeller":false,"texture":[17,13,18,63,3]},"side_propulsors":{"section_segments":10,"offset":{"x":20,"y":15,"z":0},"position":{"x":[-10,-10,0,0,0,0,0,0,0,0],"y":[-20,-30,15,35,40,50,55,60,55],"z":[0,0,0,0,0,0,0,0,0,0]},"width":[0,5,10,10,10,5,5,5,0],"height":[0,5,10,10,10,5,5,5,0],"propeller":true,"texture":[6,10,11,4,63,11,17,12]},"wing_engines":{"section_segments":10,"offset":{"x":58,"y":5,"z":0},"position":{"x":[0,0,0,0],"y":[40,55,60,55],"z":[0,0,0,0]},"width":[10,10,13,0],"height":[10,10,13,0],"propeller":true,"texture":[13,17,18]}},"wings":{"main":{"doubleside":true,"offset":{"x":10,"y":35,"z":0},"length":[50],"width":[60,30],"angle":[0],"position":[10,-15],"texture":[11],"bump":{"position":10,"size":15}},"inner":{"offset":{"x":-57,"y":-65,"z":0},"length":[5],"width":[165,112],"angle":[0],"position":[20,0],"texture":[17,63],"doubleside":true,"bump":{"position":30,"size":4}}},"typespec":{"name":"U-Sniper Mk 2","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[250,300],"reload":[4,6]},"generator":{"capacity":[100,160],"reload":[50,60]},"ship":{"mass":200,"speed":[125,145],"rotation":[50,70],"acceleration":[60,110]}},"shape":[0.902,0.916,0.946,5.172,5.232,4.531,3.93,3.534,3.255,3.054,2.924,2.853,2.837,2.902,2.925,2.995,3.121,3.245,3.449,3.417,3.036,2.398,2.843,2.839,3.081,3.066,3.081,2.839,2.843,2.398,3.036,3.417,3.449,3.245,3.121,2.995,2.925,2.902,2.837,2.853,2.924,3.054,3.255,3.534,3.93,4.531,5.232,5.172,0.946,0.916],"lasers":[{"x":1.62,"y":-2.16,"z":0,"angle":0,"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"number":1,"spread":0,"error":0,"recoil":200},{"x":-1.62,"y":-2.16,"z":0,"angle":0,"damage":[40,60],"rate":2,"type":2,"speed":[190,240],"number":1,"spread":0,"error":0,"recoil":200}],"radius":5.232}}',
                 },
             },
@@ -1270,6 +1340,9 @@ const ShipGroup = class {
         },
         GENERATOR_RELOAD_MULTIPLIER: 10,
         GENERATOR_CAPACITY_MULTIPLIER: 10,
+        LASER_RATE_MULTIPLIER: 5,
+        SHIP_SPEED_MULTIPLIER: 1.5,
+        SHIP_ACCELERATION_MULTIPLIER: 1.5
     }
 
     constructor(tier, shipMap) {
@@ -1281,14 +1354,14 @@ const ShipGroup = class {
     processShips(shipMap) {
         this.ships = [];
         this.normalShips = [];
-        this.abilityShips = [];
+        this.surgeShips = [];
         let shipsInTier = Object.values(shipMap);
         let i = 0;
         for (let value of shipsInTier) {
             let ship = value.SHIP;
             let jship = JSON.parse(ship);
             jship.level = this.tier;
-            jship.model = this.tier == 1 ? i + 2 : i + 1;
+            jship.model = i + 1;
             jship.typespec.model = jship.model;
             jship.typespec.code = jship.level * 100 + jship.model;
             jship.next = [];
@@ -1310,21 +1383,36 @@ const ShipGroup = class {
                 jship.specs.generator.capacity[0] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER,
                 jship.specs.generator.capacity[1] * ShipGroup.C.GENERATOR_CAPACITY_MULTIPLIER
             ];
+            jship.typespec.specs.generator.capacity = jship.specs.generator.capacity;
             jship.specs.generator.reload = [
                 jship.specs.generator.reload[0] * ShipGroup.C.GENERATOR_RELOAD_MULTIPLIER,
                 jship.specs.generator.reload[1] * ShipGroup.C.GENERATOR_RELOAD_MULTIPLIER
             ];
-
-            jship.typespec.specs.generator.capacity = jship.specs.generator.capacity;
             jship.typespec.specs.generator.reload = jship.specs.generator.reload;
 
-            let abilityShip = JSON.stringify(jship);
-            this.abilityShips.push(abilityShip);
+            let objsWithRate = Helper.findObjectsWithKey(jship, 'rate');
+            for (let objWithRate of objsWithRate) {
+                objWithRate.rate = Helper.clamp(objWithRate.rate * ShipGroup.C.LASER_RATE_MULTIPLIER, -1, 10)
+            }
+
+            jship.specs.ship.speed = [
+                jship.specs.ship.speed[0] * ShipGroup.C.SHIP_SPEED_MULTIPLIER,
+                jship.specs.ship.speed[1] * ShipGroup.C.SHIP_SPEED_MULTIPLIER
+            ];
+            jship.typespec.specs.ship.speed = jship.specs.ship.speed;
+            jship.specs.ship.acceleration = [
+                jship.specs.ship.acceleration[0] * ShipGroup.C.SHIP_ACCELERATION_MULTIPLIER,
+                jship.specs.ship.acceleration[1] * ShipGroup.C.SHIP_ACCELERATION_MULTIPLIER
+            ];
+            jship.typespec.specs.ship.acceleration = jship.specs.ship.acceleration;
+
+            let surgeShip = JSON.stringify(jship);
+            this.surgeShips.push(surgeShip);
 
             i++;
         }
         this.ships.push(...this.normalShips);
-        this.ships.push(...this.abilityShips);
+        this.ships.push(...this.surgeShips);
     }
 
     static getShipInfo(type) {
@@ -1347,7 +1435,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 21;
 
     timeouts = [];
     conditions = [];
@@ -1368,6 +1456,7 @@ const Ship = class {
     done = false;
 
     chooseShipTime = -1;
+    scrolledShip = -1;
     abilityTime = -1;
     outOfSpawn = false;
 
@@ -1375,7 +1464,7 @@ const Ship = class {
 
     static C = {
         INVULNERABLE_TIME: 300,
-        CHOOSE_SHIP_TIME: 600,
+        CHOOSE_SHIP_TIME: 1200,
         SURGE_COOLDOWN: 3600,
         SURGE_TIME: 60,
         BASE_KILL_SCORE: 500,
@@ -1397,6 +1486,7 @@ const Ship = class {
         this.highScore = 0;
 
         this.chooseShipTime = -1;
+        this.scrolledShip = -1;
         this.abilityTime = -1;
         this.outOfSpawn = false;
 
@@ -1570,13 +1660,13 @@ const Ship = class {
     }
 
     getAllowedMaxTier() {
-        if (this.deaths > 20) {
+        if (this.deaths > 24) {
             return 7;
-        } else if (this.deaths > 12) {
+        } else if (this.deaths > 16) {
             return 6;
-        } else if (this.deaths > 7) {
+        } else if (this.deaths > 10) {
             return 5;
-        } else if (this.deaths > 5) {
+        } else if (this.deaths > 6) {
             return 4;
         } else if (this.deaths > 3) {
             return 3;
@@ -2927,6 +3017,66 @@ const UIComponent = class {
                     }
                 ]
             },
+            SHIP_SCROLL_FORWARDS: {
+                id: "ship_scroll_forwards",
+                position: [2.5, 62.5, 10, 5],
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(188),
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#006eff80'
+                    },
+                    {
+                        type: "text",
+                        position: [15, 15, 70, 70],
+                        color: '#ffffff',
+                        value: 'Scroll > [,]'
+                    }
+                ]
+            },
+            SHIP_SCROLL_BACKWARDS: {
+                id: "ship_scroll_backwards",
+                position: [2.5, 70, 10, 5],
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(190),
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00ffd980'
+                    },
+                    {
+                        type: "text",
+                        position: [15, 15, 70, 70],
+                        color: '#ffffff',
+                        value: 'Scroll < [.]'
+                    }
+                ]
+            },
+            SHIP_SELECT: {
+                id: "ship_select",
+                position: [2.5, 77.5, 10, 5],
+                visible: true,
+                clickable: true,
+                shortcut: String.fromCharCode(191),
+                components: [
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#55ff0080'
+                    },
+                    {
+                        type: "text",
+                        position: [15, 15, 70, 70],
+                        color: '#ffffff',
+                        value: 'Select [/]'
+                    }
+                ]
+            },
             SURGE_ACTIVATE: {
                 id: "surge_activate",
                 position: [45, 85, 10, 5],
@@ -3130,6 +3280,7 @@ const GameMap = class {
     map = '';
     spawnArea = [];
     gridObjs = [];
+    randAsteroids = [];
 
     static C = {
         FILL_IN: true,
@@ -3515,8 +3666,8 @@ const GameMap = class {
                             y: -85
                         },
                         size: {
-                            x: 55,
-                            y: 55
+                            x: 60,
+                            y: 60
                         },
                         angle: Math.PI / 4
                     },
@@ -3526,17 +3677,248 @@ const GameMap = class {
                             y: 85
                         },
                         size: {
-                            x: 55,
-                            y: 55
+                            x: 60,
+                            y: 60
                         },
                         angle: Math.PI / 4
                     }
                 ],
+            },
+            {
+                name: 'Echo Chamber',
+                author: 'JavRedstone',
+                map: "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "      9          99  99          9      \n"+
+                    "      999                      999      \n"+
+                    "        999                  999        \n"+
+                    "          999              999          \n"+
+                    "            999          999            \n"+
+                    "              999      999              \n"+
+                    "                                        \n"+
+                    "        9                      9        \n"+
+                    "        99        9  9        99        \n"+
+                    "         99                  99         \n"+
+                    "          9                  9          \n"+
+                    "    9           9      9           9    \n"+
+                    "                9      9                \n"+
+                    "                9      9                \n"+
+                    "    9           9      9           9    \n"+
+                    "          9                  9          \n"+
+                    "         99                  99         \n"+
+                    "        99        9  9        99        \n"+
+                    "        9                      9        \n"+
+                    "                                        \n"+
+                    "              999      999              \n"+
+                    "            999          999            \n"+
+                    "          999              999          \n"+
+                    "        999                  999        \n"+
+                    "      999                      999      \n"+
+                    "      9          99  99          9      \n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9999999999999999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: 0,
+                            y: -155
+                        },
+                        size: {
+                            x: 380,
+                            y: 50
+                        }
+                    },
+                    {
+                        center: {
+                            x: 0,
+                            y: 155
+                        },
+                        size: {
+                            x: 380,
+                            y: 50
+                        }
+                    },
+                ],
+                randAsteroids: {
+                    num: 10,
+                    size: {
+                        min: 30,
+                        max: 50
+                    },
+                    speed: {
+                        min: 0.5,
+                        max: 0.75
+                    }
+                }
+            },
+            {
+                name: 'Sisyphus',
+                author: 'JavRedstone',
+                map: "9999999999999999999999999999999999999999\n"+
+                    "            9999999999999999999999999999\n"+
+                    "             99                      99 \n"+
+                    "              99                    99  \n"+
+                    "   9           99                  99   \n"+
+                    "                99                99    \n"+
+                    "          9      9   9           99     \n"+
+                    "                     99         99      \n"+
+                    "                      99       99       \n"+
+                    "                       99     99        \n"+
+                    "                        9     9         \n"+
+                    "                                        \n"+
+                    "     9               9                9 \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                 9                      \n"+
+                    "           9                            \n"+
+                    "                          9         9   \n"+
+                    "   9                                    \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "                                        \n"+
+                    "           9                            \n"+
+                    "                                 9      \n"+
+                    "                    9                   \n"+
+                    "                             9          \n"+
+                    "                                        \n"+
+                    "   9                                    \n"+
+                    "                        9999999         \n"+
+                    "                       99     99        \n"+
+                    "                      99       99   9   \n"+
+                    "                     99         99      \n"+
+                    "                 99999           9      \n"+
+                    "                                        \n"+
+                    "        9                               \n"+
+                    "                                    99  \n"+
+                    "             99                      99 \n"+
+                    "            9999999999999999999999999999\n"+
+                    "9999999999999999999999999999999999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: 75,
+                            y: -155
+                        },
+                        size: {
+                            x: 50,
+                            y: 50
+                        }
+                    },
+                    {
+                        center: {
+                            x: 75,
+                            y: 155
+                        },
+                        size: {
+                            x: 50,
+                            y: 50
+                        }
+                    },
+                ],
+                randAsteroids: {
+                    num: 1,
+                    size: {
+                        min: 100,
+                        max: 100
+                    },
+                    speed: {
+                        min: 0.75,
+                        max: 1.25
+                    }
+                }
+            },
+            {
+                name: 'Plinko',
+                author: 'JavRedstone',
+                map: "9999999999999999999999999999999999999999\n"+
+                    "9                                      9\n"+
+                    "9 9  9     9       99       9     9  9 9\n"+
+                    "9                                      9\n"+
+                    "9   9   9   9   9      9   9   9   9   9\n"+
+                    "9                  99                  9\n"+
+                    "9                                      9\n"+
+                    "9 9   9   9   9   9  9   9   9   9   9 9\n"+
+                    "9                                      9\n"+
+                    "9                  99                  9\n"+
+                    "9   9    9    9          9    9    9   9\n"+
+                    "9                                      9\n"+
+                    "9                 9  9                 9\n"+
+                    "9       9                      9       9\n"+
+                    "9            9            9            9\n"+
+                    "9                                      9\n"+
+                    "9  9      9     9  99  9     9      9  9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9    9    9    9   99   9    9    9    9\n"+
+                    "9    9    9    9   99   9    9    9    9\n"+
+                    "9                                      9\n"+
+                    "9                                      9\n"+
+                    "9  9      9     9  99  9     9      9  9\n"+
+                    "9                                      9\n"+
+                    "9            9            9            9\n"+
+                    "9       9                      9       9\n"+
+                    "9                 9  9                 9\n"+
+                    "9                                      9\n"+
+                    "9   9    9    9          9    9    9   9\n"+
+                    "9                  99                  9\n"+
+                    "9                                      9\n"+
+                    "9 9   9   9   9   9  9   9   9   9   9 9\n"+
+                    "9                                      9\n"+
+                    "9                  99                  9\n"+
+                    "9   9   9   9   9      9   9   9   9   9\n"+
+                    "9                                      9\n"+
+                    "9 9  9     9       99       9     9  9 9\n"+
+                    "9                                      9\n"+
+                    "9999999999999999999999999999999999999999",
+                spawns: [
+                    {
+                        center: {
+                            x: 170,
+                            y: 0
+                        },
+                        size: {
+                            x: 40,
+                            y: 60
+                        }
+                    },
+                    {
+                        center: {
+                            x: -170,
+                            y: 0
+                        },
+                        size: {
+                            x: 40,
+                            y: 60
+                        }
+                    },
+                ],
+                randAsteroids: {
+                    num: 30,
+                    size: {
+                        min: 10,
+                        max: 30
+                    },
+                    speed: {
+                        min: 1,
+                        max: 2
+                    }
+                }
             }
         ]
     }
 
-    constructor(name, author, map, spawns) {
+    constructor(name, author, map, spawns, randAsteroids) {
         this.name = name;
         this.author = author;
         this.map = map;
@@ -3548,6 +3930,12 @@ const GameMap = class {
         if (spawns) {
             for (let i = 0; i < spawns.length; i++) {
                 this.spawns.push(new Rectangle(new Vector2(spawns[i].center.x, spawns[i].center.y), new Vector2(spawns[i].size.x, spawns[i].size.y), spawns[i].angle ? spawns[i].angle : 0));
+            }
+        }
+        this.randAsteroids = [];
+        if (randAsteroids) {
+            for (let i = 0; i < randAsteroids.num; i++) {
+                this.randAsteroids.push(new Asteroid(Helper.getRandomArrayElement(this.spawnArea), Helper.getRandomUnitVector().multiply(Helper.getRandomInt(randAsteroids.speed.min, randAsteroids.speed.max)), Helper.getRandomInt(randAsteroids.size.min, randAsteroids.size.max)));
             }
         }
     }
@@ -4110,6 +4498,11 @@ const Helper = class {
 
     static getRandomFloat(min, max) {
         return Math.random() * (max - min) + min;
+    }
+
+    static getRandomUnitVector() {
+        const angle = this.getRandomFloat(0, 2 * Math.PI);
+        return new Vector2(Math.cos(angle), Math.sin(angle));
     }
 
     static getRandomString(length) {
