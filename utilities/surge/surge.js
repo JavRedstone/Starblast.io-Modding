@@ -1434,7 +1434,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 21;
+    deaths = 0;
 
     timeouts = [];
     conditions = [];
