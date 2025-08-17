@@ -922,8 +922,9 @@ const Game = class {
                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                 bottomMessage.components[0].fill = color1 + 'bf';
                 bottomMessage.components[1].value = 'Dying lowers your score. ';
-                if (ship.getLevel() < 7) {
-                    bottomMessage.components[1].value += `${ship.deaths}/${Ship.C.DEATHS[ship.getLevel()]} deaths required for tier ${ship.getLevel() + 1} unlock.`;
+                let allowedMaxTier = ship.getAllowedMaxTier();
+                if (allowedMaxTier < 7) {
+                    bottomMessage.components[1].value += `${ship.deaths}/${Ship.C.DEATHS[allowedMaxTier - 1]} deaths required for tier ${allowedMaxTier + 1} unlock.`;
                 } else {
                     bottomMessage.components[1].value += 'All tiers unlocked.';
                 }
@@ -1479,7 +1480,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 10;
+    deaths = 0;
 
     timeouts = [];
     conditions = [];
