@@ -848,7 +848,7 @@ const Game = class {
                     {
                         type: 'round',
                         position: basePosition,
-                        fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / subBaseModule.maxHealth)
+                        fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColors(subBaseModule.health / subBaseModule.maxHealth, ['#ff0000', '#ffffff'])
                     },
                     {
                         type: 'text',
@@ -886,21 +886,21 @@ const Game = class {
                         type: 'player',
                         position: [pos[0] + 22.5, pos[1] + 0.5, pos[2] - 22.5 * 2, pos[3] - 1],
                         id: player.ship.id,
-                        color: Helper.interpolateColor('#ff3636', '#ffffff', (player.ship.shield + player.ship.crystals) / (player.getMaxShield() + player.getMaxCrystals())),
+                        color: Helper.interpolateColors((player.ship.shield + player.ship.crystals) / (player.getMaxShield() + player.getMaxCrystals()), ['#ff3636', '#ffffff']),
                         align: 'left'
                     },
                     {
                         type: 'text',
                         position: [pos[0] + 2.5, pos[1] + 0.5, pos[2] - 82.5, pos[3] - 1],
                         value: 'T' + player.getLevel() + ' ' + (shipInfo ? shipInfo.ABBREVIATION : ''),
-                        color: Helper.interpolateColor('#ffffff', '#ffff00', player.getLevel() / 7),
+                        color: Helper.interpolateColors((player.getLevel() - 1) / 6, ['#ffffff', '#ffff00']),
                         align: 'left'
                     },
                     {
                         type: 'text',
                         position: [pos[0] + 85, pos[1] + 0.5, pos[2] - 85 - 2.5, pos[3] - 1],
                         value: Helper.getCounterValue(player.ship.score),
-                        color: Helper.interpolateColor('#ffffff', '#ffff00', (player.ship.score / (team.getMaxScore()) || 1)),
+                        color: Helper.interpolateColors((player.ship.score / (team.getMaxScore()) || 1), ['#ffffff', '#ffff00']),
                         align: 'right'
                     },
                 );
@@ -937,7 +937,7 @@ const Game = class {
                     type: 'text',
                     position: [7.5, 11.5, 10, 10],
                     value: ship.getLevel(),
-                    color: Helper.interpolateColor('#ffffff', '#ffff00', ship.getLevel() / 7),
+                    color: Helper.interpolateColors((ship.getLevel() - 1) / 6, ['#ffffff', '#ffff00']),
                 },
                 {
                     type: 'text',
@@ -950,7 +950,7 @@ const Game = class {
                     type: 'player',
                     position: [25, 2.5, 60, 6.5],
                     id: ship.ship.id,
-                    color: Helper.interpolateColor('#ff3636', '#ffffff', (ship.ship.shield + ship.ship.crystals) / (ship.getMaxShield() + ship.getMaxCrystals())),
+                    color: Helper.interpolateColors((ship.ship.shield + ship.ship.crystals) / (ship.getMaxShield() + ship.getMaxCrystals()), ['#ff3636', '#ffffff']),
                     align: 'left'
                 },
                 {
@@ -1050,7 +1050,7 @@ const Game = class {
                 let upgradeCodes = ShipGroup.getUpgrades(ship.ship.type);
                 shipTierComponents[0].value = 'TIER ' + ship.getLevel();
                 shipNameComponents[1].value = shipInfo.ABBREVIATION;
-                shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', ship.getLevel() / 7);
+                shipTierComponents[0].color = Helper.interpolateColors((ship.getLevel() - 1) / 6, ['#ffffff', '#ffff00']);
                 selectedScoreboard.components.push(
                     ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(5, 60)),
                     ...UIComponent.transformUIComponents(Helper.deepCopy(shipNameComponents), new Vector2(5, 78.75))
@@ -1058,7 +1058,7 @@ const Game = class {
                 if (upgradeCodes && upgradeCodes.length > 0) {
                     let tier = Math.floor(upgradeCodes[0] / 100);
                     shipTierComponents[0].value = 'TIER ' + tier;
-                    shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', tier / 7);
+                    shipTierComponents[0].color = Helper.interpolateColors((tier - 1) / 6, ['#ffffff', '#ffff00']);
                     selectedScoreboard.components.push(
                         ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(40, 60))
                     );
@@ -1079,7 +1079,7 @@ const Game = class {
                                 shownThirdTier = true;
                                 let tier = Math.floor(nextUpgradeCodes[0] / 100);
                                 shipTierComponents[0].value = 'TIER ' + tier;
-                                shipTierComponents[0].color = Helper.interpolateColor('#ffffff', '#ffff00', tier / 7);
+                                shipTierComponents[0].color = Helper.interpolateColors((tier - 1) / 6, ['#ffffff', '#ffff00']);
                                 selectedScoreboard.components.push(
                                     ...UIComponent.transformUIComponents(Helper.deepCopy(shipTierComponents), new Vector2(75, 60))
                                 );
@@ -1233,7 +1233,7 @@ const Game = class {
                             radarBackground.components.push({
                                 type: 'round',
                                 position: Helper.getRadarSpotPosition(subBaseModule.pose.position, new Vector2(1, 1).multiply(15 * Base.C.SCALES[team.base.baseLevel - 1])),
-                                fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColor('#ff0000', '#ffffff', subBaseModule.health / subBaseModule.maxHealth)
+                                fill: subBaseModule.dead ? '#ff000040' : Helper.interpolateColors(subBaseModule.health / subBaseModule.maxHealth, ['#ff0000', '#ffffff'])
                             });
                         }
                     }
@@ -1367,6 +1367,8 @@ const Game = class {
             } else {
                 ship.setCrystals(0);
             }
+        } else {
+            ship.isDonating = false;
         }
         
         let weaponsStore = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE);
@@ -1378,25 +1380,25 @@ const Game = class {
                 {
                     type: 'text',
                     value: '📦',
-                    position: [30, 20, 40, 40],
+                    position: [45, 70, 10, 10],
                     color: '#ffffff'
                 },
                 {
                     type: 'text',
                     value: '💎',
-                    position: [35, 25, 30, 30],
+                    position: [47.5, 72.5, 5, 5],
                     color: '#ffffff'
                 },
                 {
                     type: 'text',
                     value: 'Shipping crystals to headquarters...',
-                    position: [10, 60, 80, 10],
+                    position: [10, 82.5, 80, 5],
                     color: '#ffffff'
                 },
                 {
                     type: 'text',
                     value: 'Your team has far more crystals than the enemy team.',
-                    position: [10, 70, 80, 10],
+                    position: [10, 90, 80, 5],
                     color: '#ffffff'
                 }
             )
@@ -1409,137 +1411,127 @@ const Game = class {
         let weaponsStoreEmpty = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_EMPTY);
         ship.sendUI(weaponsStoreEmpty);
 
-        if (ship.team.base.doorsOpened) {
-            let weaponsStoreSecondaryTab = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_TAB);
-            weaponsStoreSecondaryTab.id += '-0';
-            weaponsStoreSecondaryTab.components[1].value = 'SECONDARIES';
-            weaponsStoreSecondaryTab.components[0].fill += (ship.selectedTab == 0 ? 'BF' : '40');
-            ship.sendUI(weaponsStoreSecondaryTab);
+        let weaponsStoreSecondaryTab = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_TAB);
+        weaponsStoreSecondaryTab.id += '-0';
+        weaponsStoreSecondaryTab.components[1].value = 'SECONDARIES';
+        weaponsStoreSecondaryTab.components[0].fill += (ship.selectedTab == 0 ? 'BF' : '40');
+        ship.sendUI(weaponsStoreSecondaryTab);
 
-            let weaponsStoreBaseTab = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_TAB);
-            weaponsStoreBaseTab.id += '-1';
-            weaponsStoreBaseTab.components[1].value = 'BASE UPGRADES';
-            weaponsStoreBaseTab.position[0] += weaponsStoreBaseTab.position[2];
-            weaponsStoreBaseTab.components[0].fill += (ship.selectedTab == 1 ? 'BF' : '40');
-            ship.sendUI(weaponsStoreBaseTab);
+        let weaponsStoreBaseTab = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_TAB);
+        weaponsStoreBaseTab.id += '-1';
+        weaponsStoreBaseTab.components[1].value = 'BASE UPGRADES';
+        weaponsStoreBaseTab.position[0] += weaponsStoreBaseTab.position[2];
+        weaponsStoreBaseTab.components[0].fill += (ship.selectedTab == 1 ? 'BF' : '40');
+        ship.sendUI(weaponsStoreBaseTab);
 
-            let weaponsStoreDonate = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
-            weaponsStoreDonate.components[1].position[2] = ship.ship.crystals / ship.getMaxCrystals() * 100;
-            weaponsStoreDonate.components[2].value = ship.ship.crystals + '💎➔ ' + ship.credits + ' 💳';
-            ship.sendUI(weaponsStoreDonate);
+        let weaponsStoreDonate = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
+        weaponsStoreDonate.components[1].position[2] = ship.ship.crystals / ship.getMaxCrystals() * 100;
+        weaponsStoreDonate.components[2].value = ship.ship.crystals + '💎➔ ' + ship.credits + ' 💳';
+        ship.sendUI(weaponsStoreDonate);
 
-            let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-            bottomMessage.components[0].fill = '#0080FFBF';
-            bottomMessage.components[1].value = "Make sure to clear your weapons to free up slots to buy new items!";
-            ship.sendUI(bottomMessage);
+        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+        bottomMessage.components[0].fill = '#0080FFBF';
+        bottomMessage.components[1].value = "Make sure to clear your weapons to free up slots to buy new items!";
+        ship.sendUI(bottomMessage);
 
-            if (ship.selectedTab == 0) {
-                let numCols = 5;
-                let numRows = 2;
-                for (let i = 0; i < numRows; i++) {
-                    for (let j = 0; j < numCols; j++) {
-                        let index = i * numCols + j;
+        if (ship.selectedTab == 0) {
+            let numCols = 5;
+            let numRows = 2;
+            for (let i = 0; i < numRows; i++) {
+                for (let j = 0; j < numCols; j++) {
+                    let index = i * numCols + j;
 
-                        if (index < 0 || index >= DepotBaseModule.C.WEAPONS_STORE_SECONDARIES.length) {
-                            continue;
-                        }
-
-                        let secondary = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
-                        secondary.id += '-' + index + '-' + ship.selectedTab;
-                        
-                        let position = Helper.getGridUIPosition(27.5, 35, 1, 3, j, i, numCols, numRows);
-                        secondary.position = position;
-                        secondary.components[1].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].ICON;
-                        secondary.components[2].value = 'x' + DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].FREQUENCY;
-                        secondary.components[3].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].BASE_COST + ' 💳';
-                        secondary.components[5].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].NAME;
-
-                        let enoughCredits = ship.credits >= DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].BASE_COST;
-                        if (enoughCredits && ship.selectedItems.length < ship.getMaxSecondaries() && ship.ship.alive) {
-                            secondary.components[0].fill = '#009400bf';
-                        } else {
-                            secondary.components[0].fill = '#2C2C2Cbf';
-                            secondary.clickable = false;
-                        }
-
-                        ship.sendUI(secondary);
+                    if (index < 0 || index >= DepotBaseModule.C.WEAPONS_STORE_SECONDARIES.length) {
+                        continue;
                     }
-                }
-            } else if (ship.selectedTab == 1) {
-                let numCols = 3;
-                let numRows = 2;
-                for (let i = 0; i < numRows; i++) {
-                    for (let j = 0; j < numCols; j++) {
-                        let index = i * numCols + j;
 
-                        if (index < 0 || index >= DepotBaseModule.C.WEAPONS_STORE_BASE_UPGRADES.length) {
-                            continue;
-                        }
+                    let secondary = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
+                    secondary.id += '-' + index + '-' + ship.selectedTab;
+                    
+                    let position = Helper.getGridUIPosition(27.5, 35, 1, 3, j, i, numCols, numRows);
+                    secondary.position = position;
+                    secondary.components[1].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].ICON;
+                    secondary.components[2].value = 'x' + DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].FREQUENCY;
+                    secondary.components[3].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].BASE_COST + ' 💳';
+                    secondary.components[5].value = DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].NAME;
 
-                        let baseUpgradeInfo = ship.team.base.baseUpgrades[index];
-
-                        let baseUpgrade = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
-                        baseUpgrade.id += '-' + index + '-' + ship.selectedTab;
-                        
-                        let position = Helper.getGridUIPosition(27.5, 35, 1, 3, j, i, numCols, numRows);
-                        baseUpgrade.position = position;
-                        baseUpgrade.components[1].value = baseUpgradeInfo.default.ICON;
-                        baseUpgrade.components[2].value = baseUpgradeInfo.level + '/' + baseUpgradeInfo.default.ALLOWED;
-                        baseUpgrade.components[3].value = baseUpgradeInfo.level < baseUpgradeInfo.default.ALLOWED ? baseUpgradeInfo.default.BASE_COST * (baseUpgradeInfo.level + 1) + ' 💳' : 'MAXED OUT';
-                        baseUpgrade.components[5].value = 'x' + baseUpgradeInfo.default.MULTIPLIER + ' ' + baseUpgradeInfo.default.NAME;
-
-                        let enoughCredits = ship.credits >= baseUpgradeInfo.default.BASE_COST * (baseUpgradeInfo.level + 1);
-                        if (enoughCredits && ship.ship.alive && baseUpgradeInfo.level < baseUpgradeInfo.default.ALLOWED) {
-                            baseUpgrade.components[0].fill = '#009400bf';
-                        } else {
-                            baseUpgrade.components[0].fill = '#2C2C2Cbf';
-                            baseUpgrade.clickable = false;
-                        }
-
-                        ship.sendUI(baseUpgrade);
+                    let enoughCredits = ship.credits >= DepotBaseModule.C.WEAPONS_STORE_SECONDARIES[index].BASE_COST;
+                    if (enoughCredits && ship.selectedItems.length < ship.getMaxSecondaries() && ship.ship.alive) {
+                        secondary.components[0].fill = '#009400bf';
+                    } else {
+                        secondary.components[0].fill = '#2C2C2Cbf';
+                        secondary.clickable = false;
                     }
+
+                    ship.sendUI(secondary);
                 }
             }
+        } else if (ship.selectedTab == 1) {
+            let numCols = 3;
+            let numRows = 2;
+            for (let i = 0; i < numRows; i++) {
+                for (let j = 0; j < numCols; j++) {
+                    let index = i * numCols + j;
 
-            let numSlots = 6;
-            for (let i = 0; i < numSlots; i++) {
-                let slot = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_SLOT);
-                slot.id += '-' + i;
-                slot.clickable = ship.selectedItems[i];
-                let position = Helper.getGridUIPosition(30, 0, 0.5, 0, i, 0, numSlots, 1);
-                slot.position = [position[0], slot.position[1], position[2], slot.position[3]];
-                slot.components[1].value = ship.selectedItems[i] ? ship.selectedItems[i].ICON : '';
-                if (i >= ship.getMaxSecondaries()) {
-                    slot.components[0].fill = '#2C2C2C80';
-                    slot.components[0].stroke = '#2C2C2Cbf';
-                    slot.components[1].value = '▧';
-                    slot.components[1].position = [-40, -40, 180, 180];
-                    slot.components[1].color = '#2C2C2Cbf';
-                } else if (ship.selectedItems[i]) {
-                    slot.components.push(
-                        {
-                            type: 'box',
-                            position: [0, 0, 100, 100],
-                            fill: '#00000080',
-                        },
-                        {
-                            type: 'text',
-                            value: '-',
-                            position: [0, 0, 100, 100],
-                            color: '#ffffff'
-                        }
-                    );
+                    if (index < 0 || index >= DepotBaseModule.C.WEAPONS_STORE_BASE_UPGRADES.length) {
+                        continue;
+                    }
+
+                    let baseUpgradeInfo = ship.team.base.baseUpgrades[index];
+
+                    let baseUpgrade = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
+                    baseUpgrade.id += '-' + index + '-' + ship.selectedTab;
+                    
+                    let position = Helper.getGridUIPosition(27.5, 35, 1, 3, j, i, numCols, numRows);
+                    baseUpgrade.position = position;
+                    baseUpgrade.components[1].value = baseUpgradeInfo.default.ICON;
+                    baseUpgrade.components[2].value = baseUpgradeInfo.level + '/' + baseUpgradeInfo.default.ALLOWED;
+                    baseUpgrade.components[3].value = baseUpgradeInfo.level < baseUpgradeInfo.default.ALLOWED ? baseUpgradeInfo.default.BASE_COST * (baseUpgradeInfo.level + 1) + ' 💳' : 'MAXED OUT';
+                    baseUpgrade.components[5].value = 'x' + baseUpgradeInfo.default.MULTIPLIER + ' ' + baseUpgradeInfo.default.NAME;
+
+                    let enoughCredits = ship.credits >= baseUpgradeInfo.default.BASE_COST * (baseUpgradeInfo.level + 1);
+                    if (enoughCredits && ship.ship.alive && baseUpgradeInfo.level < baseUpgradeInfo.default.ALLOWED) {
+                        baseUpgrade.components[0].fill = '#009400bf';
+                    } else {
+                        baseUpgrade.components[0].fill = '#2C2C2Cbf';
+                        baseUpgrade.clickable = false;
+                    }
+
+                    ship.sendUI(baseUpgrade);
                 }
-                ship.sendUI(slot);
             }
-        } else {
-            ship.hideUI(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
+        }
 
-            ship.hideUIsIncludingID(UIComponent.C.UIS.WEAPONS_STORE_TAB);
-            ship.hideUIsIncludingID(UIComponent.C.UIS.WEAPONS_STORE_ITEM);
-            ship.hideUIsIncludingID(UIComponent.C.UIS.WEAPONS_STORE_SLOT);
-
-            ship.isDonating = false;
+        let numSlots = 6;
+        for (let i = 0; i < numSlots; i++) {
+            let slot = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_SLOT);
+            slot.id += '-' + i;
+            slot.clickable = ship.selectedItems[i];
+            let position = Helper.getGridUIPosition(30, 0, 0.5, 0, i, 0, numSlots, 1);
+            slot.position = [position[0], slot.position[1], position[2], slot.position[3]];
+            slot.components[1].value = ship.selectedItems[i] ? ship.selectedItems[i].ICON : '';
+            if (i >= ship.getMaxSecondaries()) {
+                slot.components[0].fill = '#2C2C2C80';
+                slot.components[0].stroke = '#2C2C2Cbf';
+                slot.components[1].value = '▧';
+                slot.components[1].position = [-40, -40, 180, 180];
+                slot.components[1].color = '#2C2C2Cbf';
+            } else if (ship.selectedItems[i]) {
+                slot.components.push(
+                    {
+                        type: 'box',
+                        position: [0, 0, 100, 100],
+                        fill: '#00000080',
+                    },
+                    {
+                        type: 'text',
+                        value: '-',
+                        position: [0, 0, 100, 100],
+                        color: '#ffffff'
+                    }
+                );
+            }
+            ship.sendUI(slot);
         }
     }
 
@@ -1707,7 +1699,7 @@ const Game = class {
             if (id.includes(UIComponent.C.UIS.WEAPONS_STORE_SLOT.id)) {
                 if (ship.inDepot) {
                     let index = parseInt(id.split('-')[1]);
-                    ship.credits += ship.selectedItems[index].COST;
+                    ship.credits += ship.selectedItems[index].BASE_COST;
                     Helper.deleteFromArray(ship.selectedItems, ship.selectedItems[index]);
                 }
             }
@@ -3504,10 +3496,10 @@ const PowercoreBaseModule = class extends BaseModule {
         return this;
     }
 
-    createObjs() {
+    createObjs(color = this.base.team.hex) {
         super.createObjs();
         let powercore = Helper.deepCopy(Obj.C.OBJS.POWERCORE);
-        let powercoreObj = new Obj(powercore.id, powercore.type, powercore.position, powercore.rotation, powercore.scale, true, true, this.base.team.hex);
+        let powercoreObj = new Obj(powercore.id, powercore.type, powercore.position, powercore.rotation, powercore.scale, true, true, color);
         let nonRotatedPose = new Pose(
             this.pose.position,
             0,
@@ -3533,8 +3525,8 @@ const PowercoreBaseModule = class extends BaseModule {
     }
 
     deactivate() {
-        super.deactivate();
         this.base.canHeal = false;
+        this.createObjs('#4d4d4d');
     }
 }
 
@@ -3869,23 +3861,23 @@ const TurretBaseModule = class extends BaseModule {
         LASERS: [
             {
                 DAMAGE: 8,
-                RANGE: 25,
-                SHOOT_DELAY: 80
+                RANGE: 35,
+                SHOOT_DELAY: 60
             },
             {
                 DAMAGE: 12,
-                RANGE: 30,
-                SHOOT_DELAY: 80
+                RANGE: 40,
+                SHOOT_DELAY: 60
             },
             {
                 DAMAGE: 20,
-                RANGE: 35,
-                SHOOT_DELAY: 80
+                RANGE: 45,
+                SHOOT_DELAY: 60
             },
             {
                 DAMAGE: 30,
-                RANGE: 40,
-                SHOOT_DELAY: 80
+                RANGE: 55,
+                SHOOT_DELAY: 60
             }
         ],
         MIN_SHIP_VELOCITY: 0.6,
@@ -4029,8 +4021,8 @@ const DoorBaseModule = class extends BaseModule {
         NUM_DOORS: 0,
         DOOR_HEIGHT: 2.5,
         DOOR_CYCLE_STEPS: 5,
-        CLOSING_DIFF: 0.25,
-        OPENING_DIFF: 0.1,
+        CLOSING_DIFF: 0.4,
+        OPENING_DIFF: 0.25,
         REPULSE_RECTANGLE: {
             CENTER: {
                 x: 0,
@@ -5760,6 +5752,9 @@ const UIComponent = class {
                     }
                 ]
             },
+            WEAPONS_STORE_SHARE: {
+
+            },
             WEAPONS_STORE_EXIT: {
                 id: "weapons_store_exit",
                 position: [65, 80, 10, 5],
@@ -6693,14 +6688,27 @@ const Helper = class {
         return `#${hex}${alphaHex}`;
     }
 
-    static interpolateColor(color1, color2, percent) {
+    static interpolateColors(percent, colors) {
+        if (!Array.isArray(colors) || colors.length === 0) return "#000000";
+        if (colors.length === 1) return colors[0];
+
+        percent = Math.max(0, Math.min(1, percent));
+
+        const n = colors.length - 1;
+        const scaled = percent * n;
+        const idx = Math.floor(scaled);
+        const localT = scaled - idx;
+
+        const color1 = colors[idx];
+        const color2 = colors[Math.min(idx + 1, n)];
+
         const c1 = this.hexToRgb(color1, true);
         const c2 = this.hexToRgb(color2, true);
 
-        const r = Math.round(c1.r + (c2.r - c1.r) * percent);
-        const g = Math.round(c1.g + (c2.g - c1.g) * percent);
-        const b = Math.round(c1.b + (c2.b - c1.b) * percent);
-        const a = parseFloat((c1.a + (c2.a - c1.a) * percent).toFixed(2));
+        const r = Math.round(c1.r + (c2.r - c1.r) * localT);
+        const g = Math.round(c1.g + (c2.g - c1.g) * localT);
+        const b = Math.round(c1.b + (c2.b - c1.b) * localT);
+        const a = parseFloat((c1.a + (c2.a - c1.a) * localT).toFixed(2));
 
         return this.rgbToHex(r, g, b, a);
     }
