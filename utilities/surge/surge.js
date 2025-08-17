@@ -141,6 +141,7 @@ const Game = class {
         this.manageGameState();
 
         this.manageShips();
+        this.spawnAliens();
         this.spawnCollectibles();
 
         this.tickTimedEntities();
@@ -586,16 +587,16 @@ const Game = class {
                             }
 
                             if (ship.abilityTime != -1) {
-                                let abilityActivate = Helper.deepCopy(UIComponent.C.UIS.SURGE_ACTIVATE);
+                                let surgeActivate = Helper.deepCopy(UIComponent.C.UIS.SURGE_ACTIVATE);
                                 if (game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
-                                    abilityActivate.components[0].fill = '#00ff0080';
-                                    abilityActivate.components[1].value = 'Surge [X]';
+                                    surgeActivate.components[0].fill = '#00ff0080';
+                                    surgeActivate.components[1].value = 'Surge [X]';
                                 } else {
-                                    abilityActivate.clickable = false;
-                                    abilityActivate.components[0].fill = '#00000080';
-                                    abilityActivate.components[1].value = 'Surge in ' + Helper.formatTime(Ship.C.SURGE_COOLDOWN - (game.step - ship.abilityTime));
+                                    surgeActivate.clickable = false;
+                                    surgeActivate.components[0].fill = '#00000080';
+                                    surgeActivate.components[1].value = 'Surge in ' + Helper.formatTime(Ship.C.SURGE_COOLDOWN - (game.step - ship.abilityTime));
                                 }
-                                ship.sendUI(abilityActivate);
+                                ship.sendUI(surgeActivate);
                             } else {
                                 ship.hideUI(UIComponent.C.UIS.SURGE_ACTIVATE);
                             }
@@ -772,6 +773,42 @@ const Game = class {
             }
         }
     }
+    
+
+    spawnAliens() {
+        if (
+            this.map &&
+            game.step % Alien.C.SPAWN_RATE === 0 &&
+            game.aliens.length < Alien.C.MAX_AMOUNT
+        ) {
+            let pos = Helper.getRandomArrayElement(this.map.spawnArea);
+
+            let as = [];
+            for (let i = 0; i < Alien.C.TYPES.length; i++) {
+                let type = Alien.C.TYPES[i];
+                if (Alien.C.ALLOWED.includes(type.CODE)) {
+                    as.push(Helper.deepCopy(type));
+                }
+            }
+            let alienOption = Helper.getRandomArrayElement(as);
+            let level = Helper.getRandomArrayElement(alienOption.LEVELS);
+
+            this.aliens.push(
+                new Alien(
+                    pos,
+                    new Vector2(0, 0),
+
+                    alienOption.NAME,
+                    alienOption.CODE,
+                    level,
+
+                    alienOption.POINTS[level],
+                    alienOption.CRYSTAL_DROPS[level],
+                    alienOption.WEAPON_DROPS[level]
+                )
+            );
+        }
+    }
 
     spawnCollectibles() {
         if (
@@ -830,6 +867,9 @@ const Game = class {
     handleChooseShip(ship) {
         if (ship) {
             if (ship.ship.alive && ship.chooseShipTime != -1 && game.step - ship.chooseShipTime < Ship.C.CHOOSE_SHIP_TIME && !ship.outOfSpawn) {
+                let color1 = '#1a2a6c';
+                let color2 = '#b21f1f';
+                let color3 = '#fdbb2d';
                 if (ship.scrolledShip == -1) {
                     ship.scrolledShip = ship.ship.type;
                 }
@@ -855,16 +895,14 @@ const Game = class {
 
                             if (ship.getAllowedMaxTier() < tier) {
                                 shipChoice.clickable = false;
-                                shipChoice.components[0].fill = Helper.interpolateColor('#3A1C7120', '#FFAF7B20', tier / tiers.length);
+                                shipChoice.components[0].fill = Helper.interpolateColors((tier - 1) / (tiers.length - 1), [color1 + '20', color2 + '20', color3 + '20']);
                                 shipChoice.components[1].color = '#000000';
                             } else {
-                                shipChoice.components[0].fill = Helper.interpolateColor('#3A1C71BF', '#FFAF7BBF', tier / tiers.length);
+                                shipChoice.components[0].fill = Helper.interpolateColors((tier - 1) / (tiers.length - 1), [color1 + 'bf', color2 + 'bf', color3 + 'bf']);
 
                                 if (ship.scrolledShip == code) {
                                     shipChoice.components[0].stroke = '#00ff00BF';
-                                    shipChoice.components[0].width = 8;
-                                } else {
-                                    shipChoice.components[0].stroke = '#ffffffBF';
+                                    shipChoice.components[0].width = 4;
                                 }
                             }
 
@@ -882,12 +920,17 @@ const Game = class {
                 ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SELECT));
 
                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
-                bottomMessage.components[0].fill = '#3A1C71BF';
-                bottomMessage.components[1].value = 'Dying lowers your score but will allow you to access higher tiers.';
+                bottomMessage.components[0].fill = color1 + 'bf';
+                bottomMessage.components[1].value = 'Dying lowers your score. ';
+                if (ship.getLevel() < 7) {
+                    bottomMessage.components[1].value += `${ship.deaths}/${Ship.C.DEATHS[ship.getLevel()]} deaths required for tier ${ship.getLevel() + 1} unlock.`;
+                } else {
+                    bottomMessage.components[1].value += 'All tiers unlocked.';
+                }
                 ship.sendUI(bottomMessage);
 
                 let topMessage = Helper.deepCopy(UIComponent.C.UIS.TOP_MESSAGE);
-                topMessage.components[0].fill = '#FFAF7BBF';
+                topMessage.components[0].fill = color3 + 'bf';
                 topMessage.components[1].value = `Choose a ship to respawn with. Time remaining to choose: ${Helper.formatTime(Ship.C.CHOOSE_SHIP_TIME - (game.step - ship.chooseShipTime))}.`;
                 ship.sendUI(topMessage);
             } else if (ship.chooseShipTime != -1) {
@@ -1024,7 +1067,7 @@ const Game = class {
                 }
             }
             else if (id == UIComponent.C.UIS.SURGE_ACTIVATE.id) {
-                if (ship.abilityTime != -1 && game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
+                if (ship.ship.alive && ship.abilityTime != -1 && game.step - ship.abilityTime >= Ship.C.SURGE_COOLDOWN) {
                     ship.abilityTime = game.step;
                     let shipCrystals = ship.ship.crystals;
                     let prevType = ship.ship.type;
@@ -1436,7 +1479,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 10;
 
     timeouts = [];
     conditions = [];
@@ -1470,6 +1513,14 @@ const Ship = class {
         SURGE_TIME: 60,
         BASE_KILL_SCORE: 500,
         SWITCH_SHIP_TIME: 180,
+        DEATHS: [
+            1,
+            3,
+            6,
+            10,
+            16,
+            24
+        ]
     }
 
     constructor(ship) {
@@ -1661,17 +1712,17 @@ const Ship = class {
     }
 
     getAllowedMaxTier() {
-        if (this.deaths > 24) {
+        if (this.deaths > Ship.C.DEATHS[5]) {
             return 7;
-        } else if (this.deaths > 16) {
+        } else if (this.deaths > Ship.C.DEATHS[4]) {
             return 6;
-        } else if (this.deaths > 10) {
+        } else if (this.deaths > Ship.C.DEATHS[3]) {
             return 5;
-        } else if (this.deaths > 6) {
+        } else if (this.deaths > Ship.C.DEATHS[2]) {
             return 4;
-        } else if (this.deaths > 3) {
+        } else if (this.deaths > Ship.C.DEATHS[1]) {
             return 3;
-        } else if (this.deaths > 1) {
+        } else if (this.deaths > Ship.C.DEATHS[0]) {
             return 2;
         }
         return 1;
@@ -1984,6 +2035,14 @@ const Alien = class {
                 WEAPON_DROPS: [10, 20, 11]
             },
             {
+                NAME: 'Fortress',
+                CODE: 12,
+                LEVELS: [0, 1],
+                POINTS: [1200, 2500],
+                CRYSTAL_DROPS: [60, 70],
+                WEAPON_DROPS: [12, 12]
+            },
+            {
                 NAME: 'Caterpillar',
                 CODE: 13,
                 LEVELS: [0],
@@ -1998,6 +2057,14 @@ const Alien = class {
                 POINTS: [80, 100, 120],
                 CRYSTAL_DROPS: [20, 30, 40],
                 WEAPON_DROPS: [10, 11, 12]
+            },
+            {
+                NAME: 'Hirsute',
+                CODE: 15,
+                LEVELS: [0, 1],
+                POINTS: [1500, 2500],
+                CRYSTAL_DROPS: [160, 240],
+                WEAPON_DROPS: [12, 12]
             },
             {
                 NAME: 'Piranha',
@@ -2032,9 +2099,9 @@ const Alien = class {
                 WEAPON_DROPS: [21, 12, 12]
             }
         ],
-        ALLOWED: [],
-        MAX_AMOUNT: 0,
-        SPAWN_RATE: 60
+        ALLOWED: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        MAX_AMOUNT: 10,
+        SPAWN_RATE: 180
     }
 
     constructor(
@@ -3009,7 +3076,6 @@ const UIComponent = class {
                     {
                         type: 'box',
                         position: [0, 0, 100, 100],
-                        width: 4
                     },
                     {
                         type: "text",
@@ -4688,14 +4754,27 @@ const Helper = class {
         return `#${hex}${alphaHex}`;
     }
 
-    static interpolateColor(color1, color2, percent) {
+    static interpolateColors(percent, colors) {
+        if (!Array.isArray(colors) || colors.length === 0) return "#000000";
+        if (colors.length === 1) return colors[0];
+
+        percent = Math.max(0, Math.min(1, percent));
+
+        const n = colors.length - 1;
+        const scaled = percent * n;
+        const idx = Math.floor(scaled);
+        const localT = scaled - idx;
+
+        const color1 = colors[idx];
+        const color2 = colors[Math.min(idx + 1, n)];
+
         const c1 = this.hexToRgb(color1, true);
         const c2 = this.hexToRgb(color2, true);
 
-        const r = Math.round(c1.r + (c2.r - c1.r) * percent);
-        const g = Math.round(c1.g + (c2.g - c1.g) * percent);
-        const b = Math.round(c1.b + (c2.b - c1.b) * percent);
-        const a = parseFloat((c1.a + (c2.a - c1.a) * percent).toFixed(2));
+        const r = Math.round(c1.r + (c2.r - c1.r) * localT);
+        const g = Math.round(c1.g + (c2.g - c1.g) * localT);
+        const b = Math.round(c1.b + (c2.b - c1.b) * localT);
+        const a = parseFloat((c1.a + (c2.a - c1.a) * localT).toFixed(2));
 
         return this.rgbToHex(r, g, b, a);
     }
