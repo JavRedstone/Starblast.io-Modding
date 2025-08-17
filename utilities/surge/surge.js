@@ -950,7 +950,9 @@ const Game = class {
             if (this.map && this.map.spawns.length == 2 && ship.team) {
                 ship.setPosition(this.map.spawns[ship.team.team].getRandomPointInside());
             }
-            ship.chooseShipTime = game.step;
+            ship.timeouts.push(new TimeoutCreator(() => {
+                ship.chooseShipTime = game.step;
+            }, 0).start());
         }
     }
 
@@ -3903,14 +3905,14 @@ const GameMap = class {
                     },
                 ],
                 randAsteroids: {
-                    num: 30,
+                    num: 15,
                     size: {
                         min: 10,
                         max: 30
                     },
                     speed: {
-                        min: 1,
-                        max: 2
+                        min: 0.75,
+                        max: 1.25
                     }
                 }
             }
