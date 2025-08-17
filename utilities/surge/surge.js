@@ -321,7 +321,7 @@ const Game = class {
 
         ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
         
-        ship.chooseShipTime = -1;
+        ship.chooseShipTime = game.step;
         ship.abilityTime = game.step;
 
         ship.done = true;
