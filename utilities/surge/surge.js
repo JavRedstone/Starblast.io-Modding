@@ -276,8 +276,6 @@ const Game = class {
             let ship = this.ships[i];
             this.shipResetQueue.add(() => {
                 this.resetShip(ship);
-
-                ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
             });
         }
         this.timeouts.push(new TimeoutCreator(() => {
@@ -323,7 +321,7 @@ const Game = class {
 
         ship.sendUI(UIComponent.C.UIS.LIVES_BLOCKER);
         
-        ship.chooseShipTime = game.step;
+        ship.chooseShipTime = -1;
         ship.abilityTime = game.step;
 
         ship.done = true;
@@ -541,6 +539,8 @@ const Game = class {
                         this.shipResetQueue.add(() => {
                             ship.isResetting = true;
                             this.resetShip(ship);
+                            
+                            ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
                         });
                     }
 
