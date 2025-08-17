@@ -111,7 +111,7 @@ const Game = class {
 
             GAME_MANAGER: 30,
             
-            ROUND: 3600 * 30,
+            ROUND: 3600 * 25,
             ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
