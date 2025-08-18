@@ -569,7 +569,7 @@ const Game = class {
                                     bottomMessage.components[0].fill = '#ffa20080';
                                     bottomMessage.components[1].value = 'You have left your spawn area! Fight enemies!';
                                     ship.sendTimedUI(bottomMessage);
-                                } else if (ship.chooseShipTime == -1) {
+                                } else {
                                     ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
                                     ship.setGenerator(0);
                                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -2094,13 +2094,13 @@ const Alien = class {
             {
                 NAME: 'Saucer',
                 CODE: 19,
-                LEVELS: [0, 1, 2],
-                POINTS: [1000, 2500, 4000],
-                CRYSTAL_DROPS: [100, 200, 300],
-                WEAPON_DROPS: [21, 12, 12]
+                LEVELS: [0, 1],
+                POINTS: [1000, 2500],
+                CRYSTAL_DROPS: [100, 200],
+                WEAPON_DROPS: [21, 12]
             }
         ],
-        ALLOWED: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        ALLOWED: [10, 11, 13, 14, 16, 17, 18, 19],
         MAX_AMOUNT: 10,
         SPAWN_RATE: 180
     }
