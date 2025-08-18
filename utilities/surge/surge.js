@@ -924,7 +924,7 @@ const Game = class {
                 bottomMessage.components[1].value = 'Dying lowers your score. ';
                 let allowedMaxTier = ship.getAllowedMaxTier();
                 if (allowedMaxTier < 7) {
-                    bottomMessage.components[1].value += `${ship.deaths}/${Ship.C.DEATHS[allowedMaxTier - 1]} deaths required for tier ${allowedMaxTier + 1} unlock.`;
+                    bottomMessage.components[1].value += `${ship.deaths}/${Ship.C.DEATHS[allowedMaxTier - 1] + 1} deaths required for tier ${allowedMaxTier + 1} unlock.`;
                 } else {
                     bottomMessage.components[1].value += 'All tiers unlocked.';
                 }
