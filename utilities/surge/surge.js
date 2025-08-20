@@ -544,18 +544,18 @@ const Game = class {
                             ship.sendTimedUI(UIComponent.C.UIS.LOGO, TimedUI.C.LOGO_TIME);
                         });
                     }
+                    
+                    if (ship.team && !this.isGameOver && !this.waitingForFinish) {
+                        this.handleChooseShip(ship);
+                    } else {
+                        ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE)
+                        ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
+                        ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
+                        ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
+                    }
 
                     if (!ship.isResetting) {
-                        if (ship.team && !this.isGameOver && !this.waitingForFinish) {
-                            this.handleChooseShip(ship);
-                        } else {
-                            ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE)
-                            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
-                            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
-                            ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
-                        }
-
-                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime > Ship.C.SURGE_TIME + Game.C.TICKS.RESET_STAGGER && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length)) {
+                        if (ship.getLevel() > ship.getAllowedMaxTier() || (game.step - ship.abilityTime > Ship.C.SURGE_TIME + 3 * Game.C.TICKS.RESET_STAGGER && game.step - ship.abilityTime < Ship.C.SURGE_COOLDOWN && ship.getModel() > Object.keys(ShipGroup.C.SHIPS[`${ship.getLevel()}`]).length)) {
                             ship.setType(101);
                             ship.setCrystals(0);
                         }
@@ -568,14 +568,18 @@ const Game = class {
                                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                     bottomMessage.components[0].fill = '#ffa20080';
                                     bottomMessage.components[1].value = 'You have left your spawn area! Fight enemies!';
-                                    ship.sendTimedUI(bottomMessage);
+                                    if (!ship.hasUI(UIComponent.C.UIS.SHIP_SELECT)) {
+                                        ship.sendTimedUI(bottomMessage);
+                                    }
                                 } else {
                                     ship.setInvulnerable(Ship.C.INVULNERABLE_TIME);
                                     ship.setGenerator(0);
                                     let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                     bottomMessage.components[0].fill = '#008e0080';
                                     bottomMessage.components[1].value = 'You are in the safety of your spawn area.';
-                                    ship.sendUI(bottomMessage);
+                                    if (!ship.hasUI(UIComponent.C.UIS.SHIP_SELECT)) {
+                                        ship.sendUI(bottomMessage);
+                                    }
                                 }
                             }
                             if (this.map.spawns[this.getOppTeam(ship.team).team].containsPoint(ship.getPosition())) {
@@ -583,7 +587,9 @@ const Game = class {
                                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
                                 bottomMessage.components[0].fill = '#ff000080';
                                 bottomMessage.components[1].value = 'You have entered enemy territory! You will take damage!';
-                                ship.sendTimedUI(bottomMessage);
+                                if (!ship.hasUI(UIComponent.C.UIS.SHIP_SELECT)) {
+                                    ship.sendTimedUI(bottomMessage);
+                                }
                             }
 
                             if (ship.abilityTime != -1) {
@@ -619,15 +625,15 @@ const Game = class {
                                     });
                                 }
                             }
-                            for (let enemyShip of this.getOppTeam(ship.team).ships) {
-                                if (enemyShip.ship.alive && enemyShip.outOfSpawn) {
-                                    radarBackground.components.push({
-                                        type: "round",
-                                        position: Helper.getRadarSpotPosition(enemyShip.getPosition(), new Vector2(1, 1).multiply(20)),
-                                        fill: '#ff000080'
-                                    });
-                                }
-                            }
+                            // for (let enemyShip of this.getOppTeam(ship.team).ships) {
+                            //     if (enemyShip.ship.alive && enemyShip.outOfSpawn) {
+                            //         radarBackground.components.push({
+                            //             type: "round",
+                            //             position: Helper.getRadarSpotPosition(enemyShip.getPosition(), new Vector2(1, 1).multiply(20)),
+                            //             fill: '#ff000080'
+                            //         });
+                            //     }
+                            // }
                             ship.sendUI(radarBackground);
                         }
 
@@ -947,7 +953,7 @@ const Game = class {
                     ship.setMaxStats();
                     ship.setCrystals(shipCrystals);
                     ship.scrolledShip = -1;
-                }, 0).start());
+                }, Game.C.TICKS.RESET_STAGGER).start());
                 ship.chooseShipTime = -1;
             }
         }
@@ -996,7 +1002,7 @@ const Game = class {
             }
             ship.timeouts.push(new TimeoutCreator(() => {
                 ship.chooseShipTime = game.step;
-            }, 0).start());
+            }, Game.C.TICKS.RESET_STAGGER).start());
         }
     }
 
@@ -1082,9 +1088,9 @@ const Game = class {
                                 ship.setType(prevType);
                                 ship.setMaxStats();
                                 ship.setCrystals(shipCrystals);
-                            }, 0).start());
+                            }, Game.C.TICKS.RESET_STAGGER).start());
                         }, Ship.C.SURGE_TIME).start());
-                    }, 0).start());
+                    }, Game.C.TICKS.RESET_STAGGER).start());
                 }
             }
         }
@@ -1108,22 +1114,22 @@ const Team = class {
 
     static C = {
         TEAMS: [
-            [   
-                {
-                    TEAM: 0,
-                    COLOR: 'Red',
-                    HEX: '#ff0000',
-                    NAME: 'Anarchist Concord Vega',
-                    HUE: 0
-                },
-                {
-                    TEAM: 1,
-                    COLOR: 'Blue',
-                    HEX: '#0000ff',
-                    NAME: 'Andromeda Union',
-                    HUE: 240
-                }
-            ],
+            // [   
+            //     {
+            //         TEAM: 0,
+            //         COLOR: 'Red',
+            //         HEX: '#ff0000',
+            //         NAME: 'Anarchist Concord Vega',
+            //         HUE: 0
+            //     },
+            //     {
+            //         TEAM: 1,
+            //         COLOR: 'Blue',
+            //         HEX: '#0000ff',
+            //         NAME: 'Andromeda Union',
+            //         HUE: 240
+            //     }
+            // ],
             [
                 {
                     TEAM: 0,
@@ -2100,9 +2106,9 @@ const Alien = class {
                 WEAPON_DROPS: [21, 12]
             }
         ],
-        ALLOWED: [10, 11, 13, 14, 16, 17, 18, 19],
-        MAX_AMOUNT: 10,
-        SPAWN_RATE: 180
+        ALLOWED: [10, 11, 12, 13, 14, 15, 16, 17, 18, 19],
+        MAX_AMOUNT: 3,
+        SPAWN_RATE: 60
     }
 
     constructor(
