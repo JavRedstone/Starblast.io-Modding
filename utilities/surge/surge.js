@@ -2028,10 +2028,10 @@ const Alien = class {
             {
                 NAME: 'Chicken',
                 CODE: 10,
-                LEVELS: [0, 1, 2],
-                POINTS: [10, 20, 50],
-                CRYSTAL_DROPS: [10, 20, 30],
-                WEAPON_DROPS: [10, 20, 11]
+                LEVELS: [0, 1, 2, 3],
+                POINTS: [10, 20, 50, 1000],
+                CRYSTAL_DROPS: [10, 20, 30, 100],
+                WEAPON_DROPS: [10, 20, 11, 12]
             },
             {
                 NAME: 'Crab',
