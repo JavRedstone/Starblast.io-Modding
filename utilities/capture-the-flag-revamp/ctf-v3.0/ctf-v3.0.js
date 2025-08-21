@@ -892,6 +892,10 @@ const Game = class {
                         });
                     }
 
+                    if (ship.ship.healing) {
+                        ship.setHealing(false);
+                    }
+
                     if (this.isWaiting) {
                         ship.sendUI(UIComponent.C.UIS.WAITING_SCOREBOARD);
                         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -2175,6 +2179,13 @@ const Ship = class {
     setGenerator(generator) {
         if (game.ships.includes(this.ship)) {
             this.ship.set({ generator: generator });
+        }
+        return this;
+    }
+
+    setHealing(healing) {
+        if (game.ships.includes(this.ship)) {
+            this.ship.set({ healing: healing });
         }
         return this;
     }
