@@ -1522,11 +1522,11 @@ const Ship = class {
         SWITCH_SHIP_TIME: 180,
         DEATHS: [
             1,
+            2,
             3,
-            6,
-            10,
-            16,
-            24
+            4,
+            5,
+            6
         ]
     }
 
