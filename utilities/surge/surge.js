@@ -5,6 +5,8 @@
     @version 1.0.0
 
     Developed in 2025
+
+    Ship Trees: U-Series, Nautic Series, Alien Intrusion, Vanilla Revamp V3, Nerd69420's Ships
 */
 
 const Game = class {
@@ -1836,7 +1838,7 @@ const ShipGroup = class {
                     }
                 }
             },
-            'Nerd69420': {
+            "Nerd69420's Ships": {
                 '1': {
                     '101': {
                         SHIP: '{"name":"Cockroach","level":1,"model":1,"size":1.1,"specs":{"shield":{"capacity":[85,120],"reload":[1,3]},"generator":{"capacity":[50,80],"reload":[10,16]},"ship":{"mass":72,"speed":[110,135],"rotation":[80,110],"acceleration":[100,115]}},"bodies":{"main":{"section_segments":10,"offset":{"x":0,"y":0,"z":0},"position":{"x":[0,0,0,0,0,0,0,0,0,0],"y":[-50,-50,-60,-46,-25,10,30,55,75,60],"z":[0,0,0,0,0,0,0,0,0]},"width":[0,10,20,16,20,24,25,23,19,0],"height":[0,10,20,18,20,22,24,25,19,0],"propeller":true,"texture":[17,15,15,63,10,2,3,4,17],"laser":{"damage":[6,8],"rate":2,"type":1,"speed":[100,150],"number":2,"angle":9}},"cockpit":{"section_segments":8,"offset":{"x":0,"y":0,"z":17},"position":{"x":[0,0,0,0,0],"y":[-8,3,30,40,60],"z":[-7,-1,0,0,-2]},"width":[10,12,15,15,8],"height":[10,11,16,13,7],"propeller":false,"texture":[7,9,63,12]},"body2":{"section_segments":6,"offset":{"x":33,"y":20,"z":-5},"position":{"x":[0,0,0,0,0,0],"y":[-15,0,20,36,65,76],"z":[0,0,0,0,0,0]},"width":[0,11,13,15,19,0],"height":[0,12,15,15,19,0],"propeller":false,"texture":[1,63,3,4,63,1]}},"wings":{"main":{"length":[25],"width":[30,37],"angle":[-12],"position":[50,62],"doubleside":true,"offset":{"x":40,"y":10,"z":-12},"bump":{"position":0,"size":15},"texture":[63]}},"typespec":{"name":"Cockroach","level":1,"model":1,"code":101,"specs":{"shield":{"capacity":[85,120],"reload":[1,3]},"generator":{"capacity":[50,80],"reload":[10,16]},"ship":{"mass":72,"speed":[110,135],"rotation":[80,110],"acceleration":[100,115]}},"shape":[1.323,1.344,1.385,1.181,0.878,0.751,0.658,0.593,0.546,0.513,0.493,0.48,0.478,0.488,0.808,0.94,1.074,1.183,1.94,2.218,2.444,2.183,2.233,2.182,1.68,1.653,1.68,2.182,2.233,2.183,2.444,2.218,1.94,1.183,1.074,0.94,0.808,0.488,0.478,0.48,0.493,0.513,0.546,0.593,0.658,0.751,0.878,1.181,1.385,1.344],"lasers":[{"x":0,"y":-1.32,"z":0,"angle":0,"damage":[6,8],"rate":2,"type":1,"speed":[100,150],"number":2,"spread":9,"error":0,"recoil":0}],"radius":2.444}}',
