@@ -2120,7 +2120,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 40;
+    deaths = 0;
 
     timeouts = [];
     conditions = [];
@@ -5598,7 +5598,6 @@ const Helper = class {
 }
 
 Game.setShipGroups(ShipGroup.C.SHIPS);
-console.log(Game.C.OPTIONS.SHIPS)
 this.options = {
     root_mode: Game.C.OPTIONS.ROOT_MODE,
     
