@@ -2024,9 +2024,8 @@ const ShipGroup = class {
                 }
             },
         },
-        GENERATOR_RELOAD_MULTIPLIER: 10,
-        GENERATOR_CAPACITY_MULTIPLIER: 10,
-        LASER_RATE_MULTIPLIER: 5,
+        GENERATOR_RELOAD_MULTIPLIER: 50,
+        GENERATOR_CAPACITY_MULTIPLIER: 20,
         SHIP_SPEED_MULTIPLIER: 1.5,
         SHIP_ACCELERATION_MULTIPLIER: 1.5
     }
@@ -2078,7 +2077,6 @@ const ShipGroup = class {
 
             let objsWithRate = Helper.findObjectsWithKey(jship, 'rate');
             for (let objWithRate of objsWithRate) {
-                // objWithRate.rate = Helper.clamp(objWithRate.rate * ShipGroup.C.LASER_RATE_MULTIPLIER, -1, 10);
                 objWithRate.rate = -1;
             }
 
@@ -2122,7 +2120,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 40;
 
     timeouts = [];
     conditions = [];
@@ -2153,7 +2151,7 @@ const Ship = class {
         INVULNERABLE_TIME: 300,
         CHOOSE_SHIP_TIME: 1200,
         SURGE_COOLDOWN: 1800,
-        SURGE_TIME: 120,
+        SURGE_TIME: 90,
         BASE_KILL_SCORE: 500,
         SWITCH_SHIP_TIME: 180,
         DEATHS: [
@@ -5600,6 +5598,7 @@ const Helper = class {
 }
 
 Game.setShipGroups(ShipGroup.C.SHIPS);
+console.log(Game.C.OPTIONS.SHIPS)
 this.options = {
     root_mode: Game.C.OPTIONS.ROOT_MODE,
     
