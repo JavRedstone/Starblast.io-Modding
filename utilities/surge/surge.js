@@ -880,8 +880,8 @@ const Game = class {
             ship.hideUI(UIComponent.C.UIS.CHANGE_SHIP);
             ship.hideUI(UIComponent.C.UIS.SHIP_TREE);
             ship.hideUIsIncludingID(UIComponent.C.UIS.SHIP_CHOICE)
-            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS);
-            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS);
+            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_RIGHT);
+            ship.hideUI(UIComponent.C.UIS.SHIP_SCROLL_LEFT);
             ship.hideUI(UIComponent.C.UIS.SHIP_SELECT);
         }
     }
@@ -943,8 +943,8 @@ const Game = class {
                     }
                 }
 
-                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_FORWARDS));
-                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS));
+                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_RIGHT));
+                ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SCROLL_LEFT));
                 ship.sendUI(Helper.deepCopy(UIComponent.C.UIS.SHIP_SELECT));
 
                 let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
@@ -1074,10 +1074,10 @@ const Game = class {
                     ship.fillUp();
                 }
             }
-            else if (id == UIComponent.C.UIS.SHIP_SCROLL_FORWARDS.id || id == UIComponent.C.UIS.SHIP_SCROLL_BACKWARDS.id) {
+            else if (id == UIComponent.C.UIS.SHIP_SCROLL_RIGHT.id || id == UIComponent.C.UIS.SHIP_SCROLL_LEFT.id) {
                 if (ship.chooseShipTime != -1) {
                     let allowedMaxTier = ship.getAllowedMaxTier();
-                    if (id == UIComponent.C.UIS.SHIP_SCROLL_FORWARDS.id) {
+                    if (id == UIComponent.C.UIS.SHIP_SCROLL_RIGHT.id) {
                         ship.scrolledShip++;
                         let shipLevel = Math.floor(ship.scrolledShip / 100);
                         if (ship.scrolledShip > shipLevel * 100 + Object.keys(Game.shipTreeOption[`${shipLevel}`]).length) {
@@ -2120,7 +2120,7 @@ const Ship = class {
     ship = null;
 
     kills = 0;
-    deaths = 0;
+    deaths = 40;
 
     timeouts = [];
     conditions = [];
@@ -3769,12 +3769,12 @@ const UIComponent = class {
                     }
                 ]
             },
-            SHIP_SCROLL_FORWARDS: {
-                id: "ship_scroll_forwards",
-                position: [10, 77.5, 20, 5],
+            SHIP_SCROLL_RIGHT: {
+                id: "ship_scroll_right",
+                position: [40, 77.5, 20, 5],
                 visible: true,
                 clickable: true,
-                shortcut: String.fromCharCode(188),
+                shortcut: String.fromCharCode(190),
                 components: [
                     {
                         type: 'box',
@@ -3785,16 +3785,16 @@ const UIComponent = class {
                         type: "text",
                         position: [15, 15, 70, 70],
                         color: '#ffffff',
-                        value: 'Scroll Right [,]'
+                        value: 'Scroll Right [.]'
                     }
                 ]
             },
-            SHIP_SCROLL_BACKWARDS: {
-                id: "ship_scroll_backwards",
-                position: [40, 77.5, 20, 5],
+            SHIP_SCROLL_LEFT: {
+                id: "ship_scroll_left",
+                position: [10, 77.5, 20, 5],
                 visible: true,
                 clickable: true,
-                shortcut: String.fromCharCode(190),
+                shortcut: String.fromCharCode(188),
                 components: [
                     {
                         type: 'box',
@@ -3805,7 +3805,7 @@ const UIComponent = class {
                         type: "text",
                         position: [15, 15, 70, 70],
                         color: '#ffffff',
-                        value: 'Scroll Left [.]'
+                        value: 'Scroll Left [,]'
                     }
                 ]
             },
