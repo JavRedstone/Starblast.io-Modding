@@ -2146,7 +2146,7 @@ const Ship = class {
     static C = {
         INVULNERABLE_TIME: 300,
         CHOOSE_SHIP_TIME: 1200,
-        SURGE_COOLDOWN: 3600,
+        SURGE_COOLDOWN: 2400,
         SURGE_TIME: 45,
         BASE_KILL_SCORE: 500,
         SWITCH_SHIP_TIME: 180,
