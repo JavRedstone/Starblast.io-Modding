@@ -2147,14 +2147,14 @@ const Ship = class {
         INVULNERABLE_TIME: 300,
         CHOOSE_SHIP_TIME: 1200,
         SURGE_COOLDOWN: 2400,
-        SURGE_TIME: 30,
+        SURGE_TIME: 20,
         BASE_KILL_SCORE: 500,
         SWITCH_SHIP_TIME: 180,
         DEATHS: [
             0,
+            0,
             1,
-            2,
-            4,
+            3,
             6,
             10
         ]
