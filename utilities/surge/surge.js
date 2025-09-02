@@ -4654,8 +4654,8 @@ const GameMap = class {
                 randAsteroids: {
                     num: 15,
                     size: {
-                        min: 10,
-                        max: 30
+                        min: 20,
+                        max: 40
                     },
                     speed: {
                         min: 0.75,
