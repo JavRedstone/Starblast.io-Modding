@@ -720,7 +720,7 @@ class Game {
             }
             str += '\n';
         }
-        console.log(str);
+        // console.log(str);
     }
 
     resetLights() {
