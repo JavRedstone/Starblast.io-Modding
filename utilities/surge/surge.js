@@ -369,7 +369,7 @@ const Game = class {
                 if (Math.abs(diff) >= Game.C.TEAM_PLAYER_DEFICIT) {
                     let t = diff > 0 ? 0 : 1;
                     let minScore = this.teams[t].getMinScore(true);
-                    let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 101 && ship.score == minScore));
+                    let randShip = Helper.getRandomArrayElement(this.teams[t].ships.filter(ship => !ship.left && ship.ship.alive && ship.ship.type != 103 && ship.score == minScore));
                     if (randShip && !this.changeTeamShip) {
                         this.changeTeamShip = randShip;
                         randShip.changeTeamTime = game.step;
@@ -1142,22 +1142,22 @@ const Team = class {
 
     static C = {
         TEAMS: [
-            // [   
-            //     {
-            //         TEAM: 0,
-            //         COLOR: 'Red',
-            //         HEX: '#ff0000',
-            //         NAME: 'Anarchist Concord Vega',
-            //         HUE: 0
-            //     },
-            //     {
-            //         TEAM: 1,
-            //         COLOR: 'Blue',
-            //         HEX: '#0000ff',
-            //         NAME: 'Andromeda Union',
-            //         HUE: 240
-            //     }
-            // ],
+            [   
+                {
+                    TEAM: 0,
+                    COLOR: 'Red',
+                    HEX: '#ff0000',
+                    NAME: 'Anarchist Concord Vega',
+                    HUE: 0
+                },
+                {
+                    TEAM: 1,
+                    COLOR: 'Blue',
+                    HEX: '#0000ff',
+                    NAME: 'Andromeda Union',
+                    HUE: 240
+                }
+            ],
             [
                 {
                     TEAM: 0,
@@ -2020,8 +2020,8 @@ const ShipGroup = class {
                 }
             },
         },
-        GENERATOR_RELOAD_MULTIPLIER: 40,
-        GENERATOR_CAPACITY_MULTIPLIER: 20,
+        GENERATOR_RELOAD_MULTIPLIER: 100,
+        GENERATOR_CAPACITY_MULTIPLIER: 100,
         SHIP_SPEED_MULTIPLIER: 1.5,
         SHIP_ACCELERATION_MULTIPLIER: 1.5
     }
@@ -2147,15 +2147,15 @@ const Ship = class {
         INVULNERABLE_TIME: 300,
         CHOOSE_SHIP_TIME: 1200,
         SURGE_COOLDOWN: 2400,
-        SURGE_TIME: 45,
+        SURGE_TIME: 30,
         BASE_KILL_SCORE: 500,
         SWITCH_SHIP_TIME: 180,
         DEATHS: [
+            0,
             1,
             2,
             4,
             6,
-            8,
             10
         ]
     }
