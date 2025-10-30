@@ -115,7 +115,7 @@ const Game = class {
 
             GAME_MANAGER: 30,
             
-            ROUND: 3600 * 22,
+            ROUND: 3600 * 10,
             ROUND_WAIT: 60 * 10,
         },
         IS_DEBUGGING: false,
@@ -2022,8 +2022,8 @@ const ShipGroup = class {
         },
         GENERATOR_RELOAD_MULTIPLIER: 100,
         GENERATOR_CAPACITY_MULTIPLIER: 100,
-        SHIP_SPEED_MULTIPLIER: 1.5,
-        SHIP_ACCELERATION_MULTIPLIER: 1.5
+        SHIP_SPEED_MULTIPLIER: 2.5,
+        SHIP_ACCELERATION_MULTIPLIER: 2.5
     }
 
     constructor(tier, shipMap) {
