@@ -140,7 +140,7 @@ const Game = class {
                 "3  9  3   8     1             99 99 99  2       3  3       2  99 99 99             1     8   3  9  3\n"+
                 " 36     6         1                                                              1         6     63 ",
 
-            ASTEROIDS_STRENGTH: 0.75,
+            ASTEROIDS_STRENGTH: 0.25,
             RELEASE_CRYSTAL: true,
             CRYSTAL_DROP: 2,
             CRYSTAL_VALUE: 2,
@@ -805,11 +805,21 @@ const Game = class {
                         ship.setType(upgradeCode.code);
                         ship.setStats(upgradeCode.stats)
                         successfullySet = true;
+
+                        let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                        bottomMessage.components[0].fill = '#ff000080';
+                        bottomMessage.components[1].value = "Access Denied. Upgrade your base to access higher tiers."
+                        ship.sendTimedUI(bottomMessage);
                         break;
                     }
                 }
                 if (!successfullySet) {
                     ship.setType(101);
+
+                    let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
+                    bottomMessage.components[0].fill = '#ff000080';
+                    bottomMessage.components[1].value = "Access Denied. Ship reverted to default due to missing upgrade history."
+                    ship.sendTimedUI(bottomMessage);
                 }
                 ship.setCrystals(ship.getMaxCrystals() / 2);
             }
@@ -1375,8 +1385,12 @@ const Game = class {
         weaponsStore.components[2].value = ship.team.name + ' - Weapons Store | ' + Helper.formatTime(DepotBaseModule.C.WEAPONS_STORE_TIME - (game.step - ship.weaponsStoreTime));
         weaponsStore.components[2].position[2] = Math.min(95, weaponsStore.components[2].value.length * 2);
         if (!ship.team.base.doorsOpened) {
-            weaponsStore.components[0].fill = '#00000080';
             weaponsStore.components.push(
+                {
+                    type: 'box',
+                    position: [0, 68, 100, 23],
+                    fill: '#00000080'
+                },
                 {
                     type: 'text',
                     value: '📦',
@@ -1392,13 +1406,13 @@ const Game = class {
                 {
                     type: 'text',
                     value: 'Shipping crystals to headquarters...',
-                    position: [10, 82.5, 80, 5],
+                    position: [10, 80, 80, 5],
                     color: '#ffffff'
                 },
                 {
                     type: 'text',
                     value: 'Your team has far more crystals than the enemy team.',
-                    position: [10, 90, 80, 5],
+                    position: [10, 85, 80, 5],
                     color: '#ffffff'
                 }
             )
@@ -1424,10 +1438,14 @@ const Game = class {
         weaponsStoreBaseTab.components[0].fill += (ship.selectedTab == 1 ? 'BF' : '40');
         ship.sendUI(weaponsStoreBaseTab);
 
-        let weaponsStoreDonate = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
-        weaponsStoreDonate.components[1].position[2] = ship.ship.crystals / ship.getMaxCrystals() * 100;
-        weaponsStoreDonate.components[2].value = ship.ship.crystals + '💎➔ ' + ship.credits + ' 💳';
-        ship.sendUI(weaponsStoreDonate);
+        if (ship.team.base.doorsOpened) {
+            let weaponsStoreDonate = Helper.deepCopy(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
+            weaponsStoreDonate.components[1].position[2] = ship.ship.crystals / ship.getMaxCrystals() * 100;
+            weaponsStoreDonate.components[2].value = ship.ship.crystals + '💎➔ ' + ship.credits + ' 💳';
+            ship.sendUI(weaponsStoreDonate);
+        } else {
+            ship.hideUI(UIComponent.C.UIS.WEAPONS_STORE_DONATE);
+        }
 
         let bottomMessage = Helper.deepCopy(UIComponent.C.UIS.BOTTOM_MESSAGE);
         bottomMessage.components[0].fill = '#0080FFBF';
@@ -2862,7 +2880,7 @@ const Base = class {
     baseModules = [];
 
     allBaseModules = [];
-    powerCore = null;
+    powercore = null;
     subBaseModules = [];
     containerBaseModules = [];
     alienBaseModules = [];
@@ -2941,6 +2959,7 @@ const Base = class {
 
         // if (this.team.team == 0) {
         //     this.crystals = 4000;
+        //     this.baseLevel = 2;
         // }
 
         for (let baseUpgrade of DepotBaseModule.C.WEAPONS_STORE_BASE_UPGRADES) {
@@ -2957,7 +2976,7 @@ const Base = class {
         this.baseModules = [];
 
         this.allBaseModules = [];
-        this.powerCore = null;
+        this.powercore = null;
         this.subBaseModules = [];
         this.containerBaseModules = [];
         this.alienBaseModules = [];
@@ -2995,8 +3014,8 @@ const Base = class {
 
     spawnModules() {
         if (this.baseLevel > 1 && this.canHeal) {
-            this.powerCore = new PowercoreBaseModule(this, null, new Pose(new Vector2(), 0, new Vector3(1, 1, 1).multiply(10)));
-            this.baseModules.push(this.powerCore);
+            this.powercore = new PowercoreBaseModule(this, null, new Pose(new Vector2(), 0, new Vector3(1, 1, 1).multiply(10)));
+            this.baseModules.push(this.powercore);
         }
         for (let i = 0; i < Base.C.NUM_SIDES[this.baseLevel - 1]; i++) {
             let angle = (i * 2 * Math.PI) / Base.C.NUM_SIDES[this.baseLevel - 1];
@@ -3109,7 +3128,7 @@ const Base = class {
             }
             if (this.doorsOpened && diffCrystals >= Base.C.MAX_CRYSTALS[oppTeam.base.baseLevel - 1] * DoorBaseModule.C.CLOSING_DIFF && oppTeam.base.baseLevel < 4) {
                 // g.sendNotifications('Base Gates Closing!', 'The doors of your base are closing due to the enemy team having far less crystals than you.', this.team, this.team);
-                g.sendNotifications('Crystals Shipping...', 'You can no longer donate due to the enemy team having far less crystals than you.', this.team, this.team);
+                g.sendNotifications('Shipping Crystals...', 'You can no longer donate due to the enemy team having far less crystals than you.', this.team, oppTeam);
                 this.doorsOpened = false;
             }
         }
@@ -3421,10 +3440,10 @@ const SubBaseModule = class extends ContainerBaseModule {
             3000
         ],
         HEALING_RATE: [
-            59, // Prevents trolling
-            50,
-            50,
-            50
+            50, // Prevents trolling
+            25,
+            12,
+            6
         ],
         DEPOT_EXIT_QUEUE_TIME: 15
     }
@@ -4462,9 +4481,9 @@ const SafeAlien = class {
                                     spawn = false;
                                 }
                             } else if (this.baseModule.type == BaseModule.C.TYPES.POWERCORE) {
-                                this.baseModule.base.powerCore.health -= this.baseLevelFields.SHIELD;
-                                if (this.baseModule.base.powerCore.health <= 0) {
-                                    this.baseModule.base.powerCore.deactivate();
+                                this.baseModule.base.powercore.health -= this.baseLevelFields.SHIELD;
+                                if (this.baseModule.base.powercore.health <= 0) {
+                                    this.baseModule.base.powercore.deactivate();
                                     spawn = false;
                                 }
                             }
